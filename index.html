@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>대한민국 최정상급 베스트 애널리스트 대시보드</title>
+  <!-- Google Fonts & Font Awesome Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      --card-bg: rgba(30, 41, 59, 0.45);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+      --primary: #8b5cf6;
+      --primary-glow: rgba(139, 92, 246, 0.4);
+      --accent: #06b6d4;
+      --accent-glow: rgba(6, 182, 212, 0.3);
+      --upgrade: #10b981;
+      --upgrade-glow: rgba(16, 185, 129, 0.3);
+      --downgrade: #ef4444;
+      --downgrade-glow: rgba(239, 68, 68, 0.3);
+      --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', 'Noto Sans KR', sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* 슬림 스크롤바 */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* 컨테이너 */
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    /* 헤더 */
+    header {
+      text-align: center;
+      margin-bottom: 50px;
+      position: relative;
+    }
+    
+    header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -1px;
+      background: linear-gradient(to right, #a78bfa, #22d3ee);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+      position: relative;
+      display: inline-block;
+    }
+
+    header h1::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 10%;
+      width: 80%;
+      height: 3px;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      border-radius: 2px;
+      opacity: 0.7;
+    }
+
+    header p {
+      color: var(--text-sub);
+      font-size: 1.1rem;
+      margin-top: 15px;
+      font-weight: 300;
+    }
+
+    /* 네비게이션 탭 */
+    .tabs-nav {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 40px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 20px;
+    }
+
+    .tab-btn {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--text-sub);
+      padding: 12px 25px;
+      font-size: 1rem;
+      font-weight: 500;
+      border-radius: 30px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: var(--transition);
+      backdrop-filter: blur(10px);
+    }
+
+    .tab-btn i {
+      font-size: 1.1rem;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .tab-btn.active {
+      color: #fff;
+      background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%);
+      border-color: var(--primary);
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+
+    /* 탭 콘텐츠 영역 */
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ──────── 📂 탭 1: 애널리스트 목록 ──────── */
+    /* 섹터 필터 바 */
+    .filter-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+
+    .filter-btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--text-sub);
+      padding: 8px 18px;
+      font-size: 0.9rem;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .filter-btn:hover, .filter-btn.active {
+      background: rgba(22, 182, 212, 0.1);
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    /* 그리드 레이아웃 */
+    .analysts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 25px;
+    }
+
+    /* Glassmorphism 카드 */
+    .analyst-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 25px;
+      backdrop-filter: blur(12px);
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .analyst-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(to bottom, var(--primary), var(--accent));
+      opacity: 0.8;
+    }
+
+    .analyst-card:hover {
+      transform: translateY(-8px);
+      border-color: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(6, 182, 212, 0.1);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 15px;
+    }
+
+    .profile-info h3 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .profile-info .firm-tag {
+      color: var(--accent);
+      font-size: 0.85rem;
+      font-weight: 500;
+      background: rgba(6, 182, 212, 0.1);
+      padding: 2px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-right: 5px;
+    }
+
+    .profile-info .position-tag {
+      color: var(--text-sub);
+      font-size: 0.85rem;
+    }
+
+    .sector-badge {
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      color: #c084fc;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    .award-text {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+      font-size: 0.85rem;
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+    }
+
+    .evaluation-text {
+      color: var(--text-sub);
+      font-size: 0.92rem;
+      margin-bottom: 20px;
+      min-height: 70px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .coverage-title {
+      font-size: 0.85rem;
+      color: var(--text-main);
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .coverage-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 3px 8px;
+      font-size: 0.8rem;
+      border-radius: 6px;
+      color: #cbd5e1;
+      transition: var(--transition);
+    }
+
+    .tag:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    /* ──────── 📢 탭 2: 투자의견 변동 알림 ──────── */
+    .alerts-container {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 30px;
+      backdrop-filter: blur(12px);
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+      width: 100%;
+    }
+
+    .alerts-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .alerts-table th {
+      color: var(--text-sub);
+      font-weight: 600;
+      padding: 15px 20px;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.95rem;
+    }
+
+    .alerts-table td {
+      padding: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.92rem;
+      vertical-align: middle;
+    }
+
+    .alerts-table tbody tr {
+      transition: var(--transition);
+    }
+
+    .alerts-table tbody tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .company-cell {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .company-name {
+      font-weight: 600;
+      font-size: 1.05rem;
+      color: #fff;
+    }
+
+    .company-code {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+    }
+
+    /* 상향/하향 배지 */
+    .badge-alert {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .badge-alert.upgrade {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--upgrade);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);
+    }
+
+    .badge-alert.downgrade {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: var(--downgrade);
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.1);
+    }
+
+    .rating-flow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 500;
+    }
+
+    .rating-arrow {
+      color: var(--text-sub);
+    }
+
+    .rating-target {
+      color: #fbbf24;
+      font-weight: 600;
+    }
+
+    .alert-comment {
+      color: #cbd5e1;
+      font-style: italic;
+      max-width: 450px;
+      word-break: keep-all;
+    }
+
+    /* ──────── 🛠️ 탭 3: 자동 갱신 및 스케줄러 ──────── */
+    .scheduler-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      gap: 30px;
+    }
+
+    .scheduler-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 30px;
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .sched-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .sched-header i {
+      font-size: 2rem;
+      color: var(--accent);
+      text-shadow: 0 0 15px var(--accent-glow);
+    }
+
+    .sched-header h3 {
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+
+    .status-panel {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 25px;
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-size: 0.95rem;
+    }
+
+    .status-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .status-label {
+      color: var(--text-sub);
+    }
+
+    .status-val {
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .status-val.online {
+      color: var(--upgrade);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sync-btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%);
+      border: none;
+      color: #fff;
+      padding: 16px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 5px 15px var(--primary-glow);
+    }
+
+    .sync-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(139, 92, 246, 0.6);
+    }
+
+    .sync-btn:active {
+      transform: translateY(1px);
+    }
+
+    .sync-btn.loading i {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    /* 등록 가이드 카드 */
+    .guide-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 30px;
+      backdrop-filter: blur(12px);
+    }
+
+    .guide-steps {
+      margin-top: 20px;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .step-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      background: rgba(139, 92, 246, 0.2);
+      border: 1px solid var(--primary);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    .step-text h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #fff;
+    }
+
+    .step-text p {
+      font-size: 0.9rem;
+      color: var(--text-sub);
+    }
+
+    .step-text code {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #f472b6;
+      font-family: Consolas, monospace;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- 헤더 -->
+    <header>
+      <h1>대한민국 최정상급 베스트 애널리스트</h1>
+      <p id="header-subtitle">주식 시장 최고의 브레인들의 투자 의견 및 포트폴리오 섹터 맵</p>
+    </header>
+
+    <!-- 네비게이션 탭 바 -->
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('tab-analysts')">
+        <i class="fa-solid fa-folder-open"></i> 결합 섹터별 애널리스트
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-alerts')">
+        <i class="fa-solid fa-triangle-exclamation"></i> 투자의견 변동 알림
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-scheduler')">
+        <i class="fa-solid fa-clock-rotate-left"></i> 자동 갱신 및 스케줄러
+      </button>
+    </div>
+
+    <!-- 📂 탭 1: 애널리스트 목록 및 섹터 필터 -->
+    <div id="tab-analysts" class="tab-content active">
+      <div class="filter-container" id="filter-buttons">
+        <button class="filter-btn active" onclick="filterSector('ALL')">전체보기</button>
+        <!-- 자바스크립트에 의해 결합 섹터 필터가 동적으로 생성됩니다. -->
+      </div>
+      
+      <div class="analysts-grid" id="analysts-container">
+        <!-- 자바스크립트 동적 애널리스트 카드 렌더링 -->
+      </div>
+    </div>
+
+    <!-- 📢 탭 2: 투자의견 변동 알림 -->
+    <div id="tab-alerts" class="tab-content">
+      <div class="alerts-container">
+        <h2 style="font-size: 1.4rem; font-weight: 600; margin-bottom: 20px; display:flex; align-items:center; gap:10px;">
+          <i class="fa-solid fa-bell-slash" style="color:var(--downgrade);"></i> 포트폴리오 의견 변동 추적 대시보드
+        </h2>
+        <p style="color:var(--text-sub); font-size: 0.95rem; margin-bottom: 25px;">
+          * 애널리스트들이 이전 등급 대비 <b>[매수 ↔ 홀딩 ↔ 매도]</b> 등 투자의견을 변경한 정밀 트래킹 내역입니다. 구글 시트로의 복사 연동이 가능합니다.
+        </p>
+        
+        <div class="table-responsive">
+          <table class="alerts-table">
+            <thead>
+              <tr>
+                <th>기업명 (종목코드)</th>
+                <th>담당 애널리스트</th>
+                <th>변동 방향</th>
+                <th>의견 변동 흐름</th>
+                <th>목표 주가</th>
+                <th>리서치 코멘트</th>
+                <th>조정 일자</th>
+              </tr>
+            </thead>
+            <tbody id="alerts-container-body">
+              <!-- 자바스크립트 동적 의견 변동 테이블 렌더링 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🛠️ 탭 3: 자동 갱신 및 스케줄러 -->
+    <div id="tab-scheduler" class="tab-content">
+      <div class="scheduler-grid">
+        
+        <!-- 현재 자동화 제어반 -->
+        <div class="scheduler-card">
+          <div class="sched-info-top">
+            <div class="sched-header">
+              <i class="fa-solid fa-terminal"></i>
+              <div>
+                <h3>2주 주기 자동 업데이트 시스템</h3>
+                <p style="color:var(--text-sub); font-size:0.85rem; margin-top:2px;">윈도우 스케줄러 및 백그라운드 배치 데몬</p>
+              </div>
+            </div>
+            
+            <div class="status-panel">
+              <div class="status-row">
+                <span class="status-label">스케줄러 상태</span>
+                <span class="status-val online"><i class="fa-solid fa-circle" style="font-size:0.7rem;"></i> 활성화됨 (Active)</span>
+              </div>
+              <div class="status-row">
+                <span class="status-label">동작 주기</span>
+                <span class="status-val">매 2주 (14일 간격, 백그라운드)</span>
+              </div>
+              <div class="status-row">
+                <span class="status-label">마지막 업데이트 시간</span>
+                <span class="status-val" id="sched-last-update">-</span>
+              </div>
+              <div class="status-row">
+                <span class="status-label">타겟 데이터베이스</span>
+                <span class="status-val">analyst_database.json</span>
+              </div>
+              <div class="status-row">
+                <span class="status-label">확장성 모드</span>
+                <span class="status-val" style="color:var(--accent);">동적 자동 바인딩 (Enabled)</span>
+              </div>
+            </div>
+          </div>
+          
+          <button class="sync-btn" id="btn-sync" onclick="triggerSync()">
+            <i class="fa-solid fa-rotate"></i> 즉시 동기화 시뮬레이션
+          </button>
+        </div>
+
+        <!-- 윈도우 스케줄러 등록 가이드 -->
+        <div class="guide-card">
+          <div class="sched-header" style="margin-bottom: 20px;">
+            <i class="fa-brands fa-windows" style="color:#0078d4;"></i>
+            <div>
+              <h3>Windows 스케줄러 자동화 가이드</h3>
+              <p style="color:var(--text-sub); font-size:0.85rem; margin-top:2px;">매 2주마다 완전 자동 갱신 환경 구축</p>
+            </div>
+          </div>
+          
+          <div class="guide-steps">
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-text">
+                <h4>런처 배치 파일 확인</h4>
+                <p>로컬 폴더 내의 <code>run_scheduler.bat</code> 실행 파일 경로를 확인합니다.</p>
+              </div>
+            </div>
+            
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-text">
+                <h4>Windows 작업 스케줄러 실행</h4>
+                <p>시작 메뉴에서 <b>작업 스케줄러(Task Scheduler)</b>를 실행합니다.</p>
+              </div>
+            </div>
+            
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-text">
+                <h4>새 기본 작업 생성 및 주기 설정</h4>
+                <p>우측의 '기본 작업 만들기'를 눌러 이름을 지정한 후, 주기를 '매월' 또는 '매주'로 설정합니다. (격주 주말 실행 추천)</p>
+              </div>
+            </div>
+
+            <div class="step-item">
+              <div class="step-num">4</div>
+              <div class="step-text">
+                <h4>배치 스크립트 연결</h4>
+                <p>동작에서 '프로그램 시작'을 누르고 <code>run_scheduler.bat</code> 경로를 연결합니다.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 데이터 브릿지 바인딩 스크립트 -->
+  <script src="analyst_data.js"></script>
+
+  <script>
+    // 탭 전환 핸들러
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      document.getElementById(tabId).classList.add('active');
+      event.currentTarget.classList.add('active');
+    }
+
+    // 전역 상태 변수
+    let currentDatabase = window.ANALYST_DATABASE || { analysts: [], recommendations: [] };
+
+    // 화면 로드 즉시 렌더링
+    window.addEventListener('DOMContentLoaded', () => {
+      renderDashboard();
+    });
+
+    function renderDashboard() {
+      // 1. 마지막 업데이트 시간 반영
+      const lastUpdateStr = new Date().toLocaleString('ko-KR');
+      document.getElementById('sched-last-update').innerText = lastUpdateStr;
+
+      const analysts = currentDatabase.analysts;
+      const recs = currentDatabase.recommendations;
+
+      // 2. 동적 필터 버튼 바인딩
+      const filterButtonsContainer = document.getElementById('filter-buttons');
+      // 기존 버튼 중 'ALL' 제외하고 제거
+      filterButtonsContainer.innerHTML = '<button class="filter-btn active" onclick="filterSector(\'ALL\')">전체보기</button>';
+      
+      const uniqueSectors = [...new Set(analysts.map(a => a.merged_sector))];
+      uniqueSectors.forEach(sector => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn';
+        btn.innerText = sector;
+        btn.setAttribute('onclick', `filterSector('${sector}')`);
+        filterButtonsContainer.appendChild(btn);
+      });
+
+      // 3. 애널리스트 카드 렌더링
+      renderAnalysts(analysts);
+
+      // 4. 의견 변동 알림 테이블 렌더링
+      renderAlerts(recs, analysts);
+    }
+
+    // 애널리스트 카드 렌더링 함수
+    function renderAnalysts(analystList) {
+      const container = document.getElementById('analysts-container');
+      container.innerHTML = '';
+
+      if (analystList.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-sub); text-align:center; grid-column:1/-1;">조건에 부합하는 애널리스트가 없습니다.</p>';
+        return;
+      }
+
+      analystList.forEach(a => {
+        const card = document.createElement('div');
+        card.className = 'analyst-card';
+        card.setAttribute('data-sector', a.merged_sector);
+
+        const tagsHtml = a.targets.map(t => `<span class="tag">${t}</span>`).join('');
+
+        card.innerHTML = `
+          <div>
+            <div class="card-header">
+              <div class="profile-info">
+                <h3>${a.name}</h3>
+                <span class="firm-tag">${a.firm}</span>
+                <span class="position-tag">${a.position}</span>
+              </div>
+              <span class="sector-badge">${a.merged_sector}</span>
+            </div>
+            
+            <div class="award-text">
+              <i class="fa-solid fa-trophy"></i>
+              <span>${a.awards.split(',')[0]}</span>
+            </div>
+            
+            <p class="evaluation-text">${a.evaluation}</p>
+          </div>
+
+          <div>
+            <div class="coverage-title">
+              <i class="fa-solid fa-chart-line" style="color:var(--accent);"></i>
+              <span>대표 커버 기업</span>
+            </div>
+            <div class="coverage-tags">
+              ${tagsHtml}
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // 섹터 필터 동작 함수
+    function filterSector(sectorName) {
+      // 필터 버튼 활성화 스타일
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        if (btn.innerText === sectorName || (sectorName === 'ALL' && btn.innerText === '전체보기')) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      const cards = document.querySelectorAll('.analyst-card');
+      cards.forEach(card => {
+        const cardSector = card.getAttribute('data-sector');
+        if (sectorName === 'ALL' || cardSector === sectorName) {
+          card.style.display = 'flex';
+          card.style.animation = 'fadeIn 0.3s ease';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    // 의견 변동 알림 테이블 렌더링 함수
+    function renderAlerts(recs, analysts) {
+      const tbody = document.getElementById('alerts-container-body');
+      tbody.innerHTML = '';
+
+      if (recs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-sub);">최근 의견 변동 감지 내역이 없습니다.</td></tr>';
+        return;
+      }
+
+      recs.forEach(r => {
+        const analystObj = analysts.find(a => a.id === r.analyst_id) || { name: '외부', firm: '기고', position: '위원' };
+        
+        const tr = document.createElement('tr');
+        const badgeClass = r.change_type === 'upgrade' ? 'upgrade' : 'downgrade';
+        const badgeText = r.change_type === 'upgrade' ? '🟢 상향' : '🔴 하향';
+        
+        tr.innerHTML = `
+          <td>
+            <div class="company-cell">
+              <span class="company-name">${r.stock_name}</span>
+              <span class="company-code">${r.stock_code}</span>
+            </div>
+          </td>
+          <td>
+            <span style="font-weight:500;">${analystObj.name}</span>
+            <span style="color:var(--text-sub); font-size:0.85rem; display:block;">${analystObj.firm} ${analystObj.position}</span>
+          </td>
+          <td>
+            <span class="badge-alert ${badgeClass}">${badgeText}</span>
+          </td>
+          <td>
+            <div class="rating-flow">
+              <span>${r.previous_rating}</span>
+              <i class="fa-solid fa-circle-arrow-right rating-arrow"></i>
+              <span style="color:${r.change_type === 'upgrade' ? 'var(--upgrade)' : 'var(--downgrade)'}; font-weight:600;">${r.current_rating}</span>
+            </div>
+          </td>
+          <td class="rating-target">${r.target_price}</td>
+          <td>
+            <p class="alert-comment">"${r.comment}"</p>
+          </td>
+          <td style="color:var(--text-sub);">${r.date}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 즉시 동기화 시뮬레이션
+    function triggerSync() {
+      const btn = document.getElementById('btn-sync');
+      btn.disabled = true;
+      btn.classList.add('loading');
+      btn.innerHTML = '<i class="fa-solid fa-spinner"></i> 동기화 진행 중...';
+
+      // 1.5초 시뮬레이션 딜레이 작동 후 렌더링
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.classList.remove('loading');
+        btn.innerHTML = '<i class="fa-solid fa-rotate"></i> 즉시 동기화 완료!';
+        
+        // 시간 갱신 및 완료 얼럿
+        const now = new Date();
+        document.getElementById('sched-last-update').innerText = now.toLocaleString('ko-KR');
+        
+        setTimeout(() => {
+          btn.innerHTML = '<i class="fa-solid fa-rotate"></i> 즉시 동기화 시뮬레이션';
+        }, 2000);
+      }, 1500);
+    }
+  </script>
+</body>
+</html>

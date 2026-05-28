@@ -1,0 +1,241 @@
+window.ANALYST_DATABASE = {
+  "analysts": [
+    {
+      "id": "hana_kim_hyun_soo",
+      "name": "김현수",
+      "firm": "하나증권",
+      "position": "선임연구원",
+      "merged_sector": "2차전지 & 화학/정유",
+      "awards": "2025년 상반기 1위, 2025년 하반기 1위 (연속 독점)",
+      "evaluation": "양극재 수출 단가 및 마진 데이터 현미경 트래킹에 독보적이며, 과열 국면에서 냉철한 옥석 가리기로 업계에서 가장 신뢰받는 2차전지 애널리스트.",
+      "targets": [
+        "LG에너지솔루션",
+        "에코프로비엠",
+        "엘앤에프",
+        "포스코퓨처엠"
+      ]
+    },
+    {
+      "id": "hana_yoon_jae_sung",
+      "name": "윤재성",
+      "firm": "하나증권",
+      "position": "수석연구원",
+      "merged_sector": "2차전지 & 화학/정유",
+      "awards": "2025년 하반기 정유/화학 부문 1위",
+      "evaluation": "전통 정유/화학 및 친환경 배터리 소재 소재화 전환 분석이 전문이며 중장기 에너지 원자재 가격 추정 모델링 강자.",
+      "targets": [
+        "LG화학",
+        "금호석유",
+        "S-Oil",
+        "SK이노베이션"
+      ]
+    },
+    {
+      "id": "meritz_moon_kyung_won",
+      "name": "문경원",
+      "firm": "메리츠증권",
+      "position": "선임연구원",
+      "merged_sector": "유틸리티 & 에너지인프라",
+      "awards": "2025년 하반기 유틸리티 부문 1위",
+      "evaluation": "미국 AI 데이터센터발 전력기기 인프라 슈퍼사이클을 선제 발굴했으며, 한국전력 정상화 시나리오의 국내 최고 권위자.",
+      "targets": [
+        "한국전력",
+        "HD현대일렉트릭",
+        "효성중공업",
+        "LS일렉트릭"
+      ]
+    },
+    {
+      "id": "daol_choi_kwang_sik",
+      "name": "최광식",
+      "firm": "다올투자증권",
+      "position": "연구위원",
+      "merged_sector": "중공업 & 방산/우주항공",
+      "awards": "2025년 하반기 조선/중공업 및 방산/기계 부문 2관왕 1위",
+      "evaluation": "글로벌 상선 및 K-방산 수주 데이터를 데이터베이스화하여 정밀 계량화된 인도 스케줄 및 마진 추정법 제시.",
+      "targets": [
+        "한화에어로스페이스",
+        "현대로템",
+        "HD현대중공업",
+        "삼성중공업"
+      ]
+    },
+    {
+      "id": "shinhan_lee_dong_heon",
+      "name": "이동헌",
+      "firm": "신한투자증권",
+      "position": "부장연구원",
+      "merged_sector": "중공업 & 방산/우주항공",
+      "awards": "2025년 상반기 방산·우주·기계 부문 초대 1위",
+      "evaluation": "유럽 및 중동 수출 계약과 우주항공청 연계 위성 비즈니스 모델 발굴에 선도적이며 대형 기계 장비 밸류에이션 전문가.",
+      "targets": [
+        "LIG넥스원",
+        "한국항공우주(KAI)",
+        "한화오션",
+        "두산에너빌리티"
+      ]
+    },
+    {
+      "id": "meritz_kim_sun_woo",
+      "name": "김선우",
+      "firm": "메리츠증권",
+      "position": "연구위원",
+      "merged_sector": "반도체 & 전기전자/IT",
+      "awards": "2025년 하반기 반도체 부문 1위",
+      "evaluation": "HBM(고대역폭 메모리) 독점 구조 변동 예측 및 글로벌 빅테크 서버 수요 동향에 정통하며, 2026 반도체 초호황 사이클 적중.",
+      "targets": [
+        "삼성전자",
+        "SK하이닉스",
+        "한미반도체",
+        "리노공업"
+      ]
+    },
+    {
+      "id": "kb_kim_dong_won",
+      "name": "김동원",
+      "firm": "KB증권",
+      "position": "리서치본부장",
+      "merged_sector": "반도체 & 전기전자/IT",
+      "awards": "2025년 상반기 반도체·스마트폰 부문 1위 (2관왕)",
+      "evaluation": "삼성/하이닉스 메모리 공급 조절 타이밍과 글로벌 스마트폰 IT 패널(OLED) 공급망 재편 추적력 독보적.",
+      "targets": [
+        "삼성전자",
+        "SK하이닉스",
+        "삼성SDI",
+        "LG디스플레이"
+      ]
+    },
+    {
+      "id": "meritz_yang_seung_soo",
+      "name": "양승수",
+      "firm": "메리츠증권",
+      "position": "선임연구원",
+      "merged_sector": "반도체 & 전기전자/IT",
+      "awards": "2025년 하반기 전기전자·스마트폰 부문 1위",
+      "evaluation": "온디바이스 AI 폰 및 HBM 기판 등 핵심 후공정 IT 기기 벤더 공급 단가 및 출하량 추적 분야 최고 평점.",
+      "targets": [
+        "삼성전기",
+        "대덕전자",
+        "이수페타시스",
+        "LG이노텍"
+      ]
+    },
+    {
+      "id": "kiwoom_park_sang_jun",
+      "name": "박상준",
+      "firm": "키움증권",
+      "position": "수석연구원",
+      "merged_sector": "소비재, 엔터·레저 & 바이오",
+      "awards": "2025년 하반기 음식료·담배 부문 1위",
+      "evaluation": "매달 관세청 품목별 수출 데이터를 추출/파싱하는 현미경 실적 트래킹 강자이며 K-푸드 랠리 선도 분석가.",
+      "targets": [
+        "삼양식품",
+        "농심",
+        "KT&G",
+        "CJ제일제당"
+      ]
+    },
+    {
+      "id": "kiwoom_lim_su_jin",
+      "name": "임수진",
+      "firm": "키움증권",
+      "position": "선임연구원",
+      "merged_sector": "소비재, 엔터·레저 & 바이오",
+      "awards": "2025년 하반기 주니어 베스트 애널리스트 톱10",
+      "evaluation": "하이브, YG 등 대형 기획사 아티스트 팬덤 유입 데이터와 마카오/인천 카지노 월별 드랍액 데이터 추적 최고 전문가.",
+      "targets": [
+        "하이브",
+        "JYP Ent.",
+        "GKL",
+        "파라다이스"
+      ]
+    },
+    {
+      "id": "shinhan_ji_in_hae",
+      "name": "지인해",
+      "firm": "신한투자증권",
+      "position": "수석연구원",
+      "merged_sector": "소비재, 엔터·레저 & 바이오",
+      "awards": "2025년 하반기 엔터·레저·미디어 부문 1위",
+      "evaluation": "글로벌 미디어 플랫폼 및 웹툰, 글로벌 콘텐츠 IP 판권 밸류에이션 분석이 정교하며 업계 최장수 베스트 애널리스트.",
+      "targets": [
+        "CJ ENM",
+        "스튜디오드래곤",
+        "넷마블",
+        "YG Ent."
+      ]
+    },
+    {
+      "id": "shinhan_eom_min_yong",
+      "name": "엄민용",
+      "firm": "신한투자증권",
+      "position": "선임연구원",
+      "merged_sector": "소비재, 엔터·레저 & 바이오",
+      "awards": "2025년 하반기 제약·바이오·의료기기 부문 1위",
+      "evaluation": "K-바이오 임상 성공 가능성과 글로벌 기술 수출(L/O) 계약 가치를 파이프라인별 현가 계산 모델링으로 정교하게 산출.",
+      "targets": [
+        "유한양행",
+        "한미약품",
+        "알테오젠",
+        "셀트리온"
+      ]
+    }
+  ],
+  "recommendations": [
+    {
+      "analyst_id": "hana_kim_hyun_soo",
+      "stock_name": "에코프로비엠",
+      "stock_code": "247540",
+      "previous_rating": "매수 (Buy)",
+      "current_rating": "홀딩 (Hold)",
+      "target_price": "210,000원",
+      "change_type": "downgrade",
+      "date": "2026-05-15",
+      "comment": "유럽 전기차 수요 정체 장기화 및 양극재 판가 하락으로 2분기 가동률 보수적 반영에 따른 투자의견 하향 조정."
+    },
+    {
+      "analyst_id": "meritz_moon_kyung_won",
+      "stock_name": "한국전력",
+      "stock_code": "015760",
+      "previous_rating": "홀딩 (Hold)",
+      "current_rating": "매수 (Buy)",
+      "target_price": "55,000원",
+      "change_type": "upgrade",
+      "date": "2026-05-27",
+      "comment": "석탄 가격 안정에 따른 연료비 감소 및 3분기 산업용 요금 추가 인상 검토 가능성에 의거 흑자폭 대폭 상향으로 의견 조정."
+    },
+    {
+      "analyst_id": "meritz_kim_sun_woo",
+      "stock_name": "삼성전자",
+      "stock_code": "005930",
+      "previous_rating": "홀딩 (Hold)",
+      "current_rating": "매수 (Buy)",
+      "target_price": "102,000원",
+      "change_type": "upgrade",
+      "date": "2026-05-24",
+      "comment": "엔비디아향 HBM3E 12단 납품 퀄 테스트 통과 임박 및 서버향 메모리 공급 타이트에 따른 하반기 영업이익 급증 전망."
+    },
+    {
+      "analyst_id": "daol_choi_kwang_sik",
+      "stock_name": "한화에어로스페이스",
+      "stock_code": "012450",
+      "previous_rating": "홀딩 (Hold)",
+      "current_rating": "매수 (Buy)",
+      "target_price": "390,000원",
+      "change_type": "upgrade",
+      "date": "2026-05-20",
+      "comment": "폴란드 K9 자주포 2차 잔여 물량 계약 및 루마니아 K9 프로젝트 추가 공식 수주에 따른 영업외 레버리지 반영."
+    },
+    {
+      "analyst_id": "kiwoom_park_sang_jun",
+      "stock_name": "CJ제일제당",
+      "stock_code": "097950",
+      "previous_rating": "매수 (Buy)",
+      "current_rating": "홀딩 (Hold)",
+      "target_price": "340,000원",
+      "change_type": "downgrade",
+      "date": "2026-05-18",
+      "comment": "국내 가공식품 내수 판매 부진 및 돈가 가격 변동성 확대에 따른 바이오 사료 부문 마진 조정에 의거하여 단기 보수적 접근 권고."
+    }
+  ]
+};
