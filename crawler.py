@@ -3,19 +3,7 @@ import re
 import json
 import os
 import datetime
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "analyst_database.json")
-
-def load_db():
-    if os.path.exists(DB_PATH):
-        with open(DB_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {"analysts": [], "recommendations": [], "reports": []}
-
-def save_db(data):
-    with open(DB_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+from utils import load_db, save_db, logger
 
 def fetch_recent_reports():
     url = 'https://finance.naver.com/research/company_list.naver'
@@ -23,14 +11,14 @@ def fetch_recent_reports():
     try:
         html = urllib.request.urlopen(req).read().decode('euc-kr', errors='ignore')
     except Exception as e:
-        print(f"[Crawler] 네트워크 에러: {e}")
+        logger.error(f"[Crawler] 네트워크 에러: {e}")
         return []
 
     # <tbody> 부분만 추출
     try:
         table_html = html.split('type_1')[1].split('</table>')[0]
     except IndexError:
-        print("[Crawler] HTML 파싱 에러")
+        logger.error("[Crawler] HTML 파싱 에러")
         return []
 
     # 정규식 패턴 (종목명, 링크, 제목, 증권사, 작성일)
@@ -66,11 +54,11 @@ def fetch_recent_reports():
     return reports
 
 def main():
-    print("[Crawler] 네이버 금융 리서치 최신 보고서 크롤링 시작...")
+    logger.info("[Crawler] 네이버 금융 리서치 최신 보고서 크롤링 시작...")
     new_reports = fetch_recent_reports()
     
     if not new_reports:
-        print("[Crawler] 추출된 리포트가 없습니다.")
+        logger.warning("[Crawler] 추출된 리포트가 없습니다.")
         return
 
     db = load_db()
@@ -125,13 +113,13 @@ def main():
             
         existing_reports.append(new_entry)
         added_count += 1
-        print(f"  [수집] {r['stock_name']} - {r['title']}")
+        logger.info(f"  [수집] {r['stock_name']} - {r['title']}")
 
     if added_count > 0:
         save_db(db)
-        print(f"[Crawler] 성공적으로 {added_count}개의 새로운 리포트를 데이터베이스에 추가했습니다.")
+        logger.info(f"[Crawler] 성공적으로 {added_count}개의 새로운 리포트를 데이터베이스에 추가했습니다.")
     else:
-        print("[Crawler] 업데이트할 새로운 리포트가 없습니다.")
+        logger.info("[Crawler] 업데이트할 새로운 리포트가 없습니다.")
 
 if __name__ == "__main__":
     main()

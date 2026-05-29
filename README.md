@@ -30,15 +30,17 @@
 ```text
 ├── crawler.py             # 네이버 금융 리서치 리포트 수집기
 ├── calendar_fetcher.py    # 글로벌 주요 경제 지표 수집기
-├── updater.py             # 데이터 통합, 주가 패치 및 UI 데이터 생성 (핵심 로직)
+├── updater.py             # 데이터 통합 및 대시보드 갱신
+├── utils.py               # 공통 경로 및 데이터 처리 유틸리티 (신규)
+├── app.js                 # 대시보드 인터랙티브 로직 (신규 분리)
 ├── index.html             # 메인 웹 대시보드 (UI/UX)
-├── analyst_database.json  # 메인 데이터베이스 (애널리스트, 리포트 정보)
+├── fixed_events.json      # 주요 고정 경제 이벤트 데이터 (신규 분리)
+├── analyst_database.json  # 메인 데이터베이스
 ├── economic_calendar.json # 수집된 경제 이벤트 데이터
-├── analyst_data.js        # UI와 Python 데이터를 연결하는 브릿지 파일
-├── analyst_table_sheet.csv # 구글 시트/엑셀용 CSV 출력물
-├── analyst_awards_report.md # 동적으로 생성된 요약 보고서
-├── register_scheduler.bat # 윈도우 작업 스케줄러 자동 등록 스크립트
-└── stocks.txt             # 추적 대상 종목 리스트
+├── stocks.json            # 종목 마스터 데이터
+├── analyst_data.js        # UI 브릿지 파일
+├── analyst_table_sheet.csv # CSV 출력물
+└── analyst_awards_report.md # 요약 보고서
 ```
 
 ---

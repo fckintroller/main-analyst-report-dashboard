@@ -370,6 +370,14 @@
     "previous": ""
   },
   {
+    "date": "2026-05-26",
+    "title": "일본은행(BOJ) 근원 소비자물가지수",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "1.7%",
+    "previous": "1.7%"
+  },
+  {
     "date": "2026-05-27",
     "title": "비농업 고용지수",
     "country": "미국",
@@ -510,6 +518,14 @@
     "previous": ""
   },
   {
+    "date": "2026-05-28",
+    "title": "근원 개인소비지출 물가지수 전월대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "0.3%",
+    "previous": "0.3%"
+  },
+  {
     "date": "2026-05-29",
     "title": "BOE Gov Bailey Speaks",
     "country": "GBP",
@@ -624,6 +640,22 @@
     "impact": "High",
     "forecast": "2.6%",
     "previous": "2.7%"
+  },
+  {
+    "date": "2026-05-29",
+    "title": "민간 고용지수 전분기대비",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "-0.1%",
+    "previous": "-0.1%"
+  },
+  {
+    "date": "2026-05-29",
+    "title": "국내총생산(GDP) 전월대비",
+    "country": "캐나다",
+    "impact": "High",
+    "forecast": "0.1%",
+    "previous": "0.2%"
   },
   {
     "date": "2026-06-04",
