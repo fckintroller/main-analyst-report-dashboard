@@ -63,7 +63,8 @@ def main():
 
     db = load_db()
     existing_reports = db.setdefault("reports", [])
-    existing_titles = {r.get("title") for r in existing_reports}
+    # 중복 체크를 위한 복합 키 생성 (날짜_종목명_제목)
+    existing_keys = {f"{r.get('date')}_{r.get('stock_name')}_{r.get('title')}" for r in existing_reports}
     
     # DB에 등록된 애널리스트 및 관심 종목 맵
     valid_stocks = set()
@@ -77,7 +78,9 @@ def main():
 
     added_count = 0
     for r in new_reports:
-        if r["title"] in existing_titles:
+        # 복합 키 기반 중복 체크
+        report_key = f"{r['date']}_{r['stock_name']}_{r['title']}"
+        if report_key in existing_keys:
             continue
             
         # 관심 종목(DB에 등록된)만 필터링할지 여부: 일단 모두 넣지 않고, DB 타겟 종목 위주로 필터링
