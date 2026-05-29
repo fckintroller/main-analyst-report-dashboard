@@ -492,6 +492,27 @@
       font-weight: 700;
       color: #10b981;
     }
+
+    .external-event-item {
+      padding: 12px 15px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      transition: var(--transition);
+    }
+    .external-event-item.highlighted-event {
+      background: #ffffff;
+      border-color: #facc15;
+      color: #ef4444;
+      box-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
+    }
+    .external-event-item.highlighted-event .event-date,
+    .external-event-item.highlighted-event .event-title {
+      color: #ef4444 !important;
+    }
   </style>
 </head>
 <body>
@@ -511,6 +532,9 @@
       </button>
       <button class="tab-btn" onclick="switchTab('tab-chart')">
         <i class="fa-solid fa-chart-line"></i> 주가 & 코스피 비교 분석
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-calendar')">
+        <i class="fa-regular fa-calendar-check"></i> 경제 캘린더
       </button>
     </div>
 
@@ -595,6 +619,10 @@
           <div class="chart-wrapper" style="position: relative; height: 420px; width: 100%;">
             <canvas id="marketChart"></canvas>
           </div>
+          <!-- 하단 연동형 이벤트 타임라인 -->
+          <div id="external-events-list" style="margin-top: 20px; max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+            <!-- JS 동적 렌더링 -->
+          </div>
         </div>
         
         <!-- 우측: 컨트롤 패널 (검색 및 체크리스트) -->
@@ -615,10 +643,36 @@
         </div>
       </div>
     </div>
+    
+    <!-- 🗓 탭 5: 경제 캘린더 -->
+    <div id="tab-calendar" class="tab-content">
+      <div class="reports-container" style="max-width: 900px; margin: 0 auto;">
+        <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; display:flex; align-items:center; gap:10px; color:var(--primary);">
+          <i class="fa-regular fa-calendar-check" style="color:var(--primary);"></i> 주요 거시경제 캘린더 (High Impact)
+        </h2>
+        <p style="color:var(--text-sub); font-size: 0.95rem; margin-bottom: 25px;">
+          * 글로벌 금융 시장에 큰 영향을 미치는 중요도 높은 경제 지표 및 이벤트 일정입니다.
+        </p>
+        
+        <table style="width:100%; border-collapse: collapse; background: var(--card-bg); border-radius: 8px; overflow: hidden; font-size: 0.9rem;">
+          <thead>
+            <tr style="background: #101620; text-align: left; color: var(--text-sub);">
+              <th style="padding: 12px 15px; border-bottom: 1px solid var(--card-border);">날짜</th>
+              <th style="padding: 12px 15px; border-bottom: 1px solid var(--card-border);">국가</th>
+              <th style="padding: 12px 15px; border-bottom: 1px solid var(--card-border);">주요 이벤트</th>
+            </tr>
+          </thead>
+          <tbody id="calendar-container-body">
+            <!-- JS 동적 렌더링 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <!-- 데이터 브릿지 바인딩 스크립트 -->
   <script src="analyst_data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 
   <script>
     // 등급별 눈이 편안한 시그니처 색상 매핑
@@ -691,6 +745,12 @@
 
       // 6. 차트 컨트롤 체크리스트 렌더링
       renderStockChecklist();
+
+      // 7. 경제 캘린더 렌더링
+      renderCalendar();
+
+      // 8. 차트 하단 연동 타임라인 렌더링
+      renderExternalEvents();
     }
 
     // 애널리스트 카드 렌더링 함수
@@ -861,6 +921,73 @@
       });
     }
 
+    // 경제 캘린더 렌더링 함수
+    function renderCalendar() {
+      const container = document.getElementById('calendar-container-body');
+      if (!container) return;
+      container.innerHTML = '';
+      
+      const calendarData = window.CALENDAR_DATA || [];
+      if (calendarData.length === 0) {
+        container.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 20px; color: var(--text-sub);">예정된 경제 일정이 없습니다.</td></tr>';
+        return;
+      }
+      
+      calendarData.forEach(event => {
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid #101620';
+        tr.innerHTML = `
+          <td style="padding: 12px 15px; color: #e2e8f0;">${event.date}</td>
+          <td style="padding: 12px 15px;">
+            <span style="background: rgba(4, 120, 87, 0.15); color: #10b981; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem;">
+              ${event.country}
+            </span>
+          </td>
+          <td style="padding: 12px 15px; color: #ffffff; font-weight: 500;">
+            ${event.title}
+          </td>
+        `;
+        container.appendChild(tr);
+      });
+    }
+
+    // 차트 하단 연동 타임라인 렌더링 함수
+    function renderExternalEvents() {
+      const container = document.getElementById('external-events-list');
+      if (!container) return;
+      container.innerHTML = '';
+      
+      const calendarData = window.CALENDAR_DATA || [];
+      const todayStr = new Date().toISOString().split('T')[0];
+      
+      let hasFuture = false;
+      calendarData.forEach(event => {
+        if (event.date < todayStr) return;
+        hasFuture = true;
+        
+        const item = document.createElement('div');
+        item.className = 'external-event-item';
+        item.setAttribute('data-date', event.date);
+        
+        item.innerHTML = `
+          <div class="event-date" style="color: #e2e8f0; font-weight: 600; width: 90px;">${event.date}</div>
+          <div>
+            <span style="background: rgba(4, 120, 87, 0.15); color: #10b981; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem;">
+              ${event.country}
+            </span>
+          </div>
+          <div class="event-title" style="color: #ffffff; font-weight: 500; flex: 1;">
+            ${event.title}
+          </div>
+        `;
+        container.appendChild(item);
+      });
+      
+      if (!hasFuture) {
+        container.innerHTML = '<p style="color:var(--text-sub); text-align:center; padding: 20px;">예정된 경제 일정이 없습니다.</p>';
+      }
+    }
+
     // Chart.js 초기화 함수
     function initChart() {
       const ctx = document.getElementById('marketChart').getContext('2d');
@@ -873,6 +1000,61 @@
           datasets: []
         },
         options: {
+          onHover: (e, activeElements, chart) => {
+            if (!chart.scales.x) return;
+            const xValue = chart.scales.x.getValueForPixel(e.x);
+            
+            // 모든 리스트 하이라이트 해제
+            document.querySelectorAll('.external-event-item').forEach(el => {
+              el.classList.remove('highlighted-event');
+            });
+            let needsUpdate = false;
+            const annotations = chart.options.plugins.annotation?.annotations || {};
+
+            if (xValue >= 0 && xValue < chart.data.labels.length) {
+              const hoveredDate = chart.data.labels[xValue];
+              
+              // 하단 리스트 하이라이트 및 스크롤 연동
+              const targetEl = document.querySelector(`.external-event-item[data-date="${hoveredDate}"]`);
+              if (targetEl) {
+                targetEl.classList.add('highlighted-event');
+                targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              }
+              
+              // 차트 세로선 하이라이트
+              for (const key in annotations) {
+                const ann = annotations[key];
+                if (!ann.original) {
+                  ann.original = { borderColor: ann.borderColor, borderWidth: ann.borderWidth };
+                }
+                
+                if (ann.xMin === hoveredDate) {
+                  if (ann.borderColor !== 'rgba(250, 204, 21, 1)') {
+                    ann.borderColor = 'rgba(250, 204, 21, 1)';
+                    ann.borderWidth = 3;
+                    needsUpdate = true;
+                  }
+                } else {
+                  if (ann.borderColor === 'rgba(250, 204, 21, 1)') {
+                    ann.borderColor = ann.original.borderColor;
+                    ann.borderWidth = ann.original.borderWidth;
+                    needsUpdate = true;
+                  }
+                }
+              }
+            } else {
+               // 마우스가 차트 밖일 때
+               for (const key in annotations) {
+                 const ann = annotations[key];
+                 if (ann && ann.original && ann.borderColor === 'rgba(250, 204, 21, 1)') {
+                    ann.borderColor = ann.original.borderColor;
+                    ann.borderWidth = ann.original.borderWidth;
+                    needsUpdate = true;
+                 }
+               }
+            }
+            if (needsUpdate) chart.update('none');
+          },
           responsive: true,
           maintainAspectRatio: false,
           interaction: {
@@ -884,7 +1066,7 @@
               display: true,
               position: 'top',
               labels: {
-                color: 'var(--text-main)',
+                color: '#e2e8f0',
                 font: {
                   family: 'Inter',
                   size: 11
@@ -894,8 +1076,8 @@
             tooltip: {
               backgroundColor: '#080c12',
               titleColor: '#10b981',
-              bodyColor: 'var(--text-main)',
-              borderColor: 'var(--card-border)',
+              bodyColor: '#e2e8f0',
+              borderColor: '#101620',
               borderWidth: 1,
               padding: 12,
               titleFont: { weight: 'bold' }
@@ -908,7 +1090,7 @@
                 borderColor: '#101620'
               },
               ticks: {
-                color: 'var(--text-sub)',
+                color: '#9ca3af',
                 font: { size: 10 }
               }
             },
@@ -921,7 +1103,7 @@
                 borderColor: '#101620'
               },
               ticks: {
-                color: 'var(--text-sub)',
+                color: '#9ca3af',
                 font: { size: 10 }
               }
             }
@@ -970,7 +1152,7 @@
           position: 'left',
           grid: { color: '#101620' },
           ticks: {
-            color: 'var(--text-sub)',
+            color: '#9ca3af',
             callback: function(value) {
               if (!hasOther && hasKospi) return value.toLocaleString() + ' pt';
               return chartMode === 'pct' ? value.toFixed(1) + '%' : value.toLocaleString();
@@ -979,7 +1161,7 @@
           title: {
             display: true,
             text: yTitleText,
-            color: 'var(--text-main)'
+            color: '#e2e8f0'
           }
         }
       };
@@ -1006,6 +1188,21 @@
         }
       }
 
+      // 미래 30일치 날짜 패딩 생성 (차트 오른쪽 빈 공간 확보)
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+      const paddedDates = [...marketData.dates];
+      let lastDate = new Date(paddedDates[paddedDates.length - 1]);
+      if (isNaN(lastDate)) lastDate = today;
+      
+      for (let i = 1; i <= 30; i++) {
+        const nextDate = new Date(lastDate);
+        nextDate.setDate(nextDate.getDate() + i);
+        paddedDates.push(nextDate.toISOString().split('T')[0]);
+      }
+      
+      marketChart.data.labels = paddedDates;
+
       selectedStocks.forEach(stock => {
         const seriesData = marketData.series[stock];
         if (!seriesData) return;
@@ -1018,11 +1215,15 @@
           finalData = seriesData;
         }
 
+        // 미래 날짜만큼 null을 채워서 선이 오늘까지만 그려지게 함
+        const paddedSeriesData = [...finalData];
+        for (let i = 0; i < 30; i++) paddedSeriesData.push(null);
+
         const color = colors[stock] || defaultColors[colorIndex++ % defaultColors.length];
         
         datasets.push({
           label: stock,
-          data: finalData,
+          data: paddedSeriesData,
           borderColor: color,
           backgroundColor: color + '15',
           borderWidth: stock === 'KOSPI' ? 2.5 : 2,
@@ -1032,6 +1233,35 @@
           yAxisID: (stock === 'KOSPI' && hasOther) ? 'y2' : 'y'
         });
       });
+
+      // 캘린더 이벤트 미래 일정만 차트 하단 말풍선(Neon Yellow)으로 표시
+      const calendarData = window.CALENDAR_DATA || [];
+      const annotations = {};
+      
+      if (typeof window['chartjs-plugin-annotation'] !== 'undefined') {
+        Chart.register(window['chartjs-plugin-annotation']);
+      }
+      
+      let futureEventIndex = 0;
+      calendarData.forEach((ev) => {
+        // 과거 이벤트는 차트에 표시하지 않음
+        if (ev.date < todayStr) return;
+        
+        // 추정(불확실)인 경우 '?' 표기를 달 수 있으나, 이번 달 하드코딩 데이터는 모두 확정이므로 그대로 렌더링
+        let labelContent = `${ev.country} ${ev.title}`;
+        
+        annotations[`future_event_${futureEventIndex}`] = {
+          type: 'line',
+          xMin: ev.date,
+          xMax: ev.date,
+          borderColor: 'rgba(250, 204, 21, 0.2)', // 희미한 네온 옐로우 선
+          borderWidth: 1.5,
+          borderDash: [3, 3]
+        };
+        futureEventIndex++;
+      });
+      
+      marketChart.options.plugins.annotation = { annotations: annotations };
 
       marketChart.options.scales = scales;
       marketChart.data.datasets = datasets;

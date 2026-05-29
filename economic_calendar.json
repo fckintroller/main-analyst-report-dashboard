@@ -1,0 +1,122 @@
+[
+  {
+    "date": "2026-05-26",
+    "title": "CPI m/m",
+    "country": "AUD",
+    "impact": "High"
+  },
+  {
+    "date": "2026-05-26",
+    "title": "CPI y/y",
+    "country": "AUD",
+    "impact": "High"
+  },
+  {
+    "date": "2026-05-26",
+    "title": "Trimmed Mean CPI m/m",
+    "country": "AUD",
+    "impact": "High"
+  },
+  {
+    "date": "2026-05-26",
+    "title": "Official Cash Rate",
+    "country": "NZD",
+    "impact": "High"
+  },
+  {
+    "date": "2026-05-26",
+    "title": "RBNZ Monetary Policy Statement",
+    "country": "NZD",
+    "impact": "High"
+  },
+  {
+    "date": "2026-05-26",
+    "title": "RBNZ Rate Statement",
+    "country": "NZD",
+    "impact": "High"
+  },
+  {
+    "date": "2026-05-26",
+    "title": "RBNZ Press Conference",
+    "country": "NZD",
+    "impact": "High"
+  },
+  {
+    "date": "2026-05-28",
+    "title": "Core PCE Price Index m/m",
+    "country": "USD",
+    "impact": "High"
+  },
+  {
+    "date": "2026-05-28",
+    "title": "Prelim GDP q/q",
+    "country": "USD",
+    "impact": "High"
+  },
+  {
+    "date": "2026-05-29",
+    "title": "BOE Gov Bailey Speaks",
+    "country": "GBP",
+    "impact": "High"
+  },
+  {
+    "date": "2026-05-29",
+    "title": "GDP m/m",
+    "country": "CAD",
+    "impact": "High"
+  },
+  {
+    "date": "2026-06-04",
+    "title": "ECB Interest Rate Decision",
+    "country": "EUR",
+    "impact": "High"
+  },
+  {
+    "date": "2026-06-05",
+    "title": "US Non-Farm Payrolls",
+    "country": "USD",
+    "impact": "High"
+  },
+  {
+    "date": "2026-06-10",
+    "title": "US CPI m/m & y/y",
+    "country": "USD",
+    "impact": "High"
+  },
+  {
+    "date": "2026-06-10",
+    "title": "FOMC Statement & Fed Funds Rate",
+    "country": "USD",
+    "impact": "High"
+  },
+  {
+    "date": "2026-06-18",
+    "title": "BOE Official Bank Rate",
+    "country": "GBP",
+    "impact": "High"
+  },
+  {
+    "date": "2026-06-25",
+    "title": "US Final GDP q/q",
+    "country": "USD",
+    "impact": "High"
+  },
+  {
+    "date": "2026-07-02",
+    "title": "US Non-Farm Payrolls",
+    "country": "USD",
+    "impact": "High"
+  },
+  {
+    "date": "2026-07-10",
+    "title": "US CPI m/m & y/y",
+    "country": "USD",
+    "impact": "High"
+  },
+  {
+    "date": "2026-07-29",
+    "title": "FOMC Statement & Fed Funds Rate",
+    "country": "USD",
+    "impact": "High"
+  }
+]

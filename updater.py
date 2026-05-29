@@ -146,6 +146,7 @@ def generate_market_data(db_data):
         "CJ제일제당": "097950",
         "현대로템": "064350",
         "한국항공우주": "047810",
+        "한국항공우주(KAI)": "047810",
         "삼성전기": "009150",
         "하이브": "352820",
         "삼성중공업": "010140",
@@ -154,7 +155,36 @@ def generate_market_data(db_data):
         "아모레퍼시픽": "090430",
         "한미반도체": "042700",
         "LG디스플레이": "034220",
-        "이수페타시스": "007660"
+        "이수페타시스": "007660",
+        "효성중공업": "298040",
+        "셀트리온": "068270",
+        "YG Ent.": "122870",
+        "HD현대일렉트릭": "267260",
+        "HD현대중공업": "329180",
+        "파라다이스": "034230",
+        "금호석유": "011780",
+        "GS건설": "006360",
+        "LIG넥스원": "079550",
+        "포스코퓨처엠": "003670",
+        "엘앤에프": "066970",
+        "LG이노텍": "011070",
+        "두산에너빌리티": "034020",
+        "JYP Ent.": "035900",
+        "한화오션": "042660",
+        "KT&G": "033780",
+        "GKL": "114090",
+        "유한양행": "000100",
+        "코스맥스": "192820",
+        "삼성SDI": "006400",
+        "S-Oil": "010950",
+        "DL이앤씨": "375500",
+        "크래프톤": "259960",
+        "LS일렉트릭": "010120",
+        "에이피알": "278470",
+        "넷마블": "251270",
+        "대덕전자": "353200",
+        "SK이노베이션": "096770",
+        "리노공업": "058470"
     }
 
     unique_stocks = {"KOSPI"}
@@ -237,10 +267,21 @@ def main():
     # 시장 데이터 시뮬레이션 생성
     market_data = generate_market_data(db_data)
     
+    # 캘린더 데이터 로드
+    calendar_data = []
+    calendar_path = os.path.join(BASE_DIR, "economic_calendar.json")
+    if os.path.exists(calendar_path):
+        try:
+            with open(calendar_path, "r", encoding="utf-8") as f:
+                calendar_data = json.load(f)
+        except Exception as e:
+            print(f"  [에러] 캘린더 데이터 로드 실패: {e}")
+    
     # 1. 자바스크립트 브릿지 파일 갱신
     with open(JS_PATH, "w", encoding="utf-8") as f:
         f.write(f"window.ANALYST_DATABASE = {json.dumps(db_data, ensure_ascii=False, indent=2)};\n")
         f.write(f"window.MARKET_DATA = {json.dumps(market_data, ensure_ascii=False, indent=2)};\n")
+        f.write(f"window.CALENDAR_DATA = {json.dumps(calendar_data, ensure_ascii=False, indent=2)};\n")
     print(f"  [자바스크립트 브릿지 완료] {JS_PATH}가 성공적으로 업데이트되었습니다.")
     
     # 2. CSV 테이블 갱신
