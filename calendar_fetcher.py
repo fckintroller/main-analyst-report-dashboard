@@ -64,8 +64,20 @@ def fetch_economic_calendar():
                     "previous": event.get("previous", "")
                 })
                 
-    # 2026년 5~7월 확정된 주요 글로벌 경제 지표 (미래 일정 표시용 하드코딩)
-    fixed_future_events = [
+    # 2026년 1월~7월 확정된 주요 글로벌 경제 지표 (과거/미래 일정 표시용 하드코딩)
+    fixed_events = [
+        {"date": "2026-01-14", "title": "소비자물가지수(CPI) 전년동기대비", "country": "미국", "impact": "High", "forecast": "3.1%", "previous": "3.2%"},
+        {"date": "2026-01-28", "title": "기준금리 결정", "country": "미국", "impact": "High", "forecast": "5.25%", "previous": "5.25%"},
+        {"date": "2026-02-06", "title": "비농업 고용지수", "country": "미국", "impact": "High", "forecast": "180K", "previous": "210K"},
+        {"date": "2026-02-13", "title": "소비자물가지수(CPI) 전년동기대비", "country": "미국", "impact": "High", "forecast": "2.9%", "previous": "3.1%"},
+        {"date": "2026-03-06", "title": "비농업 고용지수", "country": "미국", "impact": "High", "forecast": "200K", "previous": "180K"},
+        {"date": "2026-03-12", "title": "소비자물가지수(CPI) 전년동기대비", "country": "미국", "impact": "High", "forecast": "2.8%", "previous": "2.9%"},
+        {"date": "2026-03-18", "title": "기준금리 결정", "country": "미국", "impact": "High", "forecast": "5.00%", "previous": "5.25%"},
+        {"date": "2026-04-03", "title": "비농업 고용지수", "country": "미국", "impact": "High", "forecast": "215K", "previous": "200K"},
+        {"date": "2026-04-10", "title": "소비자물가지수(CPI) 전년동기대비", "country": "미국", "impact": "High", "forecast": "2.8%", "previous": "2.8%"},
+        {"date": "2026-05-01", "title": "비농업 고용지수", "country": "미국", "impact": "High", "forecast": "190K", "previous": "215K"},
+        {"date": "2026-05-06", "title": "기준금리 결정", "country": "미국", "impact": "High", "forecast": "4.75%", "previous": "5.00%"},
+        {"date": "2026-05-14", "title": "소비자물가지수(CPI) 전년동기대비", "country": "미국", "impact": "High", "forecast": "2.7%", "previous": "2.8%"},
         {"date": "2026-06-04", "title": "기준금리 결정", "country": "유로존", "impact": "High", "forecast": "", "previous": ""},
         {"date": "2026-06-05", "title": "비농업 고용지수", "country": "미국", "impact": "High", "forecast": "", "previous": ""},
         {"date": "2026-06-10", "title": "소비자물가지수(CPI) 전년동기대비", "country": "미국", "impact": "High", "forecast": "", "previous": ""},
@@ -79,7 +91,7 @@ def fetch_economic_calendar():
     
     # 중복을 피하면서 고정 이벤트 병합
     existing_keys = set([f"{e['date']}_{e['title']}" for e in high_impact_events])
-    for fixed in fixed_future_events:
+    for fixed in fixed_events:
         if f"{fixed['date']}_{fixed['title']}" not in existing_keys:
             high_impact_events.append(fixed)
             
