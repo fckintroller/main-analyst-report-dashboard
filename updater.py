@@ -8,6 +8,7 @@ DB_PATH = os.path.join(BASE_DIR, "analyst_database.json")
 JS_PATH = os.path.join(BASE_DIR, "analyst_data.js")
 MD_PATH = os.path.join(BASE_DIR, "analyst_awards_report.md")
 CSV_PATH = os.path.join(BASE_DIR, "analyst_table_sheet.csv")
+STOCKS_PATH = os.path.join(BASE_DIR, "stocks.json")
 OUTPUTS_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "..", "02_outputs"))
 
 def load_database():
@@ -15,6 +16,14 @@ def load_database():
     if not os.path.exists(DB_PATH):
         raise FileNotFoundError(f"데이터베이스 파일이 없습니다: {DB_PATH}")
     with open(DB_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def load_stocks():
+    """stocks.json 로드"""
+    if not os.path.exists(STOCKS_PATH):
+        print(f"  [경고] 종목 마스터 파일이 없습니다: {STOCKS_PATH}")
+        return {}
+    with open(STOCKS_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
 def generate_csv(db_data):
@@ -124,68 +133,8 @@ def generate_market_data(db_data):
     import ast
     import time
     
-    # 한국 주식 코드 매핑
-    ticker_map = {
-        "KOSPI": "KOSPI",
-        "SK하이닉스": "000660",
-        "삼성전자": "005930",
-        "삼양식품": "003230",
-        "알테오젠": "196170",
-        "한화에어로스페이스": "012450",
-        "한국전력": "015760",
-        "에코프로비엠": "247540",
-        "스튜디오드래곤": "253450",
-        "LG에너지솔루션": "373220",
-        "NAVER": "035420",
-        "LG화학": "051910",
-        "리가켐바이오": "141080",
-        "두산테스나": "136490",
-        "농심": "004370",
-        "CJ ENM": "035760",
-        "카카오": "035720",
-        "CJ제일제당": "097950",
-        "현대로템": "064350",
-        "한국항공우주": "047810",
-        "한국항공우주(KAI)": "047810",
-        "삼성전기": "009150",
-        "하이브": "352820",
-        "삼성중공업": "010140",
-        "현대건설": "000720",
-        "한미약품": "128940",
-        "아모레퍼시픽": "090430",
-        "한미반도체": "042700",
-        "LG디스플레이": "034220",
-        "이수페타시스": "007660",
-        "효성중공업": "298040",
-        "셀트리온": "068270",
-        "YG Ent.": "122870",
-        "HD현대일렉트릭": "267260",
-        "HD현대중공업": "329180",
-        "파라다이스": "034230",
-        "금호석유": "011780",
-        "GS건설": "006360",
-        "LIG넥스원": "079550",
-        "포스코퓨처엠": "003670",
-        "엘앤에프": "066970",
-        "LG이노텍": "011070",
-        "두산에너빌리티": "034020",
-        "JYP Ent.": "035900",
-        "한화오션": "042660",
-        "KT&G": "033780",
-        "GKL": "114090",
-        "유한양행": "000100",
-        "코스맥스": "192820",
-        "삼성SDI": "006400",
-        "S-Oil": "010950",
-        "DL이앤씨": "375500",
-        "크래프톤": "259960",
-        "LS일렉트릭": "010120",
-        "에이피알": "278470",
-        "넷마블": "251270",
-        "대덕전자": "353200",
-        "SK이노베이션": "096770",
-        "리노공업": "058470"
-    }
+    # 한국 주식 코드 매핑 (외부 파일에서 로드)
+    ticker_map = load_stocks()
 
     unique_stocks = {"KOSPI"}
     for a in db_data.get("analysts", []):
