@@ -24,6 +24,14 @@
     "previous": "3.2%"
   },
   {
+    "date": "2026-01-23",
+    "title": "일본은행(BOJ) 기준금리 결정",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "-0.10%",
+    "previous": "-0.10%"
+  },
+  {
     "date": "2026-01-28",
     "title": "기준금리 결정",
     "country": "미국",
@@ -120,6 +128,14 @@
     "previous": "5.25%"
   },
   {
+    "date": "2026-03-19",
+    "title": "일본은행(BOJ) 기준금리 결정",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "0.00%",
+    "previous": "-0.10%"
+  },
+  {
     "date": "2026-03-27",
     "title": "근원 개인소비지출 물가지수",
     "country": "미국",
@@ -168,6 +184,14 @@
     "previous": "2.7%"
   },
   {
+    "date": "2026-04-24",
+    "title": "일본은행(BOJ) 통화정책 성명",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "0.00%",
+    "previous": "0.00%"
+  },
+  {
     "date": "2026-05-01",
     "title": "비농업 고용지수",
     "country": "미국",
@@ -206,6 +230,14 @@
     "impact": "High",
     "forecast": "2.7%",
     "previous": "2.8%"
+  },
+  {
+    "date": "2026-05-25",
+    "title": "Corporate Profits q/q",
+    "country": "캐나다",
+    "impact": "High",
+    "forecast": "",
+    "previous": "-1.6%"
   },
   {
     "date": "2026-05-26",
@@ -330,6 +362,14 @@
     "previous": "1.1%"
   },
   {
+    "date": "2026-05-26",
+    "title": "일본은행(BOJ) 이벤트",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
     "date": "2026-05-27",
     "title": "비농업 고용지수",
     "country": "미국",
@@ -344,6 +384,22 @@
     "impact": "High",
     "forecast": "",
     "previous": "42.3K"
+  },
+  {
+    "date": "2026-05-27",
+    "title": "ECB Financial Stability Review",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-05-27",
+    "title": "중앙은행 총재 연설",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
   },
   {
     "date": "2026-05-28",
@@ -428,6 +484,30 @@
     "impact": "High",
     "forecast": "1.5%",
     "previous": "1.5%"
+  },
+  {
+    "date": "2026-05-28",
+    "title": "중앙은행 총재 연설",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-05-28",
+    "title": "통화정책 성명",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-05-28",
+    "title": "중앙은행 기자회견",
+    "country": "캐나다",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
   },
   {
     "date": "2026-05-29",

@@ -654,18 +654,9 @@
           * 글로벌 금융 시장에 큰 영향을 미치는 중요도 높은 경제 지표 및 이벤트 일정입니다.
         </p>
         
-        <table style="width:100%; border-collapse: collapse; background: var(--card-bg); border-radius: 8px; overflow: hidden; font-size: 0.9rem;">
-          <thead>
-            <tr style="background: #101620; text-align: left; color: var(--text-sub);">
-              <th style="padding: 12px 15px; border-bottom: 1px solid var(--card-border);">날짜</th>
-              <th style="padding: 12px 15px; border-bottom: 1px solid var(--card-border);">국가</th>
-              <th style="padding: 12px 15px; border-bottom: 1px solid var(--card-border);">주요 이벤트</th>
-            </tr>
-          </thead>
-          <tbody id="calendar-container-body">
-            <!-- JS 동적 렌더링 -->
-          </tbody>
-        </table>
+        <div id="calendar-container-body" style="background: var(--card-bg); border-radius: 8px; padding: 20px;">
+          <!-- JS 동적 렌더링 -->
+        </div>
       </div>
     </div>
   </div>
@@ -921,33 +912,138 @@
       });
     }
 
-    // 경제 캘린더 렌더링 함수
+    // 경제 캘린더 렌더링 함수 (그룹화 및 과거 데이터 접기 적용)
     function renderCalendar() {
       const container = document.getElementById('calendar-container-body');
       if (!container) return;
       container.innerHTML = '';
       
       const calendarData = window.CALENDAR_DATA || [];
-      if (calendarData.length === 0) {
-        container.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 20px; color: var(--text-sub);">예정된 경제 일정이 없습니다.</td></tr>';
-        return;
+      
+      // 날짜 계산 로직
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      
+      function getKorDateStr(d) {
+        return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
       }
       
+      const todayStr = getKorDateStr(now);
+      const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = getKorDateStr(tomorrow);
+
+      const dayOfWeek = now.getDay();
+      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      
+      const thisWeekStart = new Date(now); thisWeekStart.setDate(now.getDate() + diffToMonday);
+      const thisWeekEnd = new Date(thisWeekStart); thisWeekEnd.setDate(thisWeekStart.getDate() + 6);
+      const twStartStr = getKorDateStr(thisWeekStart);
+      const twEndStr = getKorDateStr(thisWeekEnd);
+
+      const nextWeekStart = new Date(thisWeekEnd); nextWeekStart.setDate(thisWeekEnd.getDate() + 1);
+      const nextWeekEnd = new Date(nextWeekStart); nextWeekEnd.setDate(nextWeekStart.getDate() + 6);
+      const nwStartStr = getKorDateStr(nextWeekStart);
+      const nwEndStr = getKorDateStr(nextWeekEnd);
+
+      const lastWeekEnd = new Date(thisWeekStart); lastWeekEnd.setDate(lastWeekEnd.getDate() - 1);
+      const lastWeekStart = new Date(lastWeekEnd); lastWeekStart.setDate(lastWeekStart.getDate() - 6);
+      const lwStartStr = getKorDateStr(lastWeekStart);
+      const lwEndStr = getKorDateStr(lastWeekEnd);
+
+      const groups = [
+        { id: '과거', title: '⏳ 과거 (지난주 이전)', isPast: true, events: [] },
+        { id: '지난주', title: '⬅️ 지난주', isPast: true, events: [] },
+        { id: '오늘', title: '📌 오늘', isPast: false, events: [] },
+        { id: '내일', title: '🚀 내일', isPast: false, events: [] },
+        { id: '이번주', title: '📅 이번 주', isPast: false, events: [] },
+        { id: '다음주', title: '🗓️ 다음 주', isPast: false, events: [] },
+        { id: '이번달', title: '📆 이번 달 (이후)', isPast: false, events: [] }
+      ];
+
       calendarData.forEach(event => {
-        const tr = document.createElement('tr');
-        tr.style.borderBottom = '1px solid #101620';
-        tr.innerHTML = `
-          <td style="padding: 12px 15px; color: #e2e8f0;">${event.date}</td>
-          <td style="padding: 12px 15px;">
-            <span style="background: rgba(4, 120, 87, 0.15); color: #10b981; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem;">
-              ${event.country}
-            </span>
-          </td>
-          <td style="padding: 12px 15px; color: #ffffff; font-weight: 500;">
-            ${event.title}
-          </td>
-        `;
-        container.appendChild(tr);
+        const d = event.date;
+        if (d < lwStartStr) {
+          groups[0].events.push(event);
+        } else if (d >= lwStartStr && d <= lwEndStr) {
+          groups[1].events.push(event);
+        } else if (d === todayStr) {
+          groups[2].events.push(event);
+        } else if (d === tomorrowStr) {
+          groups[3].events.push(event);
+        } else if (d >= twStartStr && d <= twEndStr && d !== todayStr && d !== tomorrowStr) {
+          groups[4].events.push(event);
+        } else if (d >= nwStartStr && d <= nwEndStr) {
+          groups[5].events.push(event);
+        } else {
+          groups[6].events.push(event);
+        }
+      });
+
+      groups.forEach(group => {
+        const groupContainer = document.createElement('div');
+        groupContainer.style.marginBottom = '20px';
+        
+        let contentHtml = '';
+        if (group.events.length === 0) {
+          contentHtml = `<div style="color: var(--text-sub); font-size: 0.85rem; padding: 12px; background: rgba(31, 41, 55, 0.4); border-radius: 6px; text-align: center; border: 1px dashed #374151;">일정 없음</div>`;
+        } else {
+          contentHtml = group.events.map(event => {
+            let resultHtml = '';
+            if (event.forecast || event.previous) {
+              const isPastEvent = event.date < todayStr;
+              const fText = event.forecast ? `예상: ${event.forecast}` : '';
+              const pText = event.previous ? `이전: ${event.previous}` : '';
+              const joined = [fText, pText].filter(x => x).join(' | ');
+              
+              if (joined) {
+                resultHtml = `<div style="font-size: 0.8rem; color: ${isPastEvent ? '#facc15' : '#9ca3af'}; margin-top: 4px; font-weight: ${isPastEvent ? '600' : '400'};">
+                                ${isPastEvent ? '✅ 결과치(예측/이전): ' : '📉 예측/이전: '}${joined}
+                              </div>`;
+              }
+            }
+            
+            return `
+              <div style="display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-bottom: 1px solid #101620;">
+                <div style="color: #e2e8f0; font-weight: 600; width: 100px;">${event.date}</div>
+                <div>
+                  <span style="background: rgba(4, 120, 87, 0.15); color: #10b981; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem;">
+                    ${event.country}
+                  </span>
+                </div>
+                <div style="color: #ffffff; font-weight: 500; flex: 1;">
+                  ${event.title}
+                  ${resultHtml}
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+        
+        const headerColor = group.isPast ? '#9ca3af' : '#10b981';
+        
+        if (group.isPast) {
+          groupContainer.innerHTML = `
+            <details>
+              <summary style="font-size: 1rem; font-weight: 700; color: ${headerColor}; cursor: pointer; padding-bottom: 6px; border-bottom: 1px solid #1f2937; outline: none; transition: var(--transition);">
+                ${group.title} <span style="font-size: 0.85rem; font-weight: 400; color: var(--text-sub);">(${group.events.length}건)</span>
+              </summary>
+              <div style="margin-top: 12px;">
+                ${contentHtml}
+              </div>
+            </details>
+          `;
+        } else {
+          groupContainer.innerHTML = `
+            <div style="font-size: 1rem; font-weight: 700; color: ${headerColor}; margin-bottom: 10px; border-bottom: 1px solid #1f2937; padding-bottom: 6px;">
+              ${group.title}
+            </div>
+            <div>
+              ${contentHtml}
+            </div>
+          `;
+        }
+        
+        container.appendChild(groupContainer);
       });
     }
 
