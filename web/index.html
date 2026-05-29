@@ -90,9 +90,13 @@
     .chart-left-panel { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 25px; display: flex; flex-direction: column; justify-content: space-between; }
     .chart-wrapper { position: relative; height: 420px; width: 100%; }
     .chart-right-panel { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 20px; max-height: 560px; display: flex; flex-direction: column; }
-    .external-event-item { display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-bottom: 1px solid #101620; transition: var(--transition); border-radius: 6px; }
-    .external-event-item:hover, .highlighted-event { background: rgba(250, 204, 21, 0.08); border-color: rgba(250, 204, 21, 0.3); }
-    .highlighted-event { box-shadow: inset 0 0 10px rgba(250, 204, 21, 0.05); }
+    .external-event-item { display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-bottom: 1px solid #101620; transition: var(--transition); border-radius: 6px; border: 1px solid transparent; }
+    .external-event-item:hover, .highlighted-event { background: #ffffff !important; border-color: #facc15 !important; }
+    .highlighted-event { box-shadow: 0 0 15px rgba(250, 204, 21, 0.4); z-index: 10; }
+    .external-event-item.highlighted-event .event-date, 
+    .external-event-item.highlighted-event .event-title,
+    .external-event-item.highlighted-event div { color: #ef4444 !important; font-weight: 700 !important; }
+    .external-event-item.highlighted-event .event-result-text { color: #b91c1c !important; }
   </style>
 </head>
 <body>

@@ -9,11 +9,26 @@ function escapeHTML(str) {
     .replace(/'/g, '&#039;');
 }
 
+// 국가별 시그니처 색상 매핑
+function getCountryColor(country) {
+  const map = {
+    '미국': '#3b82f6',    // 신뢰의 블루
+    '유로존': '#8b5cf6',  // 로열 퍼플
+    '영국': '#ec4899',    // 마젠타 핑크
+    '일본': '#f59e0b',    // 선셋 오렌지
+    '한국': '#ef4444',    // 다이나믹 레드
+    '중국': '#ef4444',    // 레드
+    '캐나다': '#14b8a6',  // 틸 그린
+    '호주': '#10b981'     // 에메랄드
+  };
+  return map[country] || '#10b981';
+}
+
 // 등급별 눈이 편안한 시그니처 색상 매핑
 function getRatingColor(rating) {
   if (!rating) return 'var(--text-main)';
   const r = rating.trim();
-  if (r.includes('매수') || r.includes('Buy')) return '#10b981'; // 눈이 편안한 에메랄드 그린
+  if (r.includes('매수') || r.includes('Buy')) return '#10b981'; // 에메랄드 그린
   if (r.includes('홀딩') || r.includes('Hold') || r.includes('보유') || r.includes('중립')) return '#d97706'; // 황금색
   if (r.includes('매도') || r.includes('Sell') || r.includes('비중축소')) return '#ef4444'; // 로즈 레드
   return 'var(--text-main)';
@@ -257,12 +272,15 @@ function renderCalendar() {
         if (e.forecast || e.previous) {
           const isPast = e.date < todayStr;
           const joined = [e.forecast ? `예상: ${e.forecast}` : '', e.previous ? `이전: ${e.previous}` : ''].filter(x=>x).join(' | ');
-          if (joined) resHtml = `<div style="font-size: 0.8rem; color: ${isPast ? '#facc15' : '#9ca3af'}; margin-top: 4px; font-weight: ${isPast ? '600' : '400'};">${isPast ? '✅ 결과치: ' : '📉 예측/이전: '}${joined}</div>`;
+          if (joined) resHtml = `<div class="event-result-text" style="font-size: 0.8rem; color: ${isPast ? '#facc15' : '#9ca3af'}; margin-top: 4px; font-weight: ${isPast ? '600' : '400'};">${isPast ? '✅ 결과치: ' : '📉 예측/이전: '}${joined}</div>`;
         }
+        const cColor = getCountryColor(e.country);
+        const isHigh = e.impact === 'High';
+        const itemStyle = isHigh ? `background: rgba(250, 204, 21, 0.03); border-left: 3px solid #facc15;` : '';
         return `
-          <div style="display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-bottom: 1px solid #101620;">
+          <div style="display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-bottom: 1px solid #101620; ${itemStyle}">
             <div style="color: #e2e8f0; font-weight: 600; width: 100px;">${escapeHTML(e.date)}</div>
-            <span style="background: rgba(4, 120, 87, 0.15); color: #10b981; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem;">${escapeHTML(e.country)}</span>
+            <span style="background: ${cColor}15; color: ${cColor}; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem; border: 1px solid ${cColor}40;">${escapeHTML(e.country)}</span>
             <div style="color: #ffffff; font-weight: 500; flex: 1;">${escapeHTML(e.title)}${resHtml}</div>
           </div>
         `;
@@ -296,12 +314,16 @@ function renderExternalEvents() {
     if (e.forecast || e.previous) {
       const isPast = e.date < todayStr;
       const joined = [e.forecast ? `예상: ${e.forecast}` : '', e.previous ? `이전: ${e.previous}` : ''].filter(x=>x).join(' | ');
-      if (joined) resHtml = `<div style="font-size: 0.8rem; color: ${isPast ? '#facc15' : '#9ca3af'}; margin-top: 4px;">${isPast ? '✅ 결과치: ' : '📉 예측/이전: '}${joined}</div>`;
+      if (joined) resHtml = `<div class="event-result-text" style="font-size: 0.8rem; color: ${isPast ? '#facc15' : '#9ca3af'}; margin-top: 4px;">${isPast ? '✅ 결과치: ' : '📉 예측/이전: '}${joined}</div>`;
     }
+    const cColor = getCountryColor(e.country);
+    const isHigh = e.impact === 'High';
+    const itemStyle = isHigh ? `background: rgba(250, 204, 21, 0.03); border-left: 3px solid #facc15;` : '';
+    item.style.cssText += itemStyle;
     item.innerHTML = `
-      <div style="color: #e2e8f0; font-weight: 600; width: 90px;">${escapeHTML(e.date)}</div>
-      <span style="background: rgba(4, 120, 87, 0.15); color: #10b981; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem;">${escapeHTML(e.country)}</span>
-      <div style="color: #ffffff; font-weight: 500; flex: 1;">${escapeHTML(e.title)}${resHtml}</div>
+      <div class="event-date" style="color: #e2e8f0; font-weight: 600; width: 90px;">${escapeHTML(e.date)}</div>
+      <span style="background: ${cColor}15; color: ${cColor}; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem; border: 1px solid ${cColor}40;">${escapeHTML(e.country)}</span>
+      <div class="event-title" style="color: #ffffff; font-weight: 500; flex: 1;">${escapeHTML(e.title)}${resHtml}</div>
     `;
     container.appendChild(item);
   });
