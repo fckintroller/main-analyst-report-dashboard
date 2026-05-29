@@ -9,7 +9,7 @@ function escapeHTML(str) {
     .replace(/'/g, '&#039;');
 }
 
-// 국가별 시그니처 색상 매핑
+// 국가별 시그니처 색상 매핑 (온라인 버전 기준)
 function getCountryColor(country) {
   const map = {
     '미국': '#3b82f6',    // 신뢰의 블루
@@ -34,8 +34,8 @@ function getRatingColor(rating) {
   return 'var(--text-main)';
 }
 
-// 탭 전환 핸들러
-function switchTab(tabId) {
+// 탭 전환 핸들러 (clickedBtn 인자 추가하여 ID 기반 동작 지원)
+function switchTab(tabId, clickedBtn) {
   document.querySelectorAll('.tab-content').forEach(content => {
     content.classList.remove('active');
   });
@@ -47,11 +47,17 @@ function switchTab(tabId) {
   if (targetTab) {
     targetTab.classList.add('active');
   }
-  if (event && event.currentTarget) {
-    event.currentTarget.classList.add('active');
+  
+  if (clickedBtn) {
+    clickedBtn.classList.add('active');
+  } else {
+    // fallback: ID로 버튼 찾기
+    const btnId = `btn-${tabId}`;
+    const btn = document.getElementById(btnId);
+    if (btn) btn.classList.add('active');
   }
 
-  // 차트 탭 초기화 지연 기동
+  // 차트 탭 초기화 지연 기동 (Canvas 렌더링 타이밍 보장 - 50ms)
   if (tabId === 'tab-chart' && !marketChart) {
     setTimeout(initChart, 50);
   }
@@ -65,11 +71,36 @@ let selectedStocks = ['KOSPI']; // 코스피 기본 선택
 
 // 화면 로드 즉시 렌더링
 window.addEventListener('DOMContentLoaded', () => {
+  // 1. 이벤트 리스너 바인딩 (보안 및 아키텍처 규칙 준수)
+  const tabMap = {
+    'btn-tab-analysts': 'tab-analysts',
+    'btn-tab-alerts': 'tab-alerts',
+    'btn-tab-reports': 'tab-reports',
+    'btn-tab-chart': 'tab-chart',
+    'btn-tab-calendar': 'tab-calendar'
+  };
+
+  Object.entries(tabMap).forEach(([btnId, tabId]) => {
+    const btn = document.getElementById(btnId);
+    if (btn) btn.addEventListener('click', (e) => switchTab(tabId, e.currentTarget));
+  });
+
+  const btnPct = document.getElementById('btn-chart-mode-pct');
+  const btnPrice = document.getElementById('btn-chart-mode-price');
+  if (btnPct) btnPct.addEventListener('click', () => setChartMode('pct'));
+  if (btnPrice) btnPrice.addEventListener('click', () => setChartMode('price'));
+
+  const btnAll = document.getElementById('btn-toggle-all');
+  const btnNone = document.getElementById('btn-toggle-none');
+  if (btnAll) btnAll.addEventListener('click', () => toggleAllStocks(true));
+  if (btnNone) btnNone.addEventListener('click', () => toggleAllStocks(false));
+
   renderDashboard();
 });
 
 function renderDashboard() {
   const analysts = currentDatabase.analysts || [];
+  // 온라인 정렬 로직 반영 (최신순)
   const recs = [...(currentDatabase.recommendations || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
 
   // 2. 동적 필터 버튼 바인딩
@@ -330,7 +361,9 @@ function renderExternalEvents() {
 }
 
 function initChart() {
-  const ctx = document.getElementById('marketChart').getContext('2d');
+  const canvas = document.getElementById('marketChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
   const marketData = window.MARKET_DATA || { dates: [], series: {} };
   const config = {
     type: 'line',
