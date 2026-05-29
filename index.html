@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>대한민국 최정상급 베스트 애널리스트 대시보드</title>
+  <title>KOREAN ANALYST REPORT</title>
   <!-- Google Fonts & Font Awesome Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -1085,6 +1085,11 @@
           },
           responsive: true,
           maintainAspectRatio: false,
+          layout: {
+            padding: {
+              top: 80 // 말풍선 팝업이 차트 상단 밖으로 벗어나도 잘리지 않도록 충분한 상단 여백 확보
+            }
+          },
           interaction: {
             mode: 'index',
             intersect: false
@@ -1338,7 +1343,10 @@
         futureEventIndex++;
       });
       
-      marketChart.options.plugins.annotation = { annotations: annotations };
+      marketChart.options.plugins.annotation = { 
+        clip: false, // 차트 밖(패딩 영역 등)으로 나가도 말풍선이 잘리지 않도록 설정
+        annotations: annotations 
+      };
 
       marketChart.options.scales = scales;
       marketChart.data.datasets = datasets;

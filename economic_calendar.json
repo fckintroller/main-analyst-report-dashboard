@@ -1,7 +1,23 @@
 [
   {
+    "date": "2026-01-13",
+    "title": "생산자물가지수 전월대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "0.1%",
+    "previous": "0.0%"
+  },
+  {
     "date": "2026-01-14",
     "title": "소비자물가지수(CPI) 전년동기대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "3.1%",
+    "previous": "3.2%"
+  },
+  {
+    "date": "2026-01-14",
+    "title": "소비자물가지수 전년동기대비",
     "country": "미국",
     "impact": "High",
     "forecast": "3.1%",
@@ -16,12 +32,28 @@
     "previous": "5.25%"
   },
   {
+    "date": "2026-01-30",
+    "title": "근원 개인소비지출 물가지수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "2.9%",
+    "previous": "3.2%"
+  },
+  {
     "date": "2026-02-06",
     "title": "비농업 고용지수",
     "country": "미국",
     "impact": "High",
     "forecast": "180K",
     "previous": "210K"
+  },
+  {
+    "date": "2026-02-12",
+    "title": "생산자물가지수 전월대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "0.2%",
+    "previous": "0.1%"
   },
   {
     "date": "2026-02-13",
@@ -32,6 +64,22 @@
     "previous": "3.1%"
   },
   {
+    "date": "2026-02-13",
+    "title": "소비자물가지수 전년동기대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "2.9%",
+    "previous": "3.1%"
+  },
+  {
+    "date": "2026-02-27",
+    "title": "근원 개인소비지출 물가지수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "2.8%",
+    "previous": "2.9%"
+  },
+  {
     "date": "2026-03-06",
     "title": "비농업 고용지수",
     "country": "미국",
@@ -40,8 +88,24 @@
     "previous": "180K"
   },
   {
+    "date": "2026-03-11",
+    "title": "생산자물가지수 전월대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "0.3%",
+    "previous": "0.2%"
+  },
+  {
     "date": "2026-03-12",
     "title": "소비자물가지수(CPI) 전년동기대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "2.8%",
+    "previous": "2.9%"
+  },
+  {
+    "date": "2026-03-12",
+    "title": "소비자물가지수 전년동기대비",
     "country": "미국",
     "impact": "High",
     "forecast": "2.8%",
@@ -56,6 +120,14 @@
     "previous": "5.25%"
   },
   {
+    "date": "2026-03-27",
+    "title": "근원 개인소비지출 물가지수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "2.7%",
+    "previous": "2.8%"
+  },
+  {
     "date": "2026-04-03",
     "title": "비농업 고용지수",
     "country": "미국",
@@ -64,12 +136,36 @@
     "previous": "200K"
   },
   {
+    "date": "2026-04-09",
+    "title": "생산자물가지수 전월대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "0.2%",
+    "previous": "0.3%"
+  },
+  {
     "date": "2026-04-10",
     "title": "소비자물가지수(CPI) 전년동기대비",
     "country": "미국",
     "impact": "High",
     "forecast": "2.8%",
     "previous": "2.8%"
+  },
+  {
+    "date": "2026-04-10",
+    "title": "소비자물가지수 전년동기대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "2.8%",
+    "previous": "2.8%"
+  },
+  {
+    "date": "2026-04-24",
+    "title": "근원 개인소비지출 물가지수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "2.7%",
+    "previous": "2.7%"
   },
   {
     "date": "2026-05-01",
@@ -88,8 +184,24 @@
     "previous": "5.00%"
   },
   {
+    "date": "2026-05-13",
+    "title": "생산자물가지수 전월대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "0.1%",
+    "previous": "0.2%"
+  },
+  {
     "date": "2026-05-14",
     "title": "소비자물가지수(CPI) 전년동기대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "2.7%",
+    "previous": "2.8%"
+  },
+  {
+    "date": "2026-05-14",
+    "title": "소비자물가지수 전년동기대비",
     "country": "미국",
     "impact": "High",
     "forecast": "2.7%",
@@ -186,6 +298,54 @@
     "previous": ""
   },
   {
+    "date": "2026-05-26",
+    "title": "생산자물가지수(PPI)",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "3.3%",
+    "previous": "3.1%"
+  },
+  {
+    "date": "2026-05-26",
+    "title": "소비자물가지수 전년동기대비",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "1.7%",
+    "previous": "1.7%"
+  },
+  {
+    "date": "2026-05-26",
+    "title": "생산자물가지수 전년동기대비",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "3.3%",
+    "previous": "3.1%"
+  },
+  {
+    "date": "2026-05-26",
+    "title": "소비자물가지수 전월대비",
+    "country": "호주",
+    "impact": "High",
+    "forecast": "0.6%",
+    "previous": "1.1%"
+  },
+  {
+    "date": "2026-05-27",
+    "title": "비농업 고용지수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "",
+    "previous": "42.3K"
+  },
+  {
+    "date": "2026-05-27",
+    "title": "ADP 민간고용",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "",
+    "previous": "42.3K"
+  },
+  {
     "date": "2026-05-28",
     "title": "Core PCE Price Index m/m",
     "country": "USD",
@@ -214,6 +374,62 @@
     "previous": "0.7%"
   },
   {
+    "date": "2026-05-28",
+    "title": "Unemployment Claims",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "211K",
+    "previous": "209K"
+  },
+  {
+    "date": "2026-05-28",
+    "title": "소비자물가지수(CPI) 전년동기대비",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "1.5%",
+    "previous": "1.5%"
+  },
+  {
+    "date": "2026-05-28",
+    "title": "실업률",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "2.7%",
+    "previous": "2.7%"
+  },
+  {
+    "date": "2026-05-28",
+    "title": "근원 개인소비지출 물가지수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "0.3%",
+    "previous": "0.3%"
+  },
+  {
+    "date": "2026-05-28",
+    "title": "국내총생산(GDP) 전분기대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "2.0%",
+    "previous": "0.7%"
+  },
+  {
+    "date": "2026-05-28",
+    "title": "신규 실업수당 청구건수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "211K",
+    "previous": "209K"
+  },
+  {
+    "date": "2026-05-28",
+    "title": "소비자물가지수 전년동기대비",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "1.5%",
+    "previous": "1.5%"
+  },
+  {
     "date": "2026-05-29",
     "title": "BOE Gov Bailey Speaks",
     "country": "GBP",
@@ -240,6 +456,94 @@
     "impact": "High",
     "forecast": "0.1%",
     "previous": "0.2%"
+  },
+  {
+    "date": "2026-05-29",
+    "title": "소비자물가지수(CPI) 전월대비",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "0.1%",
+    "previous": "0.6%"
+  },
+  {
+    "date": "2026-05-29",
+    "title": "French Final Private Payrolls q/q",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "-0.1%",
+    "previous": "-0.1%"
+  },
+  {
+    "date": "2026-05-29",
+    "title": "소비자물가지수(CPI) 전년동기대비",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "3.3%",
+    "previous": "3.2%"
+  },
+  {
+    "date": "2026-05-29",
+    "title": "비농업 고용지수",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "11K",
+    "previous": "20K"
+  },
+  {
+    "date": "2026-05-29",
+    "title": "실업률",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "5.3%",
+    "previous": "5.2%"
+  },
+  {
+    "date": "2026-05-29",
+    "title": "소비자물가지수 전월대비",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "0.1%",
+    "previous": "0.6%"
+  },
+  {
+    "date": "2026-05-29",
+    "title": "민간 고용지수",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "-0.1%",
+    "previous": "-0.1%"
+  },
+  {
+    "date": "2026-05-29",
+    "title": "소비자물가지수 전년동기대비",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "3.3%",
+    "previous": "3.2%"
+  },
+  {
+    "date": "2026-05-29",
+    "title": "고용 변동",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "11K",
+    "previous": "20K"
+  },
+  {
+    "date": "2026-05-29",
+    "title": "국내총생산(GDP)",
+    "country": "캐나다",
+    "impact": "High",
+    "forecast": "0.1%",
+    "previous": "0.2%"
+  },
+  {
+    "date": "2026-05-29",
+    "title": "근원 개인소비지출 물가지수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "2.6%",
+    "previous": "2.7%"
   },
   {
     "date": "2026-06-04",
@@ -298,6 +602,14 @@
     "previous": ""
   },
   {
+    "date": "2026-06-10",
+    "title": "소비자물가지수 전년동기대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
     "date": "2026-06-18",
     "title": "BOE Official Bank Rate",
     "country": "GBP",
@@ -326,6 +638,14 @@
     "previous": ""
   },
   {
+    "date": "2026-06-25",
+    "title": "국내총생산 성장률",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
     "date": "2026-07-02",
     "title": "US Non-Farm Payrolls",
     "country": "USD",
@@ -348,6 +668,14 @@
   {
     "date": "2026-07-10",
     "title": "소비자물가지수(CPI) 전년동기대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-07-10",
+    "title": "소비자물가지수 전년동기대비",
     "country": "미국",
     "impact": "High",
     "forecast": "",
