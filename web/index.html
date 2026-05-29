@@ -47,17 +47,22 @@
 
     /* 애널리스트 카드 */
     .filter-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 30px; }
-    .filter-btn { background: #080c12; border: 1px solid var(--card-border); color: var(--text-sub); padding: 8px 18px; border-radius: 6px; cursor: pointer; transition: var(--transition); }
+    .filter-btn { background: #080c12; border: 1px solid var(--card-border); color: var(--text-sub); padding: 8px 18px; font-size: 0.88rem; font-weight: 500; border-radius: 6px; cursor: pointer; transition: var(--transition); }
     .filter-btn:hover, .filter-btn.active { background: rgba(4, 120, 87, 0.08); border-color: var(--primary); color: #10b981; }
     .analysts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 25px; }
-    .analyst-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 25px; position: relative; display: flex; flex-direction: column; justify-content: space-between; transition: var(--transition); }
+    .analyst-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 25px; transition: var(--transition); position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; }
     .analyst-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--primary); opacity: 0.8; }
     .analyst-card:hover { border-color: rgba(4, 120, 87, 0.5); transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4), 0 0 12px var(--primary-glow); }
-    .profile-info h3 { font-size: 1.3rem; color: #ffffff; }
-    .firm-tag { color: #10b981; background: rgba(4, 120, 87, 0.12); border: 1px solid rgba(4, 120, 87, 0.25); padding: 2px 6px; border-radius: 4px; margin-right: 6px; }
-    .award-text { background: rgba(4, 120, 87, 0.04); border: 1px solid rgba(4, 120, 87, 0.15); color: #10b981; padding: 8px 12px; border-radius: 6px; margin-bottom: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-    .evaluation-text { color: var(--text-sub); font-size: 0.9rem; margin-bottom: 20px; min-height: 70px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-    .tag { background: #101620; border: 1px solid #1f2937; padding: 4px 8px; font-size: 0.78rem; border-radius: 4px; margin: 2px; color: #cbd5e1; transition: var(--transition); }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+    .profile-info h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; color: #ffffff; }
+    .profile-info .firm-tag { color: #10b981; font-size: 0.85rem; font-weight: 600; background: rgba(4, 120, 87, 0.12); border: 1px solid rgba(4, 120, 87, 0.25); padding: 2px 6px; border-radius: 4px; display: inline-block; margin-right: 6px; }
+    .profile-info .position-tag { color: var(--text-sub); font-size: 0.85rem; }
+    .sector-badge { background: rgba(255, 255, 255, 0.03); border: 1px solid #101620; color: #9ca3af; font-size: 0.72rem; font-weight: 600; padding: 4px 10px; border-radius: 4px; letter-spacing: -0.5px; }
+    .award-text { background: rgba(4, 120, 87, 0.04); border: 1px solid rgba(4, 120, 87, 0.15); color: #10b981; font-size: 0.85rem; padding: 8px 12px; border-radius: 6px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-weight: 600; }
+    .evaluation-text { color: var(--text-sub); font-size: 0.9rem; margin-bottom: 20px; min-height: 70px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
+    .coverage-title { font-size: 0.85rem; color: #10b981; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .coverage-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag { background: #101620; border: 1px solid #1f2937; padding: 4px 8px; font-size: 0.78rem; border-radius: 4px; color: #cbd5e1; transition: var(--transition); }
     .tag:hover { border-color: var(--primary); color: #10b981; }
 
     /* 테이블 */
