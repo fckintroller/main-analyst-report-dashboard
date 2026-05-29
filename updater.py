@@ -34,7 +34,8 @@ def generate_csv(db_data):
 def compile_markdown(db_data):
     """마크다운 보고서 동적 작성"""
     analysts = db_data.get("analysts", [])
-    recommendations = db_data.get("recommendations", [])
+    # 투자의견 변동 내역 최신순(역순) 정렬
+    recommendations = sorted(db_data.get("recommendations", []), key=lambda x: x["date"], reverse=True)
     
     # 1. 투자의견 변동 섹션 빌드
     alerts_content = ""
@@ -84,7 +85,7 @@ def compile_markdown(db_data):
     markdown_template = f"""# [대한민국 최정상급 베스트 애널리스트 핵심 데이터베이스]
 
 > **"주식 시장의 1등 펀드매니저들이 가장 신뢰하는 브레인들의 투자 전략 분석 데이터베이스"**
-> **최종 자동 업데이트 일시**: `{now_str}` (2주 주기 스케줄러 작동 중)
+> **최종 업데이트 일시**: `{now_str}`
 
 ---
 
@@ -114,20 +115,105 @@ def compile_markdown(db_data):
 | :--- | :--- | :--- | :--- | :--- | :--- |
 {table_rows}
 ---
-
-## 🛠️ 자동화 스케줄러 시스템 활용법
-*   본 데이터베이스 및 보고서는 `updater.py` 스크립트에 의해 **2주마다 자동 실행**되어 최신 정보를 마크다운과 웹사이트로 반영합니다.
-*   새로운 애널리스트를 추가하고 싶으신 경우, `analyst_database.json` 파일의 `analysts` 배열에 정보를 포맷대로 추가하고 스크립트를 재실행(혹은 배치 실행)하시면 웹과 보고서에 실시간 확장 반영됩니다.
 """
     return markdown_template
+
+def generate_market_data(db_data):
+    """코스피 및 종목별 52주 시계열 주가 데이터 시뮬레이션 생성"""
+    import random
+    random.seed(42) # 동일 데이터 재현을 위해 시드 고정
+    
+    dates = []
+    start_date = datetime.date(2025, 6, 2)
+    for i in range(52):
+        d = start_date + datetime.timedelta(weeks=i)
+        dates.append(d.strftime("%Y-%m-%d"))
+        
+    # 종목별 시작가, 종료가 매핑
+    price_ranges = {
+        "KOSPI": (2650, 2750),
+        "SK하이닉스": (900000, 1700000),
+        "삼성전자": (160000, 250000),
+        "삼양식품": (830000, 1850000),
+        "알테오젠": (300000, 620000),
+        "한화에어로스페이스": (400000, 2040000),
+        "한국전력": (22000, 65000),
+        "에코프로비엠": (200000, 257000),
+        "스튜디오드래곤": (52000, 47000),
+        "LG에너지솔루션": (470000, 430000),
+        "NAVER": (200000, 230000),
+        "LG화학": (480000, 420000),
+        "리가켐바이오": (90000, 140000),
+        "두산테스나": (43000, 55000),
+        "농심": (410000, 510000),
+        "CJ ENM": (85000, 115000),
+        "카카오": (62000, 58000),
+        "CJ제일제당": (370000, 340000),
+        "현대로템": (38000, 70000),
+        "한국항공우주": (51000, 70000),
+        "삼성전기": (650000, 1600000),
+        "하이브": (210000, 310000),
+        "삼성중공업": (9500, 14500),
+        "현대건설": (35000, 48000),
+        "한미약품": (290000, 390000),
+        "아모레퍼시픽": (130000, 220000),
+        "한미반도체": (100000, 180000),
+        "LG디스플레이": (13000, 16500),
+        "이수페타시스": (41000, 62000)
+    }
+    
+    unique_stocks = set()
+    for a in db_data.get("analysts", []):
+        unique_stocks.update(a.get("targets", []))
+    for rep in db_data.get("reports", []):
+        unique_stocks.add(rep["stock_name"])
+        
+    for stock in unique_stocks:
+        if stock not in price_ranges:
+            price_ranges[stock] = (50000, 75000)
+            
+    # 시계열 가격 생성
+    series = {}
+    for stock, (start, end) in price_ranges.items():
+        prices = []
+        current = start
+        for i in range(52):
+            progress = i / 51.0
+            noise = random.uniform(-0.03, 0.03)
+            trend = start + (end - start) * progress
+            current = trend * (1.0 + noise)
+            
+            # 특수 흐름 제어
+            if stock == "KOSPI" and 10 < i < 30:
+                current -= 100
+            elif stock == "에코프로비엠" and i < 25:
+                current *= 0.8
+            elif stock == "삼성전기" and i < 20:
+                current *= 0.9
+                
+            if stock == "KOSPI":
+                prices.append(round(current, 2))
+            else:
+                prices.append(int(round(current, -2)))
+                
+        series[stock] = prices
+        
+    return {
+        "dates": dates,
+        "series": series
+    }
 
 def main():
     print("[Updater] 데이터베이스 로드 및 갱신 프로세스 시작...")
     db_data = load_database()
     
+    # 시장 데이터 시뮬레이션 생성
+    market_data = generate_market_data(db_data)
+    
     # 1. 자바스크립트 브릿지 파일 갱신
     with open(JS_PATH, "w", encoding="utf-8") as f:
-        f.write(f"window.ANALYST_DATABASE = {json.dumps(db_data, ensure_ascii=False, indent=2)};")
+        f.write(f"window.ANALYST_DATABASE = {json.dumps(db_data, ensure_ascii=False, indent=2)};\n")
+        f.write(f"window.MARKET_DATA = {json.dumps(market_data, ensure_ascii=False, indent=2)};\n")
     print(f"  [자바스크립트 브릿지 완료] {JS_PATH}가 성공적으로 업데이트되었습니다.")
     
     # 2. CSV 테이블 갱신
