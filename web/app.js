@@ -13,7 +13,7 @@ function escapeHTML(str) {
 function getRatingColor(rating) {
   if (!rating) return 'var(--text-main)';
   const r = rating.trim();
-  if (r.includes('매수') || r.includes('Buy')) return '#10b981'; // 에메랄드 그린
+  if (r.includes('매수') || r.includes('Buy')) return '#10b981'; // 눈이 편안한 에메랄드 그린
   if (r.includes('홀딩') || r.includes('Hold') || r.includes('보유') || r.includes('중립')) return '#d97706'; // 황금색
   if (r.includes('매도') || r.includes('Sell') || r.includes('비중축소')) return '#ef4444'; // 로즈 레드
   return 'var(--text-main)';
@@ -62,7 +62,6 @@ function renderDashboard() {
   if (filterButtonsContainer) {
     filterButtonsContainer.innerHTML = '';
     
-    // '전체보기' 버튼 생성
     const allBtn = document.createElement('button');
     allBtn.className = 'filter-btn active';
     allBtn.innerText = '전체보기';
@@ -74,7 +73,6 @@ function renderDashboard() {
       const btn = document.createElement('button');
       btn.className = 'filter-btn';
       btn.innerText = sector;
-      // addEventListener를 사용하여 변형 없는 섹터명을 직접 전달 (XSS 우회 방지 및 특수문자 대응)
       btn.addEventListener('click', () => filterSector(sector));
       filterButtonsContainer.appendChild(btn);
     });
@@ -211,28 +209,70 @@ function renderCalendar() {
   const getKorDateStr = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
   const todayStr = getKorDateStr(now);
 
+  const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = getKorDateStr(tomorrow);
+
+  const dayOfWeek = now.getDay();
+  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const thisWeekStart = new Date(now); thisWeekStart.setDate(now.getDate() + diffToMonday);
+  const thisWeekEnd = new Date(thisWeekStart); thisWeekEnd.setDate(thisWeekStart.getDate() + 6);
+  const twStartStr = getKorDateStr(thisWeekStart);
+  const twEndStr = getKorDateStr(thisWeekEnd);
+
+  const lastWeekEnd = new Date(thisWeekStart); lastWeekEnd.setDate(lastWeekEnd.getDate() - 1);
+  const lastWeekStart = new Date(lastWeekEnd); lastWeekStart.setDate(lastWeekStart.getDate() - 6);
+  const lwStartStr = getKorDateStr(lastWeekStart);
+  const lwEndStr = getKorDateStr(lastWeekEnd);
+
   const groups = [
-    { id: '오늘', title: '📌 오늘', events: calendarData.filter(e => e.date === todayStr) },
-    { id: '예정', title: '📅 예정된 일정', events: calendarData.filter(e => e.date > todayStr) },
-    { id: '지난', title: '⏳ 지난 일정', events: calendarData.filter(e => e.date < todayStr), isPast: true }
+    { id: '과거', title: '⏳ 과거 (지난주 이전)', isPast: true, events: [] },
+    { id: '지난주', title: '⬅️ 지난주', isPast: true, events: [] },
+    { id: '오늘', title: '📌 오늘', isPast: false, events: [] },
+    { id: '내일', title: '🚀 내일', isPast: false, events: [] },
+    { id: '이번주', title: '📅 이번 주', isPast: false, events: [] },
+    { id: '다음주', title: '🗓️ 다음 주', isPast: false, events: [] },
+    { id: '이번달', title: '📆 이번 달 (이후)', isPast: false, events: [] }
   ];
 
+  calendarData.forEach(event => {
+    const d = event.date;
+    if (d < lwStartStr) groups[0].events.push(event);
+    else if (d >= lwStartStr && d <= lwEndStr) groups[1].events.push(event);
+    else if (d === todayStr) groups[2].events.push(event);
+    else if (d === tomorrowStr) groups[3].events.push(event);
+    else if (d >= twStartStr && d <= twEndStr) groups[4].events.push(event);
+    else if (d > twEndStr && d <= getKorDateStr(new Date(thisWeekEnd.getTime() + 7 * 24 * 60 * 60 * 1000))) groups[5].events.push(event);
+    else groups[6].events.push(event);
+  });
+
   groups.forEach(group => {
-    if (group.events.length === 0 && !group.isPast) return;
     const groupDiv = document.createElement('div');
     groupDiv.style.marginBottom = '20px';
-    const content = group.events.map(e => `
-      <div style="display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-bottom: 1px solid #101620;">
-        <div style="color: #e2e8f0; font-weight: 600; width: 100px;">${escapeHTML(e.date)}</div>
-        <span style="background: rgba(4, 120, 87, 0.15); color: #10b981; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem;">${escapeHTML(e.country)}</span>
-        <div style="color: #ffffff; font-weight: 500; flex: 1;">${escapeHTML(e.title)}</div>
-      </div>
-    `).join('');
-    
-    if (group.isPast) {
-      groupDiv.innerHTML = `<details><summary style="cursor:pointer; color:#9ca3af; font-weight:700; margin-bottom:10px;">${escapeHTML(group.title)} (${group.events.length}건)</summary>${content}</details>`;
+    let contentHtml = '';
+    if (group.events.length === 0) {
+      contentHtml = `<div style="color: var(--text-sub); font-size: 0.85rem; padding: 12px; background: rgba(31, 41, 55, 0.4); border-radius: 6px; text-align: center; border: 1px dashed #374151;">일정 없음</div>`;
     } else {
-      groupDiv.innerHTML = `<div style="font-size:1rem; font-weight:700; color:#10b981; margin-bottom:10px; border-bottom:1px solid #1f2937; padding-bottom:6px;">${escapeHTML(group.title)}</div>${content}`;
+      contentHtml = group.events.map(e => {
+        let resHtml = '';
+        if (e.forecast || e.previous) {
+          const isPast = e.date < todayStr;
+          const joined = [e.forecast ? `예상: ${e.forecast}` : '', e.previous ? `이전: ${e.previous}` : ''].filter(x=>x).join(' | ');
+          if (joined) resHtml = `<div style="font-size: 0.8rem; color: ${isPast ? '#facc15' : '#9ca3af'}; margin-top: 4px; font-weight: ${isPast ? '600' : '400'};">${isPast ? '✅ 결과치: ' : '📉 예측/이전: '}${joined}</div>`;
+        }
+        return `
+          <div style="display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-bottom: 1px solid #101620;">
+            <div style="color: #e2e8f0; font-weight: 600; width: 100px;">${escapeHTML(e.date)}</div>
+            <span style="background: rgba(4, 120, 87, 0.15); color: #10b981; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem;">${escapeHTML(e.country)}</span>
+            <div style="color: #ffffff; font-weight: 500; flex: 1;">${escapeHTML(e.title)}${resHtml}</div>
+          </div>
+        `;
+      }).join('');
+    }
+    const headerColor = group.isPast ? '#9ca3af' : '#10b981';
+    if (group.isPast) {
+      groupDiv.innerHTML = `<details><summary style="font-size:1rem; font-weight:700; color:${headerColor}; cursor:pointer; padding-bottom:6px; border-bottom:1px solid #1f2937;">${group.title} (${group.events.length}건)</summary><div style="margin-top:12px;">${contentHtml}</div></details>`;
+    } else {
+      groupDiv.innerHTML = `<div style="font-size:1rem; font-weight:700; color:${headerColor}; margin-bottom:10px; border-bottom:1px solid #1f2937; padding-bottom:6px;">${group.title}</div><div>${contentHtml}</div>`;
     }
     container.appendChild(groupDiv);
   });
@@ -241,33 +281,87 @@ function renderCalendar() {
 function renderExternalEvents() {
   const container = document.getElementById('external-events-list');
   if (!container) return;
-  container.innerHTML = (window.CALENDAR_DATA || []).map(e => `
-    <div class="external-event-item" data-date="${escapeHTML(e.date)}">
-      <div class="event-date" style="color: #e2e8f0; font-weight: 600; width: 90px;">${escapeHTML(e.date)}</div>
+  container.innerHTML = '';
+  const calendarData = window.CALENDAR_DATA || [];
+  const todayStr = new Date().toISOString().split('T')[0];
+  if (calendarData.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-sub); text-align:center; padding: 20px;">예정된 경제 일정이 없습니다.</p>';
+    return;
+  }
+  calendarData.forEach(e => {
+    const item = document.createElement('div');
+    item.className = 'external-event-item';
+    item.setAttribute('data-date', e.date);
+    let resHtml = '';
+    if (e.forecast || e.previous) {
+      const isPast = e.date < todayStr;
+      const joined = [e.forecast ? `예상: ${e.forecast}` : '', e.previous ? `이전: ${e.previous}` : ''].filter(x=>x).join(' | ');
+      if (joined) resHtml = `<div style="font-size: 0.8rem; color: ${isPast ? '#facc15' : '#9ca3af'}; margin-top: 4px;">${isPast ? '✅ 결과치: ' : '📉 예측/이전: '}${joined}</div>`;
+    }
+    item.innerHTML = `
+      <div style="color: #e2e8f0; font-weight: 600; width: 90px;">${escapeHTML(e.date)}</div>
       <span style="background: rgba(4, 120, 87, 0.15); color: #10b981; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem;">${escapeHTML(e.country)}</span>
-      <div class="event-title" style="color: #ffffff; font-weight: 500; flex: 1;">${escapeHTML(e.title)}</div>
-    </div>
-  `).join('');
+      <div style="color: #ffffff; font-weight: 500; flex: 1;">${escapeHTML(e.title)}${resHtml}</div>
+    `;
+    container.appendChild(item);
+  });
 }
 
 function initChart() {
-  const canvas = document.getElementById('marketChart');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
+  const ctx = document.getElementById('marketChart').getContext('2d');
   const marketData = window.MARKET_DATA || { dates: [], series: {} };
-  marketChart = new Chart(ctx, {
+  const config = {
     type: 'line',
     data: { labels: marketData.dates, datasets: [] },
     options: {
+      onHover: (e, activeElements, chart) => {
+        if (!chart.scales.x) return;
+        const xValue = chart.scales.x.getValueForPixel(e.x);
+        document.querySelectorAll('.external-event-item').forEach(el => el.classList.remove('highlighted-event'));
+        let needsUpdate = false;
+        const annotations = chart.options.plugins.annotation?.annotations || {};
+        if (xValue >= 0 && xValue < chart.data.labels.length) {
+          const hoveredDate = chart.data.labels[xValue];
+          let firstScrolled = false;
+          for (const key in annotations) {
+            const ann = annotations[key];
+            if (!ann.original) ann.original = { borderColor: ann.borderColor, borderWidth: ann.borderWidth, labelDisplay: ann.label?.display };
+            if (ann.xMin === hoveredDate) {
+              if (ann.borderColor !== 'rgba(250, 204, 21, 1)') {
+                ann.borderColor = 'rgba(250, 204, 21, 1)'; ann.borderWidth = 3; if (ann.label) ann.label.display = true; needsUpdate = true;
+              }
+              const targetEl = document.querySelector(`.external-event-item[data-date="${ann.originalDate || hoveredDate}"]`);
+              if (targetEl) {
+                targetEl.classList.add('highlighted-event');
+                if (!firstScrolled) { targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); firstScrolled = true; }
+              }
+            } else {
+              if (ann.borderColor === 'rgba(250, 204, 21, 1)') {
+                ann.borderColor = ann.original.borderColor; ann.borderWidth = ann.original.borderWidth;
+                if (ann.label) ann.label.display = ann.original.labelDisplay; needsUpdate = true;
+              }
+            }
+          }
+        }
+        if (needsUpdate) chart.update('none');
+      },
       responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 80 } },
       interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { display: true, position: 'top', labels: { color: '#e2e8f0' } } },
+      plugins: {
+        legend: { display: true, position: 'top', labels: { color: '#e2e8f0', font: { family: 'Inter', size: 11 } } },
+        tooltip: {
+          backgroundColor: '#080c12', titleColor: '#10b981', bodyColor: '#e2e8f0', borderColor: '#101620',
+          borderWidth: 1, padding: 12, titleFont: { weight: 'bold' }
+        }
+      },
       scales: {
-        x: { grid: { color: '#101620' }, ticks: { color: '#9ca3af' } },
-        y: { grid: { color: '#101620' }, ticks: { color: '#9ca3af' } }
+        x: { grid: { color: '#101620', borderColor: '#101620' }, ticks: { color: '#9ca3af', font: { size: 10 } } },
+        y: { type: 'linear', display: true, position: 'left', grid: { color: '#101620', borderColor: '#101620' }, ticks: { color: '#9ca3af', font: { size: 10 } } }
       }
     }
-  });
+  };
+  marketChart = new Chart(ctx, config);
   updateChart();
 }
 
@@ -275,36 +369,81 @@ function updateChart() {
   if (!marketChart) return;
   const marketData = window.MARKET_DATA || { dates: [], series: {} };
   const datasets = [];
-  const colors = { 'KOSPI': '#10b981' };
-  const defaultColors = ['#06b6d4', '#f59e0b', '#ec4899', '#f97316', '#a855f7', '#84cc16', '#3b82f6'];
-  let colorIdx = 0;
-
-  selectedStocks.forEach(stock => {
-    const series = marketData.series[stock];
-    if (!series) return;
-    let data = series;
-    if (chartMode === 'pct' && stock !== 'KOSPI') {
-      const base = series[0];
-      data = series.map(p => base === 0 ? 0 : ((p - base) / base) * 100);
-    }
-    const color = colors[stock] || defaultColors[colorIdx++ % defaultColors.length];
-    datasets.push({
-      label: stock, data: data, borderColor: color, backgroundColor: color + '15',
-      borderWidth: stock === 'KOSPI' ? 2.5 : 2, tension: 0.15,
-      yAxisID: (stock === 'KOSPI' && selectedStocks.length > 1) ? 'y2' : 'y'
-    });
-  });
+  const colors = { 'KOSPI': '#10b981', 'SK하이닉스': '#06b6d4', '삼성전자': '#3b82f6', '삼양식품': '#f59e0b', '알테오젠': '#ec4899', '한화에어로스페이스': '#f97316', '한국전력': '#a855f7', '에코프로비엠': '#84cc16' };
+  const defaultColors = ['#06b6d4', '#f59e0b', '#ec4899', '#f97316', '#a855f7', '#84cc16', '#3b82f6', '#14b8a6', '#6366f1'];
+  let colorIndex = 0;
 
   const hasKospi = selectedStocks.includes('KOSPI');
-  const hasOther = selectedStocks.length > (hasKospi ? 1 : 0);
-  
-  marketChart.options.scales.y.title = { display: true, text: chartMode === 'pct' ? '수익률 (%)' : '가격', color: '#e2e8f0' };
+  const hasOther = selectedStocks.some(s => s !== 'KOSPI');
+  let yTitleText = chartMode === 'pct' ? '누적 수익률 (%)' : '주가 (KRW)';
+  if (!hasOther && hasKospi) yTitleText = '코스피 지수 (PT)';
+
+  const scales = {
+    x: marketChart.options.scales.x,
+    y: {
+      type: 'linear', display: true, position: 'left', grid: { color: '#101620' },
+      ticks: { color: '#9ca3af', callback: function(v) { if (!hasOther && hasKospi) return v.toLocaleString() + ' pt'; return chartMode === 'pct' ? v.toFixed(1) + '%' : v.toLocaleString(); } },
+      title: { display: true, text: yTitleText, color: '#e2e8f0' }
+    }
+  };
+
   if (hasKospi && hasOther) {
-    marketChart.options.scales.y2 = { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#10b981' } };
+    scales.y2 = { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#10b981', callback: function(v) { return v.toLocaleString() + ' pt'; } }, title: { display: true, text: '코스피 지수 (PT)', color: '#10b981' } };
   } else {
     delete marketChart.options.scales.y2;
   }
 
+  // 미래 30일 패딩
+  const today = new Date(); const todayStr = today.toISOString().split('T')[0];
+  const paddedDates = [...marketData.dates];
+  let lastDate = new Date(paddedDates[paddedDates.length - 1]);
+  if (isNaN(lastDate)) lastDate = today;
+  for (let i = 1; i <= 30; i++) { const n = new Date(lastDate); n.setDate(n.getDate() + i); paddedDates.push(n.toISOString().split('T')[0]); }
+  marketChart.data.labels = paddedDates;
+
+  selectedStocks.forEach(stock => {
+    const series = marketData.series[stock];
+    if (!series) return;
+    let final = [];
+    if (chartMode === 'pct' && stock !== 'KOSPI') { const base = series[0]; final = series.map(p => base === 0 ? 0 : ((p - base) / base) * 100); }
+    else final = series;
+    const paddedSeries = [...final]; for (let i = 0; i < 30; i++) paddedSeries.push(null);
+    const color = colors[stock] || defaultColors[colorIndex++ % defaultColors.length];
+    datasets.push({ label: stock, data: paddedSeries, borderColor: color, backgroundColor: color + '15', borderWidth: stock === 'KOSPI' ? 2.5 : 2, pointRadius: 1, pointHoverRadius: 4, tension: 0.15, yAxisID: (chartMode === 'price' && stock === 'KOSPI' && hasOther) ? 'y2' : 'y' });
+  });
+
+  // 어노테이션
+  const annotations = {};
+  const groupedEvents = {};
+  (window.CALENDAR_DATA || []).forEach(ev => {
+    let m = ev.date;
+    if (!paddedDates.includes(m)) {
+      const t = new Date(m).getTime(); let closest = paddedDates[0], min = Infinity;
+      paddedDates.forEach(d => { const diff = Math.abs(new Date(d).getTime() - t); if (diff < min) { min = diff; closest = d; } });
+      m = closest;
+    }
+    if (!groupedEvents[m]) groupedEvents[m] = [];
+    groupedEvents[m].push({ ...ev, originalDate: ev.date });
+  });
+
+  let fIndex = 0;
+  Object.keys(groupedEvents).forEach(m => {
+    const evs = groupedEvents[m]; const isPast = evs[0].originalDate < todayStr;
+    const contentArr = [];
+    evs.forEach((ev, idx) => {
+      contentArr.push(`[${ev.country}] ${ev.title}`);
+      if (ev.forecast || ev.previous) contentArr.push(`  ${isPast ? '결과' : '예측'}: 예상 ${ev.forecast} | 이전 ${ev.previous}`);
+      if (idx < evs.length - 1) contentArr.push('');
+    });
+    annotations[`event_${fIndex++}`] = {
+      type: 'line', xMin: m, xMax: m, originalDate: evs[0].originalDate,
+      borderColor: isPast ? 'rgba(156, 163, 175, 0.2)' : 'rgba(250, 204, 21, 0.2)', borderWidth: 1.5, borderDash: [3, 3],
+      label: { display: false, content: contentArr, position: 'start', color: isPast ? '#ffffff' : '#000000', backgroundColor: isPast ? 'rgba(75, 85, 99, 0.95)' : 'rgba(250, 204, 21, 0.95)', borderRadius: 6, font: { size: 10, weight: 'bold' }, padding: 8, yAdjust: -30 }
+    };
+  });
+
+  marketChart.options.plugins.annotation = { clip: false, annotations: annotations };
+  marketChart.options.scales = scales;
   marketChart.data.datasets = datasets;
   marketChart.update();
 }
@@ -313,46 +452,57 @@ function setChartMode(mode) {
   chartMode = mode;
   document.getElementById('btn-chart-mode-pct').classList.toggle('active', mode === 'pct');
   document.getElementById('btn-chart-mode-price').classList.toggle('active', mode === 'price');
+  const desc = document.getElementById('chart-desc');
+  if (mode === 'pct') desc.innerText = '* 2025년 6월 기점을 0%로 가정하고 코스피 대비 개별 종목들의 누적 수익률 추이를 비교 분석합니다.';
+  else desc.innerText = '* 선택한 종목들의 원화(KRW) 실제 주가 추이를 코스피 지수(우측 축)와 연동하여 비교 분석합니다.';
   updateChart();
 }
 
 function renderStockChecklist() {
   const container = document.getElementById('stock-checklist');
   if (!container) return;
-  const marketData = window.MARKET_DATA || { series: {} };
-  const stocks = ['KOSPI', ...Object.keys(marketData.series).filter(s => s !== 'KOSPI').sort()];
-  container.innerHTML = stocks.map(stock => {
+  container.innerHTML = '';
+  const marketData = window.MARKET_DATA || { dates: [], series: {} };
+  const sortedStocks = ['KOSPI', ...Object.keys(marketData.series).filter(s => s !== 'KOSPI').sort()];
+  sortedStocks.forEach(stock => {
+    const series = marketData.series[stock];
+    const currentPrice = series[series.length - 1];
+    const priceStr = stock === 'KOSPI' ? currentPrice.toLocaleString() + ' pt' : currentPrice.toLocaleString() + ' 원';
     const isChecked = selectedStocks.includes(stock);
-    const escapedStock = escapeHTML(stock);
-    return `
-      <label class="stock-item-label" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid ${isChecked ? 'rgba(4,120,87,0.4)' : 'var(--card-border)'}; border-radius: 6px; background: ${isChecked ? 'rgba(4,120,87,0.04)' : '#080c12'}; cursor: pointer;">
-        <input type="checkbox" value="${escapedStock}" ${isChecked ? 'checked' : ''} onchange="handleStockCheck(this)">
-        <span style="font-size: 0.88rem; color: ${stock === 'KOSPI' ? '#10b981' : '#ffffff'};">${escapedStock}</span>
-      </label>
-    `;
-  }).join('');
+    const item = document.createElement('label');
+    item.className = 'stock-item-label';
+    item.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border: 1px solid var(--card-border); border-radius: 6px; background: #080c12; cursor: pointer; transition: var(--transition); user-select: none;";
+    item.setAttribute('data-stock-name', stock);
+    item.innerHTML = `<div style="display: flex; align-items: center; gap: 10px;"><input type="checkbox" class="stock-chk" value="${escapeHTML(stock)}" ${isChecked ? 'checked' : ''} onchange="handleStockCheck(this)" style="accent-color: var(--primary); cursor: pointer;"><span style="font-size: 0.88rem; font-weight: ${stock === 'KOSPI' ? '700' : '500'}; color: ${stock === 'KOSPI' ? '#10b981' : '#ffffff'};">${escapeHTML(stock)}</span></div><span style="font-size: 0.8rem; color: var(--text-sub);">${priceStr}</span>`;
+    if (isChecked) { item.style.borderColor = 'rgba(4, 120, 87, 0.4)'; item.style.background = 'rgba(4, 120, 87, 0.04)'; }
+    container.appendChild(item);
+  });
 }
 
 function handleStockCheck(chk) {
   const stock = chk.value;
-  if (chk.checked) { if (!selectedStocks.includes(stock)) selectedStocks.push(stock); }
-  else { selectedStocks = selectedStocks.filter(s => s !== stock); }
-  renderStockChecklist();
+  const label = chk.closest('.stock-item-label');
+  if (chk.checked) { if (!selectedStocks.includes(stock)) selectedStocks.push(stock); label.style.borderColor = 'rgba(4, 120, 87, 0.4)'; label.style.background = 'rgba(4, 120, 87, 0.04)'; }
+  else { selectedStocks = selectedStocks.filter(s => s !== stock); label.style.borderColor = 'var(--card-border)'; label.style.background = '#080c12'; }
   updateChart();
 }
 
 function filterStockChecklist() {
-  const query = document.getElementById('stock-search').value.toLowerCase();
+  const query = document.getElementById('stock-search').value.toLowerCase().trim();
   document.querySelectorAll('.stock-item-label').forEach(label => {
-    const name = label.innerText.toLowerCase();
-    label.style.display = (name.includes(query) || name.includes('kospi')) ? 'flex' : 'none';
+    const name = label.getAttribute('data-stock-name').toLowerCase();
+    label.style.display = (name === 'kospi' || name.includes(query)) ? 'flex' : 'none';
   });
 }
 
 function toggleAllStocks(select) {
-  const marketData = window.MARKET_DATA || { series: {} };
-  if (select) selectedStocks = Object.keys(marketData.series);
-  else selectedStocks = ['KOSPI'];
-  renderStockChecklist();
+  const chks = document.querySelectorAll('.stock-chk');
+  selectedStocks = ['KOSPI'];
+  chks.forEach(chk => {
+    const stock = chk.value; if (stock === 'KOSPI') return;
+    chk.checked = select; const label = chk.closest('.stock-item-label');
+    if (select) { selectedStocks.push(stock); label.style.borderColor = 'rgba(4, 120, 87, 0.4)'; label.style.background = 'rgba(4, 120, 87, 0.04)'; }
+    else { label.style.borderColor = 'var(--card-border)'; label.style.background = '#080c12'; }
+  });
   updateChart();
 }

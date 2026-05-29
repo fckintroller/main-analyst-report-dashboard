@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Chart.js Annotation Plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1"></script>
   
   <style>
     :root {
@@ -28,42 +30,52 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Inter', 'Noto Sans KR', sans-serif; background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; line-height: 1.6; }
     .container { max-width: 1300px; margin: 0 auto; padding: 40px 20px; }
+    
+    /* 슬림 스크롤바 */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-color); }
+    ::-webkit-scrollbar-thumb { background: #101620; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #1e293b; }
+
     .tabs-nav { display: flex; justify-content: center; gap: 15px; margin-bottom: 40px; border-bottom: 1px solid #101620; padding-bottom: 20px; }
     .tab-btn { background: #080c12; border: 1px solid var(--card-border); color: var(--text-sub); padding: 12px 25px; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: var(--transition); }
-    .tab-btn.active { color: #10b981; background: rgba(4, 120, 87, 0.12); border-color: var(--primary); }
+    .tab-btn:hover { color: #10b981; background: #101620; border-color: rgba(4, 120, 87, 0.4); }
+    .tab-btn.active { color: #10b981; background: rgba(4, 120, 87, 0.12); border-color: var(--primary); box-shadow: 0 0 10px var(--primary-glow); }
     .tab-content { display: none; animation: fadeIn 0.3s ease; }
     .tab-content.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
     /* 애널리스트 카드 */
     .filter-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 30px; }
-    .filter-btn { background: #080c12; border: 1px solid var(--card-border); color: var(--text-sub); padding: 8px 18px; border-radius: 6px; cursor: pointer; }
-    .filter-btn.active { color: #10b981; border-color: var(--primary); }
+    .filter-btn { background: #080c12; border: 1px solid var(--card-border); color: var(--text-sub); padding: 8px 18px; border-radius: 6px; cursor: pointer; transition: var(--transition); }
+    .filter-btn:hover, .filter-btn.active { background: rgba(4, 120, 87, 0.08); border-color: var(--primary); color: #10b981; }
     .analysts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 25px; }
-    .analyst-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 25px; position: relative; display: flex; flex-direction: column; justify-content: space-between; }
-    .analyst-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--primary); }
+    .analyst-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 25px; position: relative; display: flex; flex-direction: column; justify-content: space-between; transition: var(--transition); }
+    .analyst-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--primary); opacity: 0.8; }
+    .analyst-card:hover { border-color: rgba(4, 120, 87, 0.5); transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4), 0 0 12px var(--primary-glow); }
     .profile-info h3 { font-size: 1.3rem; color: #ffffff; }
-    .firm-tag { color: #10b981; background: rgba(4, 120, 87, 0.12); padding: 2px 6px; border-radius: 4px; margin-right: 6px; }
-    .award-text { background: rgba(4, 120, 87, 0.04); color: #10b981; padding: 8px 12px; border-radius: 6px; margin: 15px 0; font-weight: 600; }
-    .evaluation-text { color: var(--text-sub); font-size: 0.9rem; margin-bottom: 20px; }
-    .tag { background: #101620; border: 1px solid #1f2937; padding: 4px 8px; font-size: 0.78rem; border-radius: 4px; margin: 2px; }
+    .firm-tag { color: #10b981; background: rgba(4, 120, 87, 0.12); border: 1px solid rgba(4, 120, 87, 0.25); padding: 2px 6px; border-radius: 4px; margin-right: 6px; }
+    .award-text { background: rgba(4, 120, 87, 0.04); border: 1px solid rgba(4, 120, 87, 0.15); color: #10b981; padding: 8px 12px; border-radius: 6px; margin-bottom: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .evaluation-text { color: var(--text-sub); font-size: 0.9rem; margin-bottom: 20px; min-height: 70px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .tag { background: #101620; border: 1px solid #1f2937; padding: 4px 8px; font-size: 0.78rem; border-radius: 4px; margin: 2px; color: #cbd5e1; transition: var(--transition); }
+    .tag:hover { border-color: var(--primary); color: #10b981; }
 
     /* 테이블 */
     .alerts-container, .reports-container { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 30px; }
-    .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .alerts-table { width: 100%; border-collapse: collapse; min-width: 800px; }
-    .alerts-table th { color: #10b981; padding: 12px 15px; border-bottom: 2px solid var(--card-border); background: #101620; text-align: left; font-size: 0.85rem; white-space: nowrap; }
-    .alerts-table td { padding: 12px 15px; border-bottom: 1px solid var(--card-border); font-size: 0.82rem; vertical-align: middle; }
-    .alerts-table td.comment-cell { white-space: normal; min-width: 200px; max-width: 300px; line-height: 1.4; color: var(--text-sub); font-style: italic; }
-    .rating-flow { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+    .table-responsive { overflow-x: auto; width: 100%; }
+    .alerts-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .alerts-table th { color: #10b981; padding: 10px 12px; border-bottom: 2px solid var(--card-border); background: #101620; text-align: left; font-size: 0.85rem; white-space: nowrap; }
+    .alerts-table td { padding: 10px 12px; border-bottom: 1px solid var(--card-border); font-size: 0.82rem; vertical-align: middle; white-space: nowrap; }
+    .alerts-table td.comment-cell { white-space: normal; min-width: 180px; max-width: 260px; line-height: 1.4; color: var(--text-sub); font-style: italic; }
+    .rating-flow { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.82rem; }
     .rating-arrow { color: var(--text-sub); font-size: 0.8rem; }
     .badge-alert { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 0.75rem; white-space: nowrap; }
-    .badge-alert.upgrade { border: 1px solid var(--upgrade); color: var(--upgrade); }
-    .badge-alert.downgrade { border: 1px solid var(--downgrade); color: var(--downgrade); }
+    .badge-alert.upgrade { background: rgba(5, 150, 105, 0.05); border: 1px solid var(--upgrade); color: var(--upgrade); }
+    .badge-alert.downgrade { background: rgba(185, 28, 28, 0.05); border: 1px solid var(--downgrade); color: var(--downgrade); }
 
     /* 리포트 카드 */
     .reports-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 25px; }
-    .report-card { background: #040608; border: 1px solid var(--card-border); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; transition: var(--transition); }
+    .report-card { background: #040608; border: 1px solid var(--card-border); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; transition: var(--transition); position: relative; }
     .report-card:hover { border-color: rgba(4, 120, 87, 0.4); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5), 0 0 10px var(--primary-glow); transform: translateY(-2px); }
     .report-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; border-bottom: 1px solid var(--card-border); padding-bottom: 10px; }
     .report-title { font-size: 1.05rem; font-weight: 700; color: #ffffff; line-height: 1.4; margin-bottom: 6px; }
@@ -73,21 +85,24 @@
     .report-footer { display: flex; justify-content: space-between; align-items: center; background: #080c12; padding: 10px 15px; border-radius: 6px; border: 1px solid var(--card-border); font-size: 0.85rem; }
     .report-target-box { font-weight: 700; color: #10b981; }
 
-    /* 차트 */
+    /* 차트 및 이벤트 타임라인 */
     .chart-tab-container { display: grid; grid-template-columns: 1fr 300px; gap: 25px; }
-    .chart-left-panel { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 25px; }
-    .chart-wrapper { height: 400px; }
-    .chart-right-panel { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 20px; max-height: 560px; overflow-y: auto; }
+    .chart-left-panel { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 25px; display: flex; flex-direction: column; justify-content: space-between; }
+    .chart-wrapper { position: relative; height: 420px; width: 100%; }
+    .chart-right-panel { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 20px; max-height: 560px; display: flex; flex-direction: column; }
+    .external-event-item { display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-bottom: 1px solid #101620; transition: var(--transition); border-radius: 6px; }
+    .external-event-item:hover, .highlighted-event { background: rgba(250, 204, 21, 0.08); border-color: rgba(250, 204, 21, 0.3); }
+    .highlighted-event { box-shadow: inset 0 0 10px rgba(250, 204, 21, 0.05); }
   </style>
 </head>
 <body>
 
   <div class="container">
     <div class="tabs-nav">
-      <button class="tab-btn active" onclick="switchTab('tab-analysts')"><i class="fa-solid fa-folder-open"></i> 결합 섹터</button>
-      <button class="tab-btn" onclick="switchTab('tab-alerts')"><i class="fa-solid fa-triangle-exclamation"></i> 의견 변동</button>
+      <button class="tab-btn active" onclick="switchTab('tab-analysts')"><i class="fa-solid fa-folder-open"></i> 결합 섹터별 애널리스트</button>
+      <button class="tab-btn" onclick="switchTab('tab-alerts')"><i class="fa-solid fa-triangle-exclamation"></i> 투자의견 변동 알림</button>
       <button class="tab-btn" onclick="switchTab('tab-reports')"><i class="fa-solid fa-file-invoice-dollar"></i> 리서치 보고서</button>
-      <button class="tab-btn" onclick="switchTab('tab-chart')"><i class="fa-solid fa-chart-line"></i> 분석 차트</button>
+      <button class="tab-btn" onclick="switchTab('tab-chart')"><i class="fa-solid fa-chart-line"></i> 주가 & 코스피 비교 분석</button>
       <button class="tab-btn" onclick="switchTab('tab-calendar')"><i class="fa-regular fa-calendar-check"></i> 경제 캘린더</button>
     </div>
 
@@ -98,10 +113,25 @@
 
     <div id="tab-alerts" class="tab-content">
       <div class="alerts-container">
-        <h2 style="margin-bottom:20px; color:var(--primary);">📊 의견 변동 추적</h2>
+        <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; display:flex; align-items:center; gap:10px; color:var(--primary);">
+          <i class="fa-solid fa-bell-slash" style="color:var(--downgrade);"></i> 포트폴리오 의견 변동 추적 대시보드
+        </h2>
+        <p style="color:var(--text-sub); font-size: 0.95rem; margin-bottom: 25px;">
+          * 애널리스트들이 이전 등급 대비 <b>[매수 ↔ 홀딩 ↔ 매도]</b> 등 투자의견을 변경한 정밀 트래킹 내역입니다. 구글 시트로의 복사 연동이 가능합니다.
+        </p>
         <div class="table-responsive">
           <table class="alerts-table">
-            <thead><tr><th>기업</th><th>애널리스트</th><th>방향</th><th>흐름</th><th>목표가</th><th>코멘트</th><th>날짜</th></tr></thead>
+            <thead>
+              <tr>
+                <th>기업명 (종목코드)</th>
+                <th>담당 애널리스트</th>
+                <th>변동 방향</th>
+                <th>의견 변동 흐름</th>
+                <th>목표 주가</th>
+                <th>리서치 코멘트</th>
+                <th>조정 일자</th>
+              </tr>
+            </thead>
             <tbody id="alerts-container-body"></tbody>
           </table>
         </div>
@@ -110,7 +140,12 @@
 
     <div id="tab-reports" class="tab-content">
       <div class="reports-container">
-        <h2 style="margin-bottom:20px; color:var(--primary);">📄 종합 리서치 센터</h2>
+        <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; display:flex; align-items:center; gap:10px; color:var(--primary);">
+          <i class="fa-solid fa-file-lines" style="color:var(--primary);"></i> 종합 리서치 보고서 센터
+        </h2>
+        <p style="color:var(--text-sub); font-size: 0.95rem; margin-bottom: 25px;">
+          * 대한민국 최정상급 베스트 애널리스트들이 심층 작성한 최신 종목 분석 및 섹터전략 리포트 요약본입니다.
+        </p>
         <div class="reports-grid" id="reports-container-grid"></div>
       </div>
     </div>
@@ -118,23 +153,32 @@
     <div id="tab-chart" class="tab-content">
       <div class="chart-tab-container">
         <div class="chart-left-panel">
-          <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
-            <h2 style="color:var(--primary);">📈 주가 분석</h2>
-            <div style="display:flex; gap:8px;">
-              <button id="btn-chart-mode-pct" class="filter-btn active" onclick="setChartMode('pct')">수익률</button>
-              <button id="btn-chart-mode-price" class="filter-btn" onclick="setChartMode('price')">가격</button>
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <h2 style="font-size: 1.4rem; font-weight: 700; display:flex; align-items:center; gap:10px; color:var(--primary); margin:0;">
+                <i class="fa-solid fa-chart-area" style="color:var(--primary);"></i> 주가 & 코스피 비교 분석 차트
+              </h2>
+              <div style="display: flex; gap: 8px;">
+                <button id="btn-chart-mode-pct" class="filter-btn active" onclick="setChartMode('pct')" style="padding: 6px 12px; font-size: 0.8rem; height: auto;">누적 수익률 비교 (%)</button>
+                <button id="btn-chart-mode-price" class="filter-btn" onclick="setChartMode('price')" style="padding: 6px 12px; font-size: 0.8rem; height: auto;">실제 주가 비교 (KRW/PT)</button>
+              </div>
             </div>
+            <p style="color:var(--text-sub); font-size: 0.88rem; margin-bottom: 15px;" id="chart-desc">
+              * 2025년 6월 기점을 0%로 가정하고 코스피 대비 개별 종목들의 누적 수익률 추이를 비교 분석합니다.
+            </p>
           </div>
           <div class="chart-wrapper"><canvas id="marketChart"></canvas></div>
-          <div id="external-events-list" style="margin-top:20px; max-height:150px; overflow-y:auto;"></div>
+          <div id="external-events-list" style="margin-top:20px; max-height:150px; overflow-y:auto; border-top: 1px solid #101620;"></div>
         </div>
         <div class="chart-right-panel">
-          <input type="text" id="stock-search" oninput="filterStockChecklist()" placeholder="🔍 검색..." style="width:100%; padding:8px; margin-bottom:10px; background:#040608; border:1px solid #101620; color:white;">
-          <div style="display:flex; gap:5px; margin-bottom:10px;">
-            <button class="filter-btn" onclick="toggleAllStocks(true)" style="flex:1; font-size:0.7rem;">전체</button>
-            <button class="filter-btn" onclick="toggleAllStocks(false)" style="flex:1; font-size:0.7rem;">해제</button>
+          <div style="margin-bottom: 15px;">
+            <input type="text" id="stock-search" oninput="filterStockChecklist()" placeholder="🔍 종목 검색..." style="width: 100%; background: #040608; border: 1px solid var(--card-border); color: #ffffff; padding: 10px 12px; border-radius: 6px; font-size: 0.88rem; outline: none; transition: var(--transition);">
+            <div style="display:flex; gap:8px; margin-top:10px;">
+              <button class="filter-btn" onclick="toggleAllStocks(true)" style="flex:1; padding:4px; font-size:0.75rem; text-align:center; height:auto;">전체 선택</button>
+              <button class="filter-btn" onclick="toggleAllStocks(false)" style="flex:1; padding:4px; font-size:0.75rem; text-align:center; height:auto;">전체 해제</button>
+            </div>
           </div>
-          <div id="stock-checklist"></div>
+          <div id="stock-checklist" style="overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 8px; padding-right: 5px;"></div>
         </div>
       </div>
     </div>
