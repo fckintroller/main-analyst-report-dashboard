@@ -21,6 +21,12 @@
 | `--primary` | `#047857` | 브랜드 포인트, 활성 탭 아웃라인. |
 | `--primary-glow` | `rgba(4, 120, 87, 0.1)` | 카드 호버 시 발생하는 네온 글로우. |
 
+### 1.3. Layout & Animation (레이아웃 및 애니메이션)
+*   **Max Width**: 전체 컨테이너는 최대 `1300px`로 제한하며 중앙 정렬함.
+*   **Grid Gap**: 주요 그리드 레이아웃(`.analysts-grid`, `.reports-grid`, `.chart-tab-container`)은 일관되게 `25px`의 간격을 유지함.
+*   **Transition**: 모든 인터랙티브 요소는 `all 0.25s cubic-bezier(0.4, 0, 0.2, 1)` 속성을 사용하여 부드러운 상태 변화를 제공함.
+*   **Scrollbar**: 가독성을 위해 `8px` 너비의 슬림 스크롤바를 사용하며, 핸들 색상은 `#101620`, 반경은 `4px`로 설정함.
+
 ### 1.2. Semantic Semantic & Feedback Colors (의미론적 색상)
 
 **투자의견 (Investment Ratings)**
@@ -42,20 +48,42 @@
 
 ## 2. Component Specifications (컴포넌트 명세)
 
-### 2.1. Analyst Card (애널리스트 카드)
+### 2.1. Global Layout (공통 레이아웃)
+*   **Container**: `max-width: 1300px`, `margin: 0 auto`, `padding: 40px 20px`.
+*   **Border Radius**: 모든 카드 및 주요 컨테이너는 `8px`의 반경을 가짐.
+
+### 2.2. Analyst Card (애널리스트 카드)
 *   **구조**: `display: flex; flex-direction: column; justify-content: space-between;`
+*   **패딩**: 내부 사방 `25px`.
 *   **스타일**: 
     *   기본 테두리(`--card-border`), 좌측 4px 두께의 `--primary` accent line.
     *   **Hover State**: `transform: translateY(-3px)`, Box-shadow (기본 블랙 섀도우 + `--primary-glow`).
 *   **제약사항**: `evaluation-text`는 CSS `-webkit-line-clamp: 3`을 적용하여 3줄 초과 시 생략 기호(`...`) 처리 필수.
 
-### 2.2. Interactive Event Timeline (이벤트 타임라인)
+### 2.3. Research Report Card (리서치 보고서 카드)
+*   **패딩**: 내부 사방 `20px`.
+*   **구조**: 제목 및 메타정보를 포함하는 `.report-card-header`와 하단 푸터 `.report-footer`로 구분됨.
+*   **인터랙션**: Hover 시 테두리 색상 변화 및 `translateY(-2px)` 애니메이션 적용.
+
+### 2.4. Interactive Event Timeline (이벤트 타임라인)
 *   **구조**: `.external-event-item`
+*   **패딩**: `12px 15px`.
 *   **Default State**: 배경색 `var(--card-bg)`, 텍스트 `#ffffff`.
 *   **Highlight State (`.highlighted-event`)**: 
     *   배경색 `#ffffff !important`, 좌측/하단 테두리 `#facc15` (Yellow).
     *   텍스트(날짜, 제목 등) `#ef4444 !important` (Red) 및 `font-weight: 700` 적용.
 *   **High Impact (사전 강조)**: `impact === 'High'`인 경우, 렌더링 시점부터 배경색 3% 틴트(`rgba(250, 204, 21, 0.03)`) 및 좌측 3px 두꺼운 테두리(`border-left: 3px solid #facc15`) 강제 적용.
+
+### 2.5. Alerts Table (투자의견 변동 테이블)
+*   **구조**: `.alerts-table` (반응형 `.table-responsive` 래퍼 필수).
+*   **셀 스타일**:
+    *   **Header (th)**: 패딩 `10px 12px`, 폰트 `0.85rem`, 배경 `#101620`, 텍스트 `#10b981`.
+    *   **Data (td)**: 패딩 `10px 12px`, 폰트 `0.82rem`, 기본 `white-space: nowrap` 적용.
+*   **인터랙션**: 
+    *   **Row Hover**: `background: #101620` 및 부드러운 전환 효과 적용.
+*   **특수 셀 규격**:
+    *   **기업명**: `.company-name` (Bold/White) + `.company-code` (Sub-text) 조합.
+    *   **리서치 코멘트**: `.alert-comment` (Italic), 최대 너비 `260px` 제한 및 `white-space: normal`로 줄바꿈 허용.
 
 ---
 
@@ -97,23 +125,27 @@
 
 ## 4. Complex Interactions (고난이도 인터랙션 명세)
 
-### 4.1. Chart.js 이중 축(Dual-Axis) 자동 스케일링
-*   **트리거 조건**: `chartMode === 'price'` 이면서, `selectedStocks`에 `'KOSPI'`와 다른 개별 종목이 **동시에** 포함되어 있을 때.
+### 4.1. Chart.js 이중 축(Dual-Axis) 및 스케일링 규칙
+*   **KOSPI 절대 보존의 법칙**: KOSPI는 비교 대상으로서 항상 원시 지수(PT) 값을 유지해야 함. 따라서 '수익률(pct)' 모드일지라도 KOSPI는 퍼센트로 변환되지 않음.
+*   **Dual-Axis 트리거 조건**: KOSPI와 다른 개별 종목이 **동시에** 선택된 경우, 차트 모드(`price` 또는 `pct`)와 무관하게 이중 축을 활성화함.
 *   **동작 방식**: 
-    *   **KOSPI**: 우측 축(`y2`) 생성, 단위 표시 `pt`, 틱 색상 `#10b981`.
-    *   **기타 종목**: 좌측 축(`y`) 유지, 단위 표시 `원`, 틱 색상 `#9ca3af`.
-    *   만약 KOSPI 단독 선택이거나, 수익률(`pct`) 모드인 경우 우측 축(`y2`)은 DOM에서 완전히 삭제(`delete marketChart.options.scales.y2`)되어 차트 여백 낭비를 방지.
+    *   **KOSPI**: 항상 우측 축(`y2`)에 배치, 단위 표시 `pt`, 틱 색상 `#10b981`.
+    *   **기타 종목**: 항상 좌측 축(`y`)에 배치, 모드에 따라 단위 표시(`원` 또는 `%`), 틱 색상 `#9ca3af`.
+    *   만약 KOSPI 단독 선택이거나, 개별 종목들만 선택된 경우 우측 축(`y2`)은 DOM에서 완전히 삭제(`delete marketChart.options.scales.y2`)되어 차트 여백 낭비를 방지.
 
-### 4.2. 차트-이벤트 양방향 동기화 (Chart Hover Event)
-*   **차트 어노테이션(세로선) 로직**:
-    1.  과거 데이터(`date < todayStr`)는 투명한 회색, 미래 데이터는 투명한 네온 옐로우(`rgba(250, 204, 21, 0.2)`)로 렌더링.
-    2.  `onHover` 콜백 발동 시, `chart.scales.x.getValueForPixel(e.x)`를 통해 X축 인덱스를 맵핑.
-    3.  해당 인덱스의 날짜와 어노테이션의 `xMin`이 일치하면, 선을 굵게(`borderWidth: 3`) 만들고 불투명도를 올려 강조.
-*   **DOM 연동 (스크롤 제어)**:
-    1.  차트에서 강조된 이벤트의 `originalDate`를 가져옴.
-    2.  `querySelector('.external-event-item[data-date="..."]')`로 하단 리스트 요소를 찾음.
-    3.  기존 하이라이트 클래스를 모두 지우고 대상에 `.highlighted-event` 삽입.
-    4.  `targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' })`를 호출하여 리스트 내 해당 항목으로 자동 스크롤 시전. (단, 과도한 스크롤 방지를 위해 한 번의 호버당 최초 1회만 트리거).
+### 4.3. Stock Search & Checklist Logic (종목 검색 및 체크리스트)
+*   **Persistent KOSPI**: 종목 검색 필터링 시에도 `'KOSPI'` 항목은 항상 가시성을 유지해야 함 (`name === 'kospi' || name.includes(query)`).
+*   **Checklist Sorting**: 리스트 생성 시 `'KOSPI'`를 최상단에 고정하고, 나머지 종목은 한글 가나다순으로 정렬함.
+*   **Visual Feedback**: 체크박스 선택 상태에 따라 부모 라벨의 테두리 색상(`rgba(4, 120, 87, 0.4)`)과 배경색(`rgba(4, 120, 87, 0.04)`)을 동적으로 변경함.
+
+### 4.4. Sorting Algorithms (정렬 알고리즘)
+*   **Temporal Recency**: `recommendations` 및 `reports` 데이터는 렌더링 직전 `[...data].sort((a, b) => new Date(b.date) - new Date(a.date))` 공식을 사용하여 최신 날짜가 상단에 오도록 보장함.
+
+### 4.5. State Management & Tooltips (상태 관리 및 툴팁)
+*   **Tab Switching Latency**: 차트 탭(`.tab-chart`) 선택 시 Canvas 렌더링 타이밍을 맞추기 위해 `50ms`의 `setTimeout` 지연 후 `initChart()`를 실행함.
+*   **Chart Tooltips**: 
+    *   배경색 `#080c12`, 테두리 `#101620`, 텍스트색 `#d1d5db`.
+    *   제목(Title)은 `bold` 굵기에 `#10b981`(Emerald) 색상을 적용하여 데이터 그룹을 강조함.
 
 ---
 

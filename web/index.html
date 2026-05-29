@@ -71,12 +71,19 @@
     .alerts-table { width: 100%; border-collapse: collapse; text-align: left; }
     .alerts-table th { color: #10b981; padding: 10px 12px; border-bottom: 2px solid var(--card-border); background: #101620; text-align: left; font-size: 0.85rem; white-space: nowrap; }
     .alerts-table td { padding: 10px 12px; border-bottom: 1px solid var(--card-border); font-size: 0.82rem; vertical-align: middle; white-space: nowrap; }
-    .alerts-table td.comment-cell { white-space: normal; min-width: 180px; max-width: 260px; line-height: 1.4; color: var(--text-sub); font-style: italic; }
-    .rating-flow { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.82rem; }
-    .rating-arrow { color: var(--text-sub); font-size: 0.8rem; }
+    .alerts-table td.comment-cell { white-space: normal; min-width: 180px; max-width: 260px; }
+    .alerts-table tbody tr { transition: var(--transition); }
+    .alerts-table tbody tr:hover { background: #101620; }
+    .company-cell { display: inline-flex; align-items: center; gap: 6px; }
+    .company-name { font-weight: 700; font-size: 0.88rem; color: #ffffff; }
+    .company-code { font-size: 0.75rem; color: var(--text-sub); }
     .badge-alert { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 0.75rem; white-space: nowrap; }
     .badge-alert.upgrade { background: rgba(5, 150, 105, 0.05); border: 1px solid var(--upgrade); color: var(--upgrade); }
     .badge-alert.downgrade { background: rgba(185, 28, 28, 0.05); border: 1px solid var(--downgrade); color: var(--downgrade); }
+    .rating-flow { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.82rem; }
+    .rating-arrow { color: var(--text-sub); font-size: 0.8rem; }
+    .rating-target { color: #10b981; font-weight: 700; }
+    .alert-comment { color: var(--text-sub); font-style: italic; max-width: 260px; word-break: keep-all; line-height: 1.4; font-size: 0.8rem; }
 
     /* 리포트 카드 */
     .reports-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 25px; }
