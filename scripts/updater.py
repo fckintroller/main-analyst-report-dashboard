@@ -129,8 +129,9 @@ def fetch_market_data(db_data):
         try:
             with urllib.request.urlopen(req) as response:
                 raw = response.read().decode('utf-8', errors='ignore')
+                # 작은따옴표를 큰따옴표로 변환하여 표준 JSON 형식으로 변환
                 clean = raw.strip().replace("'", '"').replace("\n", "").replace("\t", "").replace(",]", "]").replace(",,", ",")
-                return ast.literal_eval(clean)[1:]
+                return json.loads(clean)[1:]
         except Exception as e:
             logger.error(f"  [데이터 패치] {symbol} 실패: {e}")
             return []

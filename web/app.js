@@ -1,3 +1,14 @@
+// XSS 방지를 위한 HTML 이스케이프 함수
+function escapeHTML(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // 등급별 눈이 편안한 시그니처 색상 매핑
 function getRatingColor(rating) {
   if (!rating) return 'var(--text-main)';
@@ -17,8 +28,13 @@ function switchTab(tabId) {
     btn.classList.remove('active');
   });
 
-  document.getElementById(tabId).classList.add('active');
-  event.currentTarget.classList.add('active');
+  const targetTab = document.getElementById(tabId);
+  if (targetTab) {
+    targetTab.classList.add('active');
+  }
+  if (event && event.currentTarget) {
+    event.currentTarget.classList.add('active');
+  }
 
   // 차트 탭 초기화 지연 기동
   if (tabId === 'tab-chart' && !marketChart) {
@@ -38,8 +54,8 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 function renderDashboard() {
-  const analysts = currentDatabase.analysts;
-  const recs = [...currentDatabase.recommendations].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const analysts = currentDatabase.analysts || [];
+  const recs = [...(currentDatabase.recommendations || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
 
   // 2. 동적 필터 버튼 바인딩
   const filterButtonsContainer = document.getElementById('filter-buttons');
@@ -50,7 +66,7 @@ function renderDashboard() {
       const btn = document.createElement('button');
       btn.className = 'filter-btn';
       btn.innerText = sector;
-      btn.setAttribute('onclick', `filterSector('${sector}')`);
+      btn.setAttribute('onclick', `filterSector('${escapeHTML(sector)}')`);
       filterButtonsContainer.appendChild(btn);
     });
   }
@@ -76,22 +92,22 @@ function renderAnalysts(analystList) {
     const card = document.createElement('div');
     card.className = 'analyst-card';
     card.setAttribute('data-sector', a.merged_sector);
-    const tagsHtml = a.targets.map(t => `<span class="tag">${t}</span>`).join('');
+    const tagsHtml = (a.targets || []).map(t => `<span class="tag">${escapeHTML(t)}</span>`).join('');
     card.innerHTML = `
       <div>
         <div class="card-header">
           <div class="profile-info">
-            <h3>${a.name}</h3>
-            <span class="firm-tag">${a.firm}</span>
-            <span class="position-tag">${a.position}</span>
+            <h3>${escapeHTML(a.name)}</h3>
+            <span class="firm-tag">${escapeHTML(a.firm)}</span>
+            <span class="position-tag">${escapeHTML(a.position)}</span>
           </div>
-          <span class="sector-badge">${a.merged_sector}</span>
+          <span class="sector-badge">${escapeHTML(a.merged_sector)}</span>
         </div>
         <div class="award-text">
           <i class="fa-solid fa-trophy"></i>
-          <span>${a.awards}</span>
+          <span>${escapeHTML(a.awards)}</span>
         </div>
-        <p class="evaluation-text">${a.evaluation}</p>
+        <p class="evaluation-text">${escapeHTML(a.evaluation)}</p>
       </div>
       <div>
         <div class="coverage-title">
@@ -136,13 +152,13 @@ function renderAlerts(recs, analysts) {
     const aObj = analysts.find(a => a.id === r.analyst_id) || { name: '외부', firm: '기고', position: '위원' };
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><div class="company-cell"><span class="company-name">${r.stock_name}</span><span class="company-code">(${r.stock_code})</span></div></td>
-      <td><span style="font-weight:700;">${aObj.firm} ${aObj.name}</span><span style="color:var(--text-sub); font-size:0.85rem; margin-left:6px;">${aObj.position}</span></td>
+      <td><div class="company-cell"><span class="company-name">${escapeHTML(r.stock_name)}</span><span class="company-code">(${escapeHTML(r.stock_code)})</span></div></td>
+      <td><span style="font-weight:700;">${escapeHTML(aObj.firm)} ${escapeHTML(aObj.name)}</span><span style="color:var(--text-sub); font-size:0.85rem; margin-left:6px;">${escapeHTML(aObj.position)}</span></td>
       <td><span class="badge-alert ${r.change_type === 'upgrade' ? 'upgrade' : 'downgrade'}">${r.change_type === 'upgrade' ? '🟢 상향' : '🔴 하향'}</span></td>
-      <td><div class="rating-flow"><span style="color:${getRatingColor(r.previous_rating)}; font-weight:700;">${r.previous_rating}</span><i class="fa-solid fa-circle-arrow-right rating-arrow"></i><span style="color:${getRatingColor(r.current_rating)}; font-weight:700;">${r.current_rating}</span></div></td>
-      <td class="rating-target">${r.target_price}</td>
-      <td class="comment-cell"><p class="alert-comment">"${r.comment}"</p></td>
-      <td style="color:var(--text-sub);">${r.date}</td>
+      <td><div class="rating-flow"><span style="color:${getRatingColor(r.previous_rating)}; font-weight:700;">${escapeHTML(r.previous_rating)}</span><i class="fa-solid fa-circle-arrow-right rating-arrow"></i><span style="color:${getRatingColor(r.current_rating)}; font-weight:700;">${escapeHTML(r.current_rating)}</span></div></td>
+      <td class="rating-target">${escapeHTML(r.target_price)}</td>
+      <td class="comment-cell"><p class="alert-comment">"${escapeHTML(r.comment)}"</p></td>
+      <td style="color:var(--text-sub);">${escapeHTML(r.date)}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -163,14 +179,14 @@ function renderReports(reportList, analysts) {
     card.innerHTML = `
       <div>
         <div class="report-card-header">
-          <div><h3 class="report-title">${rep.title}</h3><div class="report-meta"><span class="report-author">${aObj.firm} ${aObj.name} ${aObj.position}</span><span style="margin: 0 4px; color: var(--text-sub);">•</span><span>${rep.date}</span></div></div>
+          <div><h3 class="report-title">${escapeHTML(rep.title)}</h3><div class="report-meta"><span class="report-author">${escapeHTML(aObj.firm)} ${escapeHTML(aObj.name)} ${escapeHTML(aObj.position)}</span><span style="margin: 0 4px; color: var(--text-sub);">•</span><span>${escapeHTML(rep.date)}</span></div></div>
         </div>
-        <p class="report-summary">${rep.summary}</p>
+        <p class="report-summary">${escapeHTML(rep.summary)}</p>
       </div>
       <div class="report-footer">
-        <div><span style="color:var(--text-sub);">종목: </span><span style="font-weight:700; color:#ffffff;">${rep.stock_name}</span></div>
-        <div><span style="color:var(--text-sub);">의견: </span><span style="color:${getRatingColor(rep.rating)}; font-weight:700;">${rep.rating}</span></div>
-        <div class="report-target-box"><span style="color:var(--text-sub); font-weight:normal; font-size:0.8rem;">목표가: </span><span>${rep.target_price}</span></div>
+        <div><span style="color:var(--text-sub);">종목: </span><span style="font-weight:700; color:#ffffff;">${escapeHTML(rep.stock_name)}</span></div>
+        <div><span style="color:var(--text-sub);">의견: </span><span style="color:${getRatingColor(rep.rating)}; font-weight:700;">${escapeHTML(rep.rating)}</span></div>
+        <div class="report-target-box"><span style="color:var(--text-sub); font-weight:normal; font-size:0.8rem;">목표가: </span><span>${escapeHTML(rep.target_price)}</span></div>
       </div>
     `;
     container.appendChild(card);
@@ -186,7 +202,6 @@ function renderCalendar() {
   const getKorDateStr = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
   const todayStr = getKorDateStr(now);
 
-  // 간단한 그룹화 로직 (축약)
   const groups = [
     { id: '오늘', title: '📌 오늘', events: calendarData.filter(e => e.date === todayStr) },
     { id: '예정', title: '📅 예정된 일정', events: calendarData.filter(e => e.date > todayStr) },
@@ -199,16 +214,16 @@ function renderCalendar() {
     groupDiv.style.marginBottom = '20px';
     const content = group.events.map(e => `
       <div style="display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-bottom: 1px solid #101620;">
-        <div style="color: #e2e8f0; font-weight: 600; width: 100px;">${e.date}</div>
-        <span style="background: rgba(4, 120, 87, 0.15); color: #10b981; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem;">${e.country}</span>
-        <div style="color: #ffffff; font-weight: 500; flex: 1;">${e.title}</div>
+        <div style="color: #e2e8f0; font-weight: 600; width: 100px;">${escapeHTML(e.date)}</div>
+        <span style="background: rgba(4, 120, 87, 0.15); color: #10b981; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem;">${escapeHTML(e.country)}</span>
+        <div style="color: #ffffff; font-weight: 500; flex: 1;">${escapeHTML(e.title)}</div>
       </div>
     `).join('');
     
     if (group.isPast) {
-      groupDiv.innerHTML = `<details><summary style="cursor:pointer; color:#9ca3af; font-weight:700; margin-bottom:10px;">${group.title} (${group.events.length}건)</summary>${content}</details>`;
+      groupDiv.innerHTML = `<details><summary style="cursor:pointer; color:#9ca3af; font-weight:700; margin-bottom:10px;">${escapeHTML(group.title)} (${group.events.length}건)</summary>${content}</details>`;
     } else {
-      groupDiv.innerHTML = `<div style="font-size:1rem; font-weight:700; color:#10b981; margin-bottom:10px; border-bottom:1px solid #1f2937; padding-bottom:6px;">${group.title}</div>${content}`;
+      groupDiv.innerHTML = `<div style="font-size:1rem; font-weight:700; color:#10b981; margin-bottom:10px; border-bottom:1px solid #1f2937; padding-bottom:6px;">${escapeHTML(group.title)}</div>${content}`;
     }
     container.appendChild(groupDiv);
   });
@@ -218,10 +233,10 @@ function renderExternalEvents() {
   const container = document.getElementById('external-events-list');
   if (!container) return;
   container.innerHTML = (window.CALENDAR_DATA || []).map(e => `
-    <div class="external-event-item" data-date="${e.date}">
-      <div class="event-date" style="color: #e2e8f0; font-weight: 600; width: 90px;">${e.date}</div>
-      <span style="background: rgba(4, 120, 87, 0.15); color: #10b981; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem;">${e.country}</span>
-      <div class="event-title" style="color: #ffffff; font-weight: 500; flex: 1;">${e.title}</div>
+    <div class="external-event-item" data-date="${escapeHTML(e.date)}">
+      <div class="event-date" style="color: #e2e8f0; font-weight: 600; width: 90px;">${escapeHTML(e.date)}</div>
+      <span style="background: rgba(4, 120, 87, 0.15); color: #10b981; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem;">${escapeHTML(e.country)}</span>
+      <div class="event-title" style="color: #ffffff; font-weight: 500; flex: 1;">${escapeHTML(e.title)}</div>
     </div>
   `).join('');
 }
@@ -299,10 +314,11 @@ function renderStockChecklist() {
   const stocks = ['KOSPI', ...Object.keys(marketData.series).filter(s => s !== 'KOSPI').sort()];
   container.innerHTML = stocks.map(stock => {
     const isChecked = selectedStocks.includes(stock);
+    const escapedStock = escapeHTML(stock);
     return `
       <label class="stock-item-label" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid ${isChecked ? 'rgba(4,120,87,0.4)' : 'var(--card-border)'}; border-radius: 6px; background: ${isChecked ? 'rgba(4,120,87,0.04)' : '#080c12'}; cursor: pointer;">
-        <input type="checkbox" value="${stock}" ${isChecked ? 'checked' : ''} onchange="handleStockCheck(this)">
-        <span style="font-size: 0.88rem; color: ${stock === 'KOSPI' ? '#10b981' : '#ffffff'};">${stock}</span>
+        <input type="checkbox" value="${escapedStock}" ${isChecked ? 'checked' : ''} onchange="handleStockCheck(this)">
+        <span style="font-size: 0.88rem; color: ${stock === 'KOSPI' ? '#10b981' : '#ffffff'};">${escapedStock}</span>
       </label>
     `;
   }).join('');
