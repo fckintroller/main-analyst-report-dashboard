@@ -60,13 +60,22 @@ function renderDashboard() {
   // 2. 동적 필터 버튼 바인딩
   const filterButtonsContainer = document.getElementById('filter-buttons');
   if (filterButtonsContainer) {
-    filterButtonsContainer.innerHTML = '<button class="filter-btn active" onclick="filterSector(\'ALL\')">전체보기</button>';
+    filterButtonsContainer.innerHTML = '';
+    
+    // '전체보기' 버튼 생성
+    const allBtn = document.createElement('button');
+    allBtn.className = 'filter-btn active';
+    allBtn.innerText = '전체보기';
+    allBtn.addEventListener('click', () => filterSector('ALL'));
+    filterButtonsContainer.appendChild(allBtn);
+
     const uniqueSectors = [...new Set(analysts.map(a => a.merged_sector))];
     uniqueSectors.forEach(sector => {
       const btn = document.createElement('button');
       btn.className = 'filter-btn';
       btn.innerText = sector;
-      btn.setAttribute('onclick', `filterSector('${escapeHTML(sector)}')`);
+      // addEventListener를 사용하여 변형 없는 섹터명을 직접 전달 (XSS 우회 방지 및 특수문자 대응)
+      btn.addEventListener('click', () => filterSector(sector));
       filterButtonsContainer.appendChild(btn);
     });
   }
