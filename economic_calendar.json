@@ -42,6 +42,54 @@
     "impact": "High"
   },
   {
+    "date": "2026-05-26",
+    "title": "소비자물가지수(CPI) 전월대비",
+    "country": "호주",
+    "impact": "High",
+    "forecast": "0.6%",
+    "previous": "1.1%"
+  },
+  {
+    "date": "2026-05-26",
+    "title": "소비자물가지수(CPI) 전년동기대비",
+    "country": "호주",
+    "impact": "High",
+    "forecast": "4.4%",
+    "previous": "4.6%"
+  },
+  {
+    "date": "2026-05-26",
+    "title": "기준금리 결정",
+    "country": "뉴질랜드",
+    "impact": "High",
+    "forecast": "2.25%",
+    "previous": "2.25%"
+  },
+  {
+    "date": "2026-05-26",
+    "title": "통화정책 성명",
+    "country": "뉴질랜드",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-05-26",
+    "title": "금리 결정 성명",
+    "country": "뉴질랜드",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-05-26",
+    "title": "중앙은행 기자회견",
+    "country": "뉴질랜드",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
     "date": "2026-05-28",
     "title": "Core PCE Price Index m/m",
     "country": "USD",
@@ -52,6 +100,22 @@
     "title": "Prelim GDP q/q",
     "country": "USD",
     "impact": "High"
+  },
+  {
+    "date": "2026-05-28",
+    "title": "근원 개인소비지출(PCE) 물가지수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "0.3%",
+    "previous": "0.3%"
+  },
+  {
+    "date": "2026-05-28",
+    "title": "국내총생산(GDP) 성장률",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "2.0%",
+    "previous": "0.7%"
   },
   {
     "date": "2026-05-29",
@@ -66,10 +130,34 @@
     "impact": "High"
   },
   {
+    "date": "2026-05-29",
+    "title": "중앙은행 총재 연설",
+    "country": "영국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-05-29",
+    "title": "국내총생산(GDP) 성장률",
+    "country": "캐나다",
+    "impact": "High",
+    "forecast": "0.1%",
+    "previous": "0.2%"
+  },
+  {
     "date": "2026-06-04",
     "title": "ECB Interest Rate Decision",
     "country": "EUR",
     "impact": "High"
+  },
+  {
+    "date": "2026-06-04",
+    "title": "기준금리 결정",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
   },
   {
     "date": "2026-06-05",
@@ -78,6 +166,14 @@
     "impact": "High"
   },
   {
+    "date": "2026-06-05",
+    "title": "비농업 고용지수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
     "date": "2026-06-10",
     "title": "US CPI m/m & y/y",
     "country": "USD",
@@ -88,6 +184,22 @@
     "title": "FOMC Statement & Fed Funds Rate",
     "country": "USD",
     "impact": "High"
+  },
+  {
+    "date": "2026-06-10",
+    "title": "소비자물가지수(CPI) 전년동기대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-06-10",
+    "title": "기준금리 결정",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
   },
   {
     "date": "2026-06-18",
@@ -96,10 +208,26 @@
     "impact": "High"
   },
   {
+    "date": "2026-06-18",
+    "title": "기준금리 결정",
+    "country": "영국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
     "date": "2026-06-25",
     "title": "US Final GDP q/q",
     "country": "USD",
     "impact": "High"
+  },
+  {
+    "date": "2026-06-25",
+    "title": "국내총생산(GDP) 성장률",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
   },
   {
     "date": "2026-07-02",
@@ -108,15 +236,39 @@
     "impact": "High"
   },
   {
+    "date": "2026-07-02",
+    "title": "비농업 고용지수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
     "date": "2026-07-10",
     "title": "US CPI m/m & y/y",
     "country": "USD",
     "impact": "High"
   },
   {
+    "date": "2026-07-10",
+    "title": "소비자물가지수(CPI) 전년동기대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
     "date": "2026-07-29",
     "title": "FOMC Statement & Fed Funds Rate",
     "country": "USD",
     "impact": "High"
+  },
+  {
+    "date": "2026-07-29",
+    "title": "기준금리 결정",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
   }
 ]

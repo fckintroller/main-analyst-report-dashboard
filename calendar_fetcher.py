@@ -18,6 +18,28 @@ def fetch_economic_calendar():
         print(f"[Calendar] 네트워크 또는 파싱 에러: {e}")
         return []
 
+    country_map = {
+        "USD": "미국", "EUR": "유로존", "GBP": "영국", "JPY": "일본", 
+        "CAD": "캐나다", "AUD": "호주", "NZD": "뉴질랜드", "CHF": "스위스", 
+        "CNY": "중국", "KRW": "한국"
+    }
+
+    def translate_title(title):
+        t = title.lower()
+        if "cpi m/m" in t: return "소비자물가지수(CPI) 전월대비"
+        if "cpi y/y" in t: return "소비자물가지수(CPI) 전년동기대비"
+        if "core pce" in t: return "근원 개인소비지출(PCE) 물가지수"
+        if "interest rate" in t or "cash rate" in t or "bank rate" in t or "funds rate" in t: return "기준금리 결정"
+        if "non-farm" in t or "employment change" in t: return "비농업 고용지수"
+        if "gdp" in t: return "국내총생산(GDP) 성장률"
+        if "monetary policy" in t: return "통화정책 성명"
+        if "rate statement" in t: return "금리 결정 성명"
+        if "press conference" in t: return "중앙은행 기자회견"
+        if "speaks" in t: return "중앙은행 총재 연설"
+        if "retail sales" in t: return "소매판매"
+        if "pmi" in t: return "구매관리자지수(PMI)"
+        return title
+
     high_impact_events = []
     
     for event in data:
@@ -29,27 +51,30 @@ def fetch_economic_calendar():
                 # Extract just the YYYY-MM-DD part
                 date_only = date_str.split('T')[0]
                 
-                # We also want to map the country (currency) to a more readable name if needed,
-                # but "USD", "EUR", "KRW" is fine.
+                raw_country = event.get("country", "")
+                kor_country = country_map.get(raw_country, raw_country)
+                kor_title = translate_title(event.get("title", ""))
                 
                 high_impact_events.append({
                     "date": date_only,
-                    "title": event.get("title", ""),
-                    "country": event.get("country", ""),
-                    "impact": "High"
+                    "title": kor_title,
+                    "country": kor_country,
+                    "impact": "High",
+                    "forecast": event.get("forecast", ""),
+                    "previous": event.get("previous", "")
                 })
                 
     # 2026년 5~7월 확정된 주요 글로벌 경제 지표 (미래 일정 표시용 하드코딩)
     fixed_future_events = [
-        {"date": "2026-06-04", "title": "ECB Interest Rate Decision", "country": "EUR", "impact": "High"},
-        {"date": "2026-06-05", "title": "US Non-Farm Payrolls", "country": "USD", "impact": "High"},
-        {"date": "2026-06-10", "title": "US CPI m/m & y/y", "country": "USD", "impact": "High"},
-        {"date": "2026-06-10", "title": "FOMC Statement & Fed Funds Rate", "country": "USD", "impact": "High"},
-        {"date": "2026-06-18", "title": "BOE Official Bank Rate", "country": "GBP", "impact": "High"},
-        {"date": "2026-06-25", "title": "US Final GDP q/q", "country": "USD", "impact": "High"},
-        {"date": "2026-07-02", "title": "US Non-Farm Payrolls", "country": "USD", "impact": "High"},
-        {"date": "2026-07-10", "title": "US CPI m/m & y/y", "country": "USD", "impact": "High"},
-        {"date": "2026-07-29", "title": "FOMC Statement & Fed Funds Rate", "country": "USD", "impact": "High"}
+        {"date": "2026-06-04", "title": "기준금리 결정", "country": "유로존", "impact": "High", "forecast": "", "previous": ""},
+        {"date": "2026-06-05", "title": "비농업 고용지수", "country": "미국", "impact": "High", "forecast": "", "previous": ""},
+        {"date": "2026-06-10", "title": "소비자물가지수(CPI) 전년동기대비", "country": "미국", "impact": "High", "forecast": "", "previous": ""},
+        {"date": "2026-06-10", "title": "기준금리 결정", "country": "미국", "impact": "High", "forecast": "", "previous": ""},
+        {"date": "2026-06-18", "title": "기준금리 결정", "country": "영국", "impact": "High", "forecast": "", "previous": ""},
+        {"date": "2026-06-25", "title": "국내총생산(GDP) 성장률", "country": "미국", "impact": "High", "forecast": "", "previous": ""},
+        {"date": "2026-07-02", "title": "비농업 고용지수", "country": "미국", "impact": "High", "forecast": "", "previous": ""},
+        {"date": "2026-07-10", "title": "소비자물가지수(CPI) 전년동기대비", "country": "미국", "impact": "High", "forecast": "", "previous": ""},
+        {"date": "2026-07-29", "title": "기준금리 결정", "country": "미국", "impact": "High", "forecast": "", "previous": ""}
     ]
     
     # 중복을 피하면서 고정 이벤트 병합
