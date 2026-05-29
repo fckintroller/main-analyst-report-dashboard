@@ -119,87 +119,114 @@ def compile_markdown(db_data):
     return markdown_template
 
 def generate_market_data(db_data):
-    """코스피 및 종목별 52주 시계열 주가 데이터 시뮬레이션 생성"""
-    import random
-    random.seed(42) # 동일 데이터 재현을 위해 시드 고정
+    """코스피 및 종목별 1년(52주) 시계열 주가 데이터를 네이버 금융 API를 통해 생성"""
+    import urllib.request
+    import ast
+    import time
     
-    dates = []
-    start_date = datetime.date(2025, 6, 2)
-    for i in range(52):
-        d = start_date + datetime.timedelta(weeks=i)
-        dates.append(d.strftime("%Y-%m-%d"))
-        
-    # 종목별 시작가, 종료가 매핑
-    price_ranges = {
-        "KOSPI": (2650, 2750),
-        "SK하이닉스": (900000, 1700000),
-        "삼성전자": (160000, 250000),
-        "삼양식품": (830000, 1850000),
-        "알테오젠": (300000, 620000),
-        "한화에어로스페이스": (400000, 2040000),
-        "한국전력": (22000, 65000),
-        "에코프로비엠": (200000, 257000),
-        "스튜디오드래곤": (52000, 47000),
-        "LG에너지솔루션": (470000, 430000),
-        "NAVER": (200000, 230000),
-        "LG화학": (480000, 420000),
-        "리가켐바이오": (90000, 140000),
-        "두산테스나": (43000, 55000),
-        "농심": (410000, 510000),
-        "CJ ENM": (85000, 115000),
-        "카카오": (62000, 58000),
-        "CJ제일제당": (370000, 340000),
-        "현대로템": (38000, 70000),
-        "한국항공우주": (51000, 70000),
-        "삼성전기": (650000, 1600000),
-        "하이브": (210000, 310000),
-        "삼성중공업": (9500, 14500),
-        "현대건설": (35000, 48000),
-        "한미약품": (290000, 390000),
-        "아모레퍼시픽": (130000, 220000),
-        "한미반도체": (100000, 180000),
-        "LG디스플레이": (13000, 16500),
-        "이수페타시스": (41000, 62000)
+    # 한국 주식 코드 매핑
+    ticker_map = {
+        "KOSPI": "KOSPI",
+        "SK하이닉스": "000660",
+        "삼성전자": "005930",
+        "삼양식품": "003230",
+        "알테오젠": "196170",
+        "한화에어로스페이스": "012450",
+        "한국전력": "015760",
+        "에코프로비엠": "247540",
+        "스튜디오드래곤": "253450",
+        "LG에너지솔루션": "373220",
+        "NAVER": "035420",
+        "LG화학": "051910",
+        "리가켐바이오": "141080",
+        "두산테스나": "136490",
+        "농심": "004370",
+        "CJ ENM": "035760",
+        "카카오": "035720",
+        "CJ제일제당": "097950",
+        "현대로템": "064350",
+        "한국항공우주": "047810",
+        "삼성전기": "009150",
+        "하이브": "352820",
+        "삼성중공업": "010140",
+        "현대건설": "000720",
+        "한미약품": "128940",
+        "아모레퍼시픽": "090430",
+        "한미반도체": "042700",
+        "LG디스플레이": "034220",
+        "이수페타시스": "007660"
     }
-    
-    unique_stocks = set()
+
+    unique_stocks = {"KOSPI"}
     for a in db_data.get("analysts", []):
         unique_stocks.update(a.get("targets", []))
     for rep in db_data.get("reports", []):
         unique_stocks.add(rep["stock_name"])
-        
-    for stock in unique_stocks:
-        if stock not in price_ranges:
-            price_ranges[stock] = (50000, 75000)
-            
-    # 시계열 가격 생성
+
     series = {}
-    for stock, (start, end) in price_ranges.items():
-        prices = []
-        current = start
-        for i in range(52):
-            progress = i / 51.0
-            noise = random.uniform(-0.03, 0.03)
-            trend = start + (end - start) * progress
-            current = trend * (1.0 + noise)
+    dates_str_list = []
+    
+    # 날짜 범위 설정 (최근 1년)
+    today = datetime.datetime.now()
+    one_year_ago = today - datetime.timedelta(days=365)
+    start_time = one_year_ago.strftime("%Y%m%d")
+    end_time = today.strftime("%Y%m%d")
+
+    def fetch_naver_data(symbol):
+        url = f"https://api.finance.naver.com/siseJson.naver?symbol={symbol}&requestType=1&startTime={start_time}&endTime={end_time}&timeframe=week"
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        try:
+            with urllib.request.urlopen(req) as response:
+                raw_data = response.read().decode('utf-8', errors='ignore')
+                # Naver API returns JS-like array string, we clean and parse it
+                clean_data = raw_data.strip().replace("'", '"').replace("\n", "").replace("\t", "").replace(",]", "]").replace(",,", ",")
+                # ast.literal_eval is safer than json.loads for this loose format
+                data_list = ast.literal_eval(clean_data)
+                return data_list[1:] # 0번 인덱스는 헤더이므로 제외
+        except Exception as e:
+            print(f"  [에러] {symbol} 데이터 다운로드 실패: {e}")
+            return []
+
+    print("  [데이터 패치] KOSPI (KOSPI) 다운로드 중...")
+    kospi_rows = fetch_naver_data("KOSPI")
+    
+    if kospi_rows:
+        dates_str_list = [f"{str(row[0])[:4]}-{str(row[0])[4:6]}-{str(row[0])[6:]}" for row in kospi_rows]
+        series["KOSPI"] = [round(float(row[4]), 2) for row in kospi_rows] # 4번째 인덱스가 종가(Close)
+    else:
+        print("  [에러] KOSPI 데이터를 가져오지 못했습니다.")
+        return {"dates": [], "series": {}}
+
+    for stock in unique_stocks:
+        if stock == "KOSPI":
+            continue
             
-            # 특수 흐름 제어
-            if stock == "KOSPI" and 10 < i < 30:
-                current -= 100
-            elif stock == "에코프로비엠" and i < 25:
-                current *= 0.8
-            elif stock == "삼성전기" and i < 20:
-                current *= 0.9
-                
-            if stock == "KOSPI":
-                prices.append(round(current, 2))
-            else:
-                prices.append(int(round(current, -2)))
-                
-        series[stock] = prices
+        ticker = ticker_map.get(stock)
+        if not ticker:
+            print(f"  [경고] 티커 매핑을 찾을 수 없습니다: {stock}. (기본값 0으로 설정)")
+            series[stock] = [0] * len(dates_str_list)
+            continue
+            
+        print(f"  [데이터 패치] {stock} ({ticker}) 다운로드 중...")
+        stock_rows = fetch_naver_data(ticker)
+        
+        if not stock_rows:
+            series[stock] = [0] * len(dates_str_list)
+        else:
+            # KOSPI 날짜와 길이를 맞추기 위해 간단한 매핑
+            date_to_price = {f"{str(row[0])[:4]}-{str(row[0])[4:6]}-{str(row[0])[6:]}": float(row[4]) for row in stock_rows}
+            prices = []
+            last_price = 0
+            for d in dates_str_list:
+                if d in date_to_price:
+                    last_price = date_to_price[d]
+                prices.append(int(round(last_price, -2)))
+            series[stock] = prices
+            
+        time.sleep(0.1) # API 호출 제한 방지
         
     return {
-        "dates": dates,
+        "dates": dates_str_list,
         "series": series
     }
 

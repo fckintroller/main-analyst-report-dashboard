@@ -7,6 +7,8 @@
   <!-- Google Fonts & Font Awesome Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <style>
     :root {
@@ -507,6 +509,9 @@
       <button class="tab-btn" onclick="switchTab('tab-reports')">
         <i class="fa-solid fa-file-invoice-dollar"></i> 리서치 보고서
       </button>
+      <button class="tab-btn" onclick="switchTab('tab-chart')">
+        <i class="fa-solid fa-chart-line"></i> 주가 & 코스피 비교 분석
+      </button>
     </div>
 
     <!-- 📂 탭 1: 애널리스트 목록 및 섹터 필터 -->
@@ -566,6 +571,50 @@
         </div>
       </div>
     </div>
+
+    <!-- 📈 탭 5: 주가 및 코스피 비교 분석 차트 -->
+    <div id="tab-chart" class="tab-content">
+      <div class="chart-tab-container" style="display: grid; grid-template-columns: 1fr 300px; gap: 25px;">
+        <!-- 좌측: 차트 뷰 -->
+        <div class="chart-left-panel" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 25px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <h2 style="font-size: 1.4rem; font-weight: 700; display:flex; align-items:center; gap:10px; color:var(--primary); margin:0;">
+                <i class="fa-solid fa-chart-area" style="color:var(--primary);"></i> 주가 & 코스피 비교 분석 차트
+              </h2>
+              <!-- 비교 모드 전환 버튼 -->
+              <div style="display: flex; gap: 8px;">
+                <button id="btn-chart-mode-pct" class="filter-btn active" onclick="setChartMode('pct')" style="padding: 6px 12px; font-size: 0.8rem; height: auto;">누적 수익률 비교 (%)</button>
+                <button id="btn-chart-mode-price" class="filter-btn" onclick="setChartMode('price')" style="padding: 6px 12px; font-size: 0.8rem; height: auto;">실제 주가 비교 (KRW/PT)</button>
+              </div>
+            </div>
+            <p style="color:var(--text-sub); font-size: 0.88rem; margin-bottom: 15px;" id="chart-desc">
+              * 2025년 6월 기점을 0%로 가정하고 코스피 대비 개별 종목들의 누적 수익률 추이를 비교 분석합니다.
+            </p>
+          </div>
+          <div class="chart-wrapper" style="position: relative; height: 420px; width: 100%;">
+            <canvas id="marketChart"></canvas>
+          </div>
+        </div>
+        
+        <!-- 우측: 컨트롤 패널 (검색 및 체크리스트) -->
+        <div class="chart-right-panel" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; max-height: 560px;">
+          <div style="margin-bottom: 15px;">
+            <div style="position: relative;">
+              <input type="text" id="stock-search" oninput="filterStockChecklist()" placeholder="🔍 종목 검색..." style="width: 100%; background: #040608; border: 1px solid var(--card-border); color: #ffffff; padding: 10px 12px; border-radius: 6px; font-size: 0.88rem; outline: none; transition: var(--transition);">
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 10px; gap: 8px;">
+              <button class="filter-btn" onclick="toggleAllStocks(true)" style="flex: 1; padding: 4px; font-size: 0.75rem; text-align: center; height: auto;">전체 선택</button>
+              <button class="filter-btn" onclick="toggleAllStocks(false)" style="flex: 1; padding: 4px; font-size: 0.75rem; text-align: center; height: auto;">전체 해제</button>
+            </div>
+          </div>
+          <!-- 스크롤 가능 체크리스트 -->
+          <div id="stock-checklist" style="overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 8px; padding-right: 5px;">
+            <!-- 자바스크립트 동적 체크리스트 바인딩 -->
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- 데이터 브릿지 바인딩 스크립트 -->
@@ -593,10 +642,18 @@
 
       document.getElementById(tabId).classList.add('active');
       event.currentTarget.classList.add('active');
+
+      // 차트 탭 초기화 지연 기동
+      if (tabId === 'tab-chart' && !marketChart) {
+        setTimeout(initChart, 50);
+      }
     }
 
     // 전역 상태 변수
     let currentDatabase = window.ANALYST_DATABASE || { analysts: [], recommendations: [] };
+    let marketChart = null;
+    let chartMode = 'pct'; // 'pct' 또는 'price'
+    let selectedStocks = ['KOSPI']; // 코스피 기본 선택
 
     // 화면 로드 즉시 렌더링
     window.addEventListener('DOMContentLoaded', () => {
@@ -631,6 +688,9 @@
       // 5. 리서치 보고서 렌더링 및 최신순(역순) 정렬
       const reports = [...(currentDatabase.reports || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
       renderReports(reports, analysts);
+
+      // 6. 차트 컨트롤 체크리스트 렌더링
+      renderStockChecklist();
     }
 
     // 애널리스트 카드 렌더링 함수
@@ -799,6 +859,302 @@
         `;
         container.appendChild(card);
       });
+    }
+
+    // Chart.js 초기화 함수
+    function initChart() {
+      const ctx = document.getElementById('marketChart').getContext('2d');
+      const marketData = window.MARKET_DATA || { dates: [], series: {} };
+      
+      const config = {
+        type: 'line',
+        data: {
+          labels: marketData.dates,
+          datasets: []
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: {
+                color: 'var(--text-main)',
+                font: {
+                  family: 'Inter',
+                  size: 11
+                }
+              }
+            },
+            tooltip: {
+              backgroundColor: '#080c12',
+              titleColor: '#10b981',
+              bodyColor: 'var(--text-main)',
+              borderColor: 'var(--card-border)',
+              borderWidth: 1,
+              padding: 12,
+              titleFont: { weight: 'bold' }
+            }
+          },
+          scales: {
+            x: {
+              grid: {
+                color: '#101620',
+                borderColor: '#101620'
+              },
+              ticks: {
+                color: 'var(--text-sub)',
+                font: { size: 10 }
+              }
+            },
+            y: {
+              type: 'linear',
+              display: true,
+              position: 'left',
+              grid: {
+                color: '#101620',
+                borderColor: '#101620'
+              },
+              ticks: {
+                color: 'var(--text-sub)',
+                font: { size: 10 }
+              }
+            }
+          }
+        }
+      };
+
+      marketChart = new Chart(ctx, config);
+      updateChart();
+    }
+
+    // 차트 동적 업데이트 함수
+    function updateChart() {
+      if (!marketChart) return;
+      
+      const marketData = window.MARKET_DATA || { dates: [], series: {} };
+      const datasets = [];
+
+      const colors = {
+        'KOSPI': '#10b981',
+        'SK하이닉스': '#06b6d4',
+        '삼성전자': '#3b82f6',
+        '삼양식품': '#f59e0b',
+        '알테오젠': '#ec4899',
+        '한화에어로스페이스': '#f97316',
+        '한국전력': '#a855f7',
+        '에코프로비엠': '#84cc16'
+      };
+      
+      const defaultColors = ['#06b6d4', '#f59e0b', '#ec4899', '#f97316', '#a855f7', '#84cc16', '#3b82f6', '#14b8a6', '#6366f1'];
+      let colorIndex = 0;
+
+      const hasKospi = selectedStocks.includes('KOSPI');
+      const hasOther = selectedStocks.some(s => s !== 'KOSPI');
+
+      let yTitleText = chartMode === 'pct' ? '누적 수익률 (%)' : '주가 (KRW)';
+      if (!hasOther && hasKospi) {
+          yTitleText = '코스피 지수 (PT)';
+      }
+
+      const scales = {
+        x: marketChart.options.scales.x,
+        y: {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          grid: { color: '#101620' },
+          ticks: {
+            color: 'var(--text-sub)',
+            callback: function(value) {
+              if (!hasOther && hasKospi) return value.toLocaleString() + ' pt';
+              return chartMode === 'pct' ? value.toFixed(1) + '%' : value.toLocaleString();
+            }
+          },
+          title: {
+            display: true,
+            text: yTitleText,
+            color: 'var(--text-main)'
+          }
+        }
+      };
+      
+      if (hasKospi && hasOther) {
+        scales.y2 = {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          grid: { drawOnChartArea: false },
+          ticks: { 
+            color: '#10b981',
+            callback: function(value) { return value.toLocaleString() + ' pt'; }
+          },
+          title: {
+            display: true,
+            text: '코스피 지수 (PT)',
+            color: '#10b981'
+          }
+        };
+      } else {
+        if (marketChart.options.scales.y2) {
+          delete marketChart.options.scales.y2;
+        }
+      }
+
+      selectedStocks.forEach(stock => {
+        const seriesData = marketData.series[stock];
+        if (!seriesData) return;
+
+        let finalData = [];
+        if (chartMode === 'pct' && stock !== 'KOSPI') {
+          const base = seriesData[0];
+          finalData = seriesData.map(p => base === 0 ? 0 : ((p - base) / base) * 100);
+        } else {
+          finalData = seriesData;
+        }
+
+        const color = colors[stock] || defaultColors[colorIndex++ % defaultColors.length];
+        
+        datasets.push({
+          label: stock,
+          data: finalData,
+          borderColor: color,
+          backgroundColor: color + '15',
+          borderWidth: stock === 'KOSPI' ? 2.5 : 2,
+          pointRadius: 1,
+          pointHoverRadius: 4,
+          tension: 0.15,
+          yAxisID: (stock === 'KOSPI' && hasOther) ? 'y2' : 'y'
+        });
+      });
+
+      marketChart.options.scales = scales;
+      marketChart.data.datasets = datasets;
+      marketChart.update();
+    }
+
+    // 모드 제어
+    function setChartMode(mode) {
+      chartMode = mode;
+      document.getElementById('btn-chart-mode-pct').classList.toggle('active', mode === 'pct');
+      document.getElementById('btn-chart-mode-price').classList.toggle('active', mode === 'price');
+      
+      const desc = document.getElementById('chart-desc');
+      if (mode === 'pct') {
+        desc.innerText = '* 2025년 6월 기점을 0%로 가정하고 코스피 대비 개별 종목들의 누적 수익률 추이를 비교 분석합니다.';
+      } else {
+        desc.innerText = '* 선택한 종목들의 원화(KRW) 실제 주가 추이를 코스피 지수(우측 축)와 연동하여 비교 분석합니다.';
+      }
+
+      updateChart();
+    }
+
+    // 우측 컨트롤 체크리스트 빌더
+    function renderStockChecklist() {
+      const container = document.getElementById('stock-checklist');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const marketData = window.MARKET_DATA || { dates: [], series: {} };
+      const stocks = Object.keys(marketData.series);
+      const sortedStocks = ['KOSPI', ...stocks.filter(s => s !== 'KOSPI').sort()];
+
+      sortedStocks.forEach(stock => {
+        const seriesData = marketData.series[stock];
+        const currentPrice = seriesData[seriesData.length - 1];
+        
+        let priceStr = '';
+        if (stock === 'KOSPI') {
+          priceStr = currentPrice.toLocaleString() + ' pt';
+        } else {
+          priceStr = currentPrice.toLocaleString() + ' 원';
+        }
+
+        const isChecked = selectedStocks.includes(stock);
+        const item = document.createElement('label');
+        item.className = 'stock-item-label';
+        item.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border: 1px solid var(--card-border); border-radius: 6px; background: #080c12; cursor: pointer; transition: var(--transition); user-select: none;";
+        item.setAttribute('data-stock-name', stock);
+        
+        item.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="checkbox" class="stock-chk" value="${stock}" ${isChecked ? 'checked' : ''} onchange="handleStockCheck(this)" style="accent-color: var(--primary); cursor: pointer;">
+            <span style="font-size: 0.88rem; font-weight: ${stock === 'KOSPI' ? '700' : '500'}; color: ${stock === 'KOSPI' ? '#10b981' : '#ffffff'};">${stock}</span>
+          </div>
+          <span style="font-size: 0.8rem; color: var(--text-sub);">${priceStr}</span>
+        `;
+
+        if (isChecked) {
+          item.style.borderColor = 'rgba(4, 120, 87, 0.4)';
+          item.style.background = 'rgba(4, 120, 87, 0.04)';
+        }
+
+        container.appendChild(item);
+      });
+    }
+
+    // 종목 체크 핸들러
+    function handleStockCheck(chk) {
+      const stock = chk.value;
+      const label = chk.closest('.stock-item-label');
+      
+      if (chk.checked) {
+        if (!selectedStocks.includes(stock)) {
+          selectedStocks.push(stock);
+        }
+        label.style.borderColor = 'rgba(4, 120, 87, 0.4)';
+        label.style.background = 'rgba(4, 120, 87, 0.04)';
+      } else {
+        selectedStocks = selectedStocks.filter(s => s !== stock);
+        label.style.borderColor = 'var(--card-border)';
+        label.style.background = '#080c12';
+      }
+      
+      updateChart();
+    }
+
+    // 체크리스트 검색 필터
+    function filterStockChecklist() {
+      const query = document.getElementById('stock-search').value.toLowerCase().trim();
+      const labels = document.querySelectorAll('.stock-item-label');
+
+      labels.forEach(label => {
+        const name = label.getAttribute('data-stock-name').toLowerCase();
+        if (name === 'kospi' || name.includes(query)) {
+          label.style.display = 'flex';
+        } else {
+          label.style.display = 'none';
+        }
+      });
+    }
+
+    // 전체 선택/해제
+    function toggleAllStocks(select) {
+      const chks = document.querySelectorAll('.stock-chk');
+      selectedStocks = ['KOSPI'];
+
+      chks.forEach(chk => {
+        const stock = chk.value;
+        if (stock === 'KOSPI') return;
+
+        chk.checked = select;
+        const label = chk.closest('.stock-item-label');
+        if (select) {
+          selectedStocks.push(stock);
+          label.style.borderColor = 'rgba(4, 120, 87, 0.4)';
+          label.style.background = 'rgba(4, 120, 87, 0.04)';
+        } else {
+          label.style.borderColor = 'var(--card-border)';
+          label.style.background = '#080c12';
+        }
+      });
+
+      updateChart();
     }
   </script>
 </body>
