@@ -17,10 +17,11 @@ ROOT_DIR = os.path.dirname(BASE_DIR)
 
 # 데이터 경로
 DATA_DIR = os.path.join(ROOT_DIR, "data")
+CONFIG_DIR = os.path.join(DATA_DIR, "config")
 DB_PATH = os.path.join(DATA_DIR, "analyst_database.json")
 CALENDAR_PATH = os.path.join(DATA_DIR, "economic_calendar.json")
-STOCKS_PATH = os.path.join(DATA_DIR, "stocks.json")
-FIXED_EVENTS_PATH = os.path.join(DATA_DIR, "fixed_events.json")
+STOCKS_PATH = os.path.join(CONFIG_DIR, "stocks.json")
+FIXED_EVENTS_PATH = os.path.join(CONFIG_DIR, "fixed_events.json")
 
 # 웹 경로
 WEB_DIR = os.path.join(ROOT_DIR, "web")
