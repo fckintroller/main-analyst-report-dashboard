@@ -4,8 +4,8 @@ echo ===================================================
 echo 대한민국 베스트 애널리스트 대시보드 자동화 스케줄러 등록
 echo ===================================================
 echo.
-echo 매일 밤 21:00에 최신 리포트를 수집(crawler.py)하고
-echo 실시간 주가 데이터와 함께 대시보드를 갱신(updater.py)하는
+echo 매일 밤 21:00에 최신 리포트를 수집하고
+echo 실시간 주가 데이터와 함께 대시보드를 갱신하는
 echo 백그라운드 작업을 윈도우 작업 스케줄러에 등록합니다.
 echo.
 
@@ -15,7 +15,7 @@ set "PYTHON_EXE=python"
 :: 실행할 배치 스크립트 임시 생성
 set "RUNNER_SCRIPT=%PROJECT_DIR%run_automation.bat"
 echo @echo off > "%RUNNER_SCRIPT%"
-echo cd /d "%PROJECT_DIR%" >> "%RUNNER_SCRIPT%"
+echo cd /d "%PROJECT_DIR%scripts" >> "%RUNNER_SCRIPT%"
 echo echo [1/3] 리포트 크롤러 실행 중... >> "%RUNNER_SCRIPT%"
 echo %PYTHON_EXE% crawler.py >> "%RUNNER_SCRIPT%"
 echo echo [2/3] 경제 캘린더 수집 중... >> "%RUNNER_SCRIPT%"
