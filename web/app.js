@@ -318,11 +318,8 @@ function renderCalendar() {
       }).join('');
     }
     const headerColor = group.isPast ? '#9ca3af' : '#10b981';
-    if (group.isPast) {
-      groupDiv.innerHTML = `<details><summary style="font-size:1rem; font-weight:700; color:${headerColor}; cursor:pointer; padding-bottom:6px; border-bottom:1px solid #1f2937;">${group.title} (${group.events.length}건)</summary><div style="margin-top:12px;">${contentHtml}</div></details>`;
-    } else {
-      groupDiv.innerHTML = `<div style="font-size:1rem; font-weight:700; color:${headerColor}; margin-bottom:10px; border-bottom:1px solid #1f2937; padding-bottom:6px;">${group.title}</div><div>${contentHtml}</div>`;
-    }
+    const isOpen = group.isPast ? '' : 'open';
+    groupDiv.innerHTML = `<details ${isOpen}><summary style="font-size:1rem; font-weight:700; color:${headerColor}; cursor:pointer; padding-bottom:6px; border-bottom:1px solid #1f2937; margin-bottom:10px;">${group.title} (${group.events.length}건)</summary><div>${contentHtml}</div></details>`;
     container.appendChild(groupDiv);
   });
 }
