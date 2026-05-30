@@ -228,14 +228,10 @@
                   <i class="fa-solid fa-chart-area" style="color:var(--primary);"></i> 주가 & 코스피 비교 분석 차트
                 </h2>
                 <p style="color:var(--text-sub); font-size: 0.88rem; margin-top: 8px;" id="chart-desc">
-                  * 2025년 6월 기점을 0%로 가정하고 코스피 대비 개별 종목들의 누적 수익률 추이를 비교 분석합니다.
+                  * 선택한 종목들의 실제 주가 및 캔들 차트를 코스피 지수(우측 축)와 연동하여 비교 분석합니다. 단일 종목 선택 시 캔들 차트가 표시됩니다.
                 </p>
               </div>
               <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
-                <div style="display: flex; gap: 8px;">
-                  <button id="btn-chart-mode-pct" class="filter-btn active" style="padding: 6px 12px; font-size: 0.8rem; height: auto;">누적 수익률 비교 (%)</button>
-                  <button id="btn-chart-mode-price" class="filter-btn" style="padding: 6px 12px; font-size: 0.8rem; height: auto;">실제 주가 (Candle/Line)</button>
-                </div>
                 <div style="display: flex; gap: 8px;" id="ma-buttons-container">
                   <button class="filter-btn" onclick="toggleMA(5, this)" style="padding: 4px 8px; font-size: 0.75rem;">5일선</button>
                   <button class="filter-btn" onclick="toggleMA(20, this)" style="padding: 4px 8px; font-size: 0.75rem;">20일선</button>
