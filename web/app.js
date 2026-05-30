@@ -268,7 +268,7 @@ function renderReports(reportList, analysts) {
         <p class="report-summary">${escapeHTML(rep.summary)}</p>
       </div>
       <div class="report-footer">
-        <div><span style="color:var(--text-sub);">종목: </span><span style="font-weight:700; color:#ffffff;">${escapeHTML(rep.stock_name)}</span></div>
+        <div><span style="color:var(--text-sub);">종목: </span><span style="font-weight:700; color:var(--text-heading);">${escapeHTML(rep.stock_name)}</span></div>
         <div><span style="color:var(--text-sub);">의견: </span><span style="color:${getRatingColor(rep.rating)}; font-weight:700;">${escapeHTML(rep.rating)}</span></div>
         <div class="report-target-box"><span style="color:var(--text-sub); font-weight:normal; font-size:0.8rem;">목표가: </span><span>${escapeHTML(rep.target_price)}</span></div>
       </div>
