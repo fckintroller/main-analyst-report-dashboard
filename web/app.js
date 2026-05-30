@@ -481,7 +481,7 @@ function updateChart() {
   const hasKospi = selectedStocks.includes('KOSPI');
   const hasOther = selectedStocks.some(s => s !== 'KOSPI');
   let yTitleText = chartMode === 'pct' ? '누적 수익률 (%)' : '주가 (KRW)';
-  if (!hasOther && hasKospi) yTitleText = '코스피 지수 (PT)';
+  if (chartMode !== 'pct' && !hasOther && hasKospi) yTitleText = '코스피 지수 (PT)';
 
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
   const gridColor = isLight ? '#e5e7eb' : '#101620';
@@ -491,12 +491,12 @@ function updateChart() {
     x: marketChart.options.scales.x,
     y: {
       type: 'linear', display: true, position: 'left', grid: { color: gridColor },
-      ticks: { color: tickColor, callback: function(v) { if (!hasOther && hasKospi) return v.toLocaleString() + ' pt'; return chartMode === 'pct' ? v.toFixed(1) + '%' : v.toLocaleString(); } },
+      ticks: { color: tickColor, callback: function(v) { if (chartMode !== 'pct' && !hasOther && hasKospi) return v.toLocaleString() + ' pt'; return chartMode === 'pct' ? v.toFixed(1) + '%' : v.toLocaleString(); } },
       title: { display: true, text: yTitleText, color: isLight ? '#374151' : '#e2e8f0' }
     }
   };
 
-  if (hasKospi && hasOther) {
+  if (chartMode === 'price' && hasKospi && hasOther) {
     scales.y2 = { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#10b981', callback: function(v) { return v.toLocaleString() + ' pt'; } }, title: { display: true, text: '코스피 지수 (PT)', color: '#10b981' } };
   } else {
     delete marketChart.options.scales.y2;
