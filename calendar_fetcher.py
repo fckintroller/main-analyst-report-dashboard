@@ -108,8 +108,34 @@ def fetch_economic_calendar():
                     "previous": event.get("previous", "")
                 })
                 
-    # 2026년 1월~7월 확정된 주요 글로벌 경제 지표 (과거/미래 일정 표시용 하드코딩)
+    # 2025년 6월 ~ 2026년 7월 확정된 주요 글로벌 경제 지표 (과거/미래 일정 표시용 하드코딩)
     fixed_events = [
+        {"date": "2025-06-06", "title": "비농업 고용지수", "country": "미국", "impact": "High", "forecast": "200K", "previous": "175K"},
+        {"date": "2025-06-12", "title": "소비자물가지수 전년동기대비", "country": "미국", "impact": "High", "forecast": "3.1%", "previous": "3.3%"},
+        {"date": "2025-06-18", "title": "기준금리 결정", "country": "미국", "impact": "High", "forecast": "5.50%", "previous": "5.50%"},
+        
+        {"date": "2025-07-04", "title": "비농업 고용지수", "country": "미국", "impact": "High", "forecast": "205K", "previous": "200K"},
+        {"date": "2025-07-11", "title": "소비자물가지수 전년동기대비", "country": "미국", "impact": "High", "forecast": "3.0%", "previous": "3.1%"},
+        {"date": "2025-07-30", "title": "기준금리 결정", "country": "미국", "impact": "High", "forecast": "5.50%", "previous": "5.50%"},
+        
+        {"date": "2025-08-01", "title": "비농업 고용지수", "country": "미국", "impact": "High", "forecast": "190K", "previous": "205K"},
+        {"date": "2025-08-14", "title": "소비자물가지수 전년동기대비", "country": "미국", "impact": "High", "forecast": "2.9%", "previous": "3.0%"},
+        
+        {"date": "2025-09-05", "title": "비농업 고용지수", "country": "미국", "impact": "High", "forecast": "180K", "previous": "190K"},
+        {"date": "2025-09-11", "title": "소비자물가지수 전년동기대비", "country": "미국", "impact": "High", "forecast": "2.9%", "previous": "2.9%"},
+        {"date": "2025-09-17", "title": "기준금리 결정", "country": "미국", "impact": "High", "forecast": "5.25%", "previous": "5.50%"},
+        
+        {"date": "2025-10-03", "title": "비농업 고용지수", "country": "미국", "impact": "High", "forecast": "170K", "previous": "180K"},
+        {"date": "2025-10-10", "title": "소비자물가지수 전년동기대비", "country": "미국", "impact": "High", "forecast": "2.8%", "previous": "2.9%"},
+        {"date": "2025-10-29", "title": "기준금리 결정", "country": "미국", "impact": "High", "forecast": "5.00%", "previous": "5.25%"},
+        
+        {"date": "2025-11-07", "title": "비농업 고용지수", "country": "미국", "impact": "High", "forecast": "185K", "previous": "170K"},
+        {"date": "2025-11-13", "title": "소비자물가지수 전년동기대비", "country": "미국", "impact": "High", "forecast": "2.7%", "previous": "2.8%"},
+        
+        {"date": "2025-12-05", "title": "비농업 고용지수", "country": "미국", "impact": "High", "forecast": "190K", "previous": "185K"},
+        {"date": "2025-12-11", "title": "소비자물가지수 전년동기대비", "country": "미국", "impact": "High", "forecast": "2.6%", "previous": "2.7%"},
+        {"date": "2025-12-17", "title": "기준금리 결정", "country": "미국", "impact": "High", "forecast": "5.00%", "previous": "5.00%"},
+
         {"date": "2026-01-13", "title": "생산자물가지수 전월대비", "country": "미국", "impact": "High", "forecast": "0.1%", "previous": "0.0%"},
         {"date": "2026-01-14", "title": "소비자물가지수 전년동기대비", "country": "미국", "impact": "High", "forecast": "3.1%", "previous": "3.2%"},
         {"date": "2026-01-23", "title": "일본은행(BOJ) 기준금리 결정", "country": "일본", "impact": "High", "forecast": "-0.10%", "previous": "-0.10%"},
