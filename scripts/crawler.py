@@ -114,6 +114,10 @@ def main():
         if prices:
             new_entry["target_price"] = prices[-1] + "원"
             
+        # --- 외부 기고가 및 목표가 미정 리포트 필터링 ---
+        if new_entry["analyst_id"] == "external_analyst" or new_entry["target_price"] in ("미정", "N/A", "", "0"):
+            continue
+            
         existing_reports.append(new_entry)
         added_count += 1
         logger.info(f"  [수집] {r['stock_name']} - {r['title']}")
