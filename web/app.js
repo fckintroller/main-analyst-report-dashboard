@@ -410,31 +410,33 @@ function initChart() {
     data: { labels: marketData.dates, datasets: [] },
     options: {
       onHover: (e, activeElements, chart) => {
-        if (!chart.scales.x) return;
-        const xValue = chart.scales.x.getValueForPixel(e.x);
         document.querySelectorAll('.external-event-item').forEach(el => el.classList.remove('highlighted-event'));
         let needsUpdate = false;
         const annotations = chart.options.plugins.annotation?.annotations || {};
-        if (xValue >= 0 && xValue < chart.data.labels.length) {
-          const hoveredDate = chart.data.labels[xValue];
-          let firstScrolled = false;
-          for (const key in annotations) {
-            const ann = annotations[key];
-            if (!ann.original) ann.original = { borderColor: ann.borderColor, borderWidth: ann.borderWidth, labelDisplay: ann.label?.display };
-            if (ann.xMin === hoveredDate) {
-              if (ann.borderColor !== 'rgba(250, 204, 21, 1)') {
-                ann.borderColor = 'rgba(250, 204, 21, 1)'; ann.borderWidth = 3; if (ann.label) ann.label.display = true; needsUpdate = true;
-              }
-              const targetEl = document.querySelector(`.external-event-item[data-date="${ann.originalDate || hoveredDate}"]`);
-              if (targetEl) {
-                targetEl.classList.add('highlighted-event');
-                if (!firstScrolled) { targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); firstScrolled = true; }
-              }
-            } else {
-              if (ann.borderColor === 'rgba(250, 204, 21, 1)') {
-                ann.borderColor = ann.original.borderColor; ann.borderWidth = ann.original.borderWidth;
-                if (ann.label) ann.label.display = ann.original.labelDisplay; needsUpdate = true;
-              }
+        
+        let hoveredDate = null;
+        if (activeElements && activeElements.length > 0) {
+          hoveredDate = chart.data.labels[activeElements[0].index];
+        }
+
+        let firstScrolled = false;
+        for (const key in annotations) {
+          const ann = annotations[key];
+          if (!ann.original) ann.original = { borderColor: ann.borderColor, borderWidth: ann.borderWidth, labelDisplay: ann.label?.display };
+          
+          if (hoveredDate && ann.xMin === hoveredDate) {
+            if (ann.borderColor !== 'rgba(250, 204, 21, 1)') {
+              ann.borderColor = 'rgba(250, 204, 21, 1)'; ann.borderWidth = 3; if (ann.label) ann.label.display = true; needsUpdate = true;
+            }
+            const targetEl = document.querySelector(`.external-event-item[data-date="${ann.originalDate || hoveredDate}"]`);
+            if (targetEl) {
+              targetEl.classList.add('highlighted-event');
+              if (!firstScrolled) { targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); firstScrolled = true; }
+            }
+          } else {
+            if (ann.borderColor === 'rgba(250, 204, 21, 1)') {
+              ann.borderColor = ann.original.borderColor; ann.borderWidth = ann.original.borderWidth;
+              if (ann.label) ann.label.display = ann.original.labelDisplay; needsUpdate = true;
             }
           }
         }
