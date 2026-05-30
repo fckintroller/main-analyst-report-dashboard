@@ -166,6 +166,47 @@ def generate_market_data(db_data):
             print(f"  [에러] {symbol} 데이터 다운로드 실패: {e}")
             return []
 
+    def fetch_naver_ir_data(symbol):
+        import re
+        import ssl
+        ssl_context = ssl._create_unverified_context()
+        ir_list = []
+        page = 1
+        keep_fetching = True
+        
+        while keep_fetching and page <= 20: # 무한 루프 방지
+            url = f"https://finance.naver.com/item/news_notice.naver?code={symbol}&page={page}"
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            try:
+                with urllib.request.urlopen(req, context=ssl_context) as response:
+                    html = response.read().decode('euc-kr', errors='ignore')
+                    pattern = re.compile(r'<td class="title">.*?<a[^>]*>(.*?)</a>.*?<td class="date">(.*?)</td>', re.IGNORECASE | re.DOTALL)
+                    
+                    matches = list(pattern.finditer(html))
+                    if not matches:
+                        break
+                        
+                    for match in matches:
+                        title = match.group(1).strip()
+                        date_str = match.group(2).strip()
+                        clean_date = date_str.split()[0].replace('.', '-')
+                        
+                        if clean_date < '2025-06-01':
+                            keep_fetching = False
+                            continue
+                            
+                        if any(k in title for k in ['기업설명회', '실적', 'IR', '영업잠정실적', '안내', '매출']):
+                            clean_title = re.sub(r'<[^>]+>', '', title).strip()
+                            ir_list.append({"date": clean_date, "title": clean_title})
+            except Exception as e:
+                print(f"  [에러] {symbol} IR 데이터 다운로드 실패: {e}")
+                break
+            
+            page += 1
+            time.sleep(0.1)
+            
+        return ir_list
+
     print("  [데이터 패치] KOSPI (KOSPI) 다운로드 중...")
     kospi_rows = fetch_naver_data("KOSPI")
     
@@ -173,8 +214,9 @@ def generate_market_data(db_data):
         dates_str_list = [f"{str(row[0])[:4]}-{str(row[0])[4:6]}-{str(row[0])[6:]}" for row in kospi_rows]
         series["KOSPI"] = [round(float(row[4]), 2) for row in kospi_rows] # 4번째 인덱스가 종가(Close)
     else:
-        print("  [에러] KOSPI 데이터를 가져오지 못했습니다.")
         return {"dates": [], "series": {}}
+
+    ir_data_dict = {}
 
     for stock in unique_stocks:
         if stock == "KOSPI":
@@ -202,11 +244,17 @@ def generate_market_data(db_data):
                 prices.append(int(round(last_price, -2)))
             series[stock] = prices
             
+        print(f"  [IR 패치] {stock} ({ticker}) 공시 데이터 다운로드 중...")
+        ir_rows = fetch_naver_ir_data(ticker)
+        if ir_rows:
+            ir_data_dict[stock] = ir_rows
+            
         time.sleep(0.1) # API 호출 제한 방지
         
     return {
         "dates": dates_str_list,
-        "series": series
+        "series": series,
+        "ir_data": ir_data_dict
     }
 
 def main():
@@ -231,6 +279,7 @@ def main():
         f.write(f"window.ANALYST_DATABASE = {json.dumps(db_data, ensure_ascii=False, indent=2)};\n")
         f.write(f"window.MARKET_DATA = {json.dumps(market_data, ensure_ascii=False, indent=2)};\n")
         f.write(f"window.CALENDAR_DATA = {json.dumps(calendar_data, ensure_ascii=False, indent=2)};\n")
+        f.write(f"window.IR_DATA = {json.dumps(market_data.get('ir_data', {}), ensure_ascii=False, indent=2)};\n")
     print(f"  [자바스크립트 브릿지 완료] {JS_PATH}가 성공적으로 업데이트되었습니다.")
     
     # 2. CSV 테이블 갱신

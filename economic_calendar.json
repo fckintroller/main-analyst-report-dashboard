@@ -1,5 +1,157 @@
 [
   {
+    "date": "2025-06-06",
+    "title": "비농업 고용지수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "200K",
+    "previous": "175K"
+  },
+  {
+    "date": "2025-06-12",
+    "title": "소비자물가지수 전년동기대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "3.1%",
+    "previous": "3.3%"
+  },
+  {
+    "date": "2025-06-18",
+    "title": "기준금리 결정",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "5.50%",
+    "previous": "5.50%"
+  },
+  {
+    "date": "2025-07-04",
+    "title": "비농업 고용지수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "205K",
+    "previous": "200K"
+  },
+  {
+    "date": "2025-07-11",
+    "title": "소비자물가지수 전년동기대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "3.0%",
+    "previous": "3.1%"
+  },
+  {
+    "date": "2025-07-30",
+    "title": "기준금리 결정",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "5.50%",
+    "previous": "5.50%"
+  },
+  {
+    "date": "2025-08-01",
+    "title": "비농업 고용지수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "190K",
+    "previous": "205K"
+  },
+  {
+    "date": "2025-08-14",
+    "title": "소비자물가지수 전년동기대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "2.9%",
+    "previous": "3.0%"
+  },
+  {
+    "date": "2025-09-05",
+    "title": "비농업 고용지수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "180K",
+    "previous": "190K"
+  },
+  {
+    "date": "2025-09-11",
+    "title": "소비자물가지수 전년동기대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "2.9%",
+    "previous": "2.9%"
+  },
+  {
+    "date": "2025-09-17",
+    "title": "기준금리 결정",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "5.25%",
+    "previous": "5.50%"
+  },
+  {
+    "date": "2025-10-03",
+    "title": "비농업 고용지수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "170K",
+    "previous": "180K"
+  },
+  {
+    "date": "2025-10-10",
+    "title": "소비자물가지수 전년동기대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "2.8%",
+    "previous": "2.9%"
+  },
+  {
+    "date": "2025-10-29",
+    "title": "기준금리 결정",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "5.00%",
+    "previous": "5.25%"
+  },
+  {
+    "date": "2025-11-07",
+    "title": "비농업 고용지수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "185K",
+    "previous": "170K"
+  },
+  {
+    "date": "2025-11-13",
+    "title": "소비자물가지수 전년동기대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "2.7%",
+    "previous": "2.8%"
+  },
+  {
+    "date": "2025-12-05",
+    "title": "비농업 고용지수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "190K",
+    "previous": "185K"
+  },
+  {
+    "date": "2025-12-11",
+    "title": "소비자물가지수 전년동기대비",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "2.6%",
+    "previous": "2.7%"
+  },
+  {
+    "date": "2025-12-17",
+    "title": "기준금리 결정",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "5.00%",
+    "previous": "5.00%"
+  },
+  {
     "date": "2026-01-13",
     "title": "생산자물가지수 전월대비",
     "country": "미국",
@@ -22,6 +174,14 @@
     "impact": "High",
     "forecast": "3.1%",
     "previous": "3.2%"
+  },
+  {
+    "date": "2026-01-23",
+    "title": "일본은행(BOJ) 기준금리 결정",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "-0.10%",
+    "previous": "-0.10%"
   },
   {
     "date": "2026-01-28",
@@ -120,6 +280,14 @@
     "previous": "5.25%"
   },
   {
+    "date": "2026-03-19",
+    "title": "일본은행(BOJ) 기준금리 결정",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "0.00%",
+    "previous": "-0.10%"
+  },
+  {
     "date": "2026-03-27",
     "title": "근원 개인소비지출 물가지수",
     "country": "미국",
@@ -168,6 +336,14 @@
     "previous": "2.7%"
   },
   {
+    "date": "2026-04-24",
+    "title": "일본은행(BOJ) 통화정책 성명",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "0.00%",
+    "previous": "0.00%"
+  },
+  {
     "date": "2026-05-01",
     "title": "비농업 고용지수",
     "country": "미국",
@@ -206,6 +382,14 @@
     "impact": "High",
     "forecast": "2.7%",
     "previous": "2.8%"
+  },
+  {
+    "date": "2026-05-25",
+    "title": "Corporate Profits q/q",
+    "country": "캐나다",
+    "impact": "High",
+    "forecast": "",
+    "previous": "-1.6%"
   },
   {
     "date": "2026-05-26",
@@ -330,6 +514,14 @@
     "previous": "1.1%"
   },
   {
+    "date": "2026-05-26",
+    "title": "일본은행(BOJ) 이벤트",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
     "date": "2026-05-27",
     "title": "비농업 고용지수",
     "country": "미국",
@@ -344,6 +536,22 @@
     "impact": "High",
     "forecast": "",
     "previous": "42.3K"
+  },
+  {
+    "date": "2026-05-27",
+    "title": "ECB Financial Stability Review",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-05-27",
+    "title": "중앙은행 총재 연설",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
   },
   {
     "date": "2026-05-28",
@@ -428,6 +636,30 @@
     "impact": "High",
     "forecast": "1.5%",
     "previous": "1.5%"
+  },
+  {
+    "date": "2026-05-28",
+    "title": "중앙은행 총재 연설",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-05-28",
+    "title": "통화정책 성명",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-05-28",
+    "title": "중앙은행 기자회견",
+    "country": "캐나다",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
   },
   {
     "date": "2026-05-29",
