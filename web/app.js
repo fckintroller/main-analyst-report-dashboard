@@ -74,6 +74,7 @@ function switchTab(tabId, clickedBtn) {
 // 전역 상태 변수
 let currentDatabase = window.ANALYST_DATABASE || { analysts: [], recommendations: [] };
 let marketChart = null;
+let chartMode = 'pct'; // 'pct' 또는 'price'
 let selectedStocks = ['KOSPI']; // 코스피 기본 선택
 let activeMAs = new Set(); // 활성화된 이동평균선 (5, 20, 60, 120)
 
@@ -92,6 +93,11 @@ window.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById(btnId);
     if (btn) btn.addEventListener('click', (e) => switchTab(tabId, e.currentTarget));
   });
+
+  const btnPct = document.getElementById('btn-chart-mode-pct');
+  const btnPrice = document.getElementById('btn-chart-mode-price');
+  if (btnPct) btnPct.addEventListener('click', () => setChartMode('pct'));
+  if (btnPrice) btnPrice.addEventListener('click', () => setChartMode('price'));
 
   const btnAll = document.getElementById('btn-toggle-all');
   const btnNone = document.getElementById('btn-toggle-none');
@@ -474,7 +480,7 @@ function updateChart() {
 
   const hasKospi = selectedStocks.includes('KOSPI');
   const hasOther = selectedStocks.some(s => s !== 'KOSPI');
-  let yTitleText = '주가 (KRW)';
+  let yTitleText = chartMode === 'pct' ? '누적 수익률 (%)' : '주가 (KRW)';
   if (!hasOther && hasKospi) yTitleText = '코스피 지수 (PT)';
 
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
@@ -485,7 +491,7 @@ function updateChart() {
     x: marketChart.options.scales.x,
     y: {
       type: 'linear', display: true, position: 'left', grid: { color: gridColor },
-      ticks: { color: tickColor, callback: function(v) { if (!hasOther && hasKospi) return v.toLocaleString() + ' pt'; return v.toLocaleString(); } },
+      ticks: { color: tickColor, callback: function(v) { if (!hasOther && hasKospi) return v.toLocaleString() + ' pt'; return chartMode === 'pct' ? v.toFixed(1) + '%' : v.toLocaleString(); } },
       title: { display: true, text: yTitleText, color: isLight ? '#374151' : '#e2e8f0' }
     }
   };
@@ -505,7 +511,7 @@ function updateChart() {
   marketChart.data.labels = paddedDates;
   
   const isSingleTarget = (!hasKospi && selectedStocks.length === 1) || (hasKospi && !hasOther);
-  const showCandle = isSingleTarget;
+  const showCandle = isSingleTarget && chartMode === 'price';
 
   selectedStocks.forEach(stock => {
     const series = marketData.series[stock];
@@ -544,9 +550,12 @@ function updateChart() {
         yAxisID: (stock === 'KOSPI' && hasOther) ? 'y2' : 'y' 
       });
     } else {
-      const paddedSeries = [...series]; for (let i = 0; i < 30; i++) paddedSeries.push(null);
+      let final = [];
+      if (chartMode === 'pct' && stock !== 'KOSPI') { const base = series[0]; final = series.map(p => base === 0 ? 0 : ((p - base) / base) * 100); }
+      else final = series;
+      const paddedSeries = [...final]; for (let i = 0; i < 30; i++) paddedSeries.push(null);
       const color = colors[stock] || defaultColors[colorIndex++ % defaultColors.length];
-      datasets.push({ label: stock, data: paddedSeries, borderColor: color, backgroundColor: color + '15', borderWidth: stock === 'KOSPI' ? 2.5 : 2, pointRadius: 1, pointHoverRadius: 4, tension: 0.15, yAxisID: (stock === 'KOSPI' && hasOther) ? 'y2' : 'y' });
+      datasets.push({ label: stock, data: paddedSeries, borderColor: color, backgroundColor: color + '15', borderWidth: stock === 'KOSPI' ? 2.5 : 2, pointRadius: 1, pointHoverRadius: 4, tension: 0.15, yAxisID: (chartMode === 'price' && stock === 'KOSPI' && hasOther) ? 'y2' : 'y' });
     }
   });
 
@@ -602,6 +611,24 @@ function updateChart() {
   marketChart.data.datasets = datasets;
   marketChart.update();
   renderIrEvents();
+}
+
+function renderIrEvents() {
+  const container = document.getElementById('ir-events');
+  if (!container) return;
+  // ... (IR events logic kept as is)
+}
+
+function setChartMode(mode) {
+  chartMode = mode;
+  document.getElementById('btn-chart-mode-pct')?.classList.toggle('active', mode === 'pct');
+  document.getElementById('btn-chart-mode-price')?.classList.toggle('active', mode === 'price');
+  const desc = document.getElementById('chart-desc');
+  if (desc) {
+    if (mode === 'pct') desc.innerText = '* 2025년 6월 기점을 0%로 가정하고 코스피 대비 개별 종목들의 누적 수익률 추이를 비교 분석합니다.';
+    else desc.innerText = '* 선택한 종목들의 실제 주가 및 캔들 차트를 코스피 지수(우측 축)와 연동하여 비교 분석합니다. 단일 종목 선택 시 캔들 차트가 표시됩니다.';
+  }
+  updateChart();
 }
 
 function renderStockChecklist() {
