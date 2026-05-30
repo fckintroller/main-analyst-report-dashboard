@@ -185,6 +185,7 @@ def fetch_market_data(db_data):
 
     dates = [f"{str(row[0])[:4]}-{str(row[0])[4:6]}-{str(row[0])[6:]}" for row in kospi_rows]
     series = {"KOSPI": [round(float(row[4]), 2) for row in kospi_rows]}
+    series_ohlc = {"KOSPI": [{"o": round(float(row[1]), 2), "h": round(float(row[2]), 2), "l": round(float(row[3]), 2), "c": round(float(row[4]), 2)} for row in kospi_rows]}
 
     ir_data_dict = {}
 
@@ -200,15 +201,22 @@ def fetch_market_data(db_data):
         
         if not stock_rows:
             series[stock] = [0] * len(dates)
+            series_ohlc[stock] = [{"o": 0, "h": 0, "l": 0, "c": 0}] * len(dates)
         else:
             date_to_price = {f"{str(row[0])[:4]}-{str(row[0])[4:6]}-{str(row[0])[6:]}": float(row[4]) for row in stock_rows}
+            date_to_ohlc = {f"{str(row[0])[:4]}-{str(row[0])[4:6]}-{str(row[0])[6:]}": {"o": float(row[1]), "h": float(row[2]), "l": float(row[3]), "c": float(row[4])} for row in stock_rows}
             prices = []
+            ohlc_prices = []
             last_price = 0
+            last_ohlc = {"o": 0, "h": 0, "l": 0, "c": 0}
             for d in dates:
                 if d in date_to_price:
                     last_price = date_to_price[d]
+                    last_ohlc = date_to_ohlc[d]
                 prices.append(int(round(last_price, -2)))
+                ohlc_prices.append({"o": int(round(last_ohlc["o"], -2)), "h": int(round(last_ohlc["h"], -2)), "l": int(round(last_ohlc["l"], -2)), "c": int(round(last_ohlc["c"], -2))})
             series[stock] = prices
+            series_ohlc[stock] = ohlc_prices
         
         logger.info(f"  [IR 패치] {stock} ({ticker}) 공시 데이터 다운로드 중...")
         ir_rows = fetch_naver_ir_data(ticker)
@@ -217,7 +225,7 @@ def fetch_market_data(db_data):
             
         time.sleep(0.05)
         
-    return {"dates": dates, "series": series}, ir_data_dict
+    return {"dates": dates, "series": series, "series_ohlc": series_ohlc}, ir_data_dict
 
 def main():
     logger.info("[Updater] 업데이트 프로세스 시작...")

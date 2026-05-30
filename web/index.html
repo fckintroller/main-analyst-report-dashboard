@@ -11,20 +11,43 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Chart.js Annotation Plugin -->
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1"></script>
+  <!-- Chart.js Financial Plugin & Luxon Adapter -->
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@0.1.1/dist/chartjs-chart-financial.min.js"></script>
   
   <style>
     :root {
+      /* Dark Theme (Default) */
       --bg-color: #040608;
       --card-bg: #080c12;
       --card-border: #101620;
       --text-main: #d1d5db;
       --text-sub: #6b7280;
+      --text-heading: #ffffff;
       --primary: #047857;
       --primary-glow: rgba(4, 120, 87, 0.1);
       --accent: #047857;
       --upgrade: #059669;
       --downgrade: #b91c1c;
+      --table-header: rgba(4, 120, 87, 0.05);
+      --table-border: #101620;
       --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    [data-theme="light"] {
+      /* Light Theme */
+      --bg-color: #f3f4f6;
+      --card-bg: #ffffff;
+      --card-border: #e5e7eb;
+      --text-main: #374151;
+      --text-sub: #6b7280;
+      --text-heading: #111827;
+      --primary: #059669;
+      --primary-glow: rgba(5, 150, 105, 0.15);
+      --accent: #059669;
+      --table-header: #f9fafb;
+      --table-border: #e5e7eb;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -52,12 +75,13 @@
     .analysts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 25px; }
     .analyst-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 25px; transition: var(--transition); position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; }
     .analyst-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--primary); opacity: 0.8; }
-    .analyst-card:hover { border-color: rgba(4, 120, 87, 0.5); transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4), 0 0 12px var(--primary-glow); }
+    .analyst-card:hover { border-color: rgba(4, 120, 87, 0.5); transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4), 0 0 12px var(--primary-glow); }
+    [data-theme="light"] .analyst-card:hover { box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05), 0 0 12px var(--primary-glow); }
     .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
-    .profile-info h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; color: #ffffff; }
+    .profile-info h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; color: var(--text-heading); }
     .profile-info .firm-tag { color: #10b981; font-size: 0.85rem; font-weight: 600; background: rgba(4, 120, 87, 0.12); border: 1px solid rgba(4, 120, 87, 0.25); padding: 2px 6px; border-radius: 4px; display: inline-block; margin-right: 6px; }
     .profile-info .position-tag { color: var(--text-sub); font-size: 0.85rem; }
-    .sector-badge { background: rgba(255, 255, 255, 0.03); border: 1px solid #101620; color: #9ca3af; font-size: 0.72rem; font-weight: 600; padding: 4px 10px; border-radius: 4px; letter-spacing: -0.5px; }
+    .sector-badge { background: rgba(128, 128, 128, 0.05); border: 1px solid var(--card-border); color: var(--text-sub); font-size: 0.72rem; font-weight: 600; padding: 4px 10px; border-radius: 4px; letter-spacing: -0.5px; }
     .award-text { background: rgba(4, 120, 87, 0.04); border: 1px solid rgba(4, 120, 87, 0.15); color: #10b981; font-size: 0.85rem; padding: 8px 12px; border-radius: 6px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-weight: 600; }
     .evaluation-text { color: var(--text-sub); font-size: 0.9rem; margin-bottom: 20px; min-height: 70px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
     .coverage-title { font-size: 0.85rem; color: #10b981; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
@@ -109,11 +133,39 @@
     .external-event-item.highlighted-event .event-title,
     .external-event-item.highlighted-event div { color: #ef4444 !important; font-weight: 700 !important; }
     .external-event-item.highlighted-event .event-result-text { color: #b91c1c !important; }
+
+    /* 모바일 하단 탭 바 (Bottom Nav) */
+    .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-top: 1px solid var(--card-border); z-index: 1000; justify-content: space-around; padding: 10px 0; padding-bottom: calc(10px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 10px rgba(0,0,0,0.1); }
+    .bottom-nav-item { background: none; border: none; color: var(--text-sub); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: var(--transition); flex: 1; }
+    .bottom-nav-item i { font-size: 1.2rem; margin-bottom: 2px; }
+    .bottom-nav-item.active { color: var(--primary); }
+
+    /* 반응형 레이아웃 */
+    @media (max-width: 768px) {
+      .tabs-nav { display: none; }
+      .bottom-nav { display: flex; }
+      .container { padding-bottom: 80px; }
+      .chart-tab-container { grid-template-columns: 1fr; }
+      .chart-wrapper { height: 300px; }
+    }
+
+    /* 종목 퀵 뷰 팝업 (Tooltip) */
+    .quick-info-popup { position: absolute; background: var(--card-bg); border: 1px solid var(--primary); padding: 12px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5), 0 0 10px var(--primary-glow); z-index: 50; display: none; width: 220px; font-size: 0.85rem; color: var(--text-main); }
+    .quick-info-popup.show { display: block; animation: fadeIn 0.2s ease; }
+    .quick-info-title { font-weight: 700; color: #ffffff; margin-bottom: 4px; border-bottom: 1px solid var(--card-border); padding-bottom: 4px; }
+    [data-theme="light"] .quick-info-title { color: var(--text-heading); }
   </style>
 </head>
 <body>
 
   <div class="container">
+    <header style="text-align: center; margin-bottom: 30px;">
+      <div style="display:flex; justify-content:center; align-items:center; position:relative;">
+        <h1 style="font-size: 2.2rem; font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+          KOREA ANALYST REPORT
+        </h1>
+        <button id="theme-toggle" class="filter-btn" style="position:absolute; right:0; padding: 8px 12px; font-size: 1.2rem; border-radius: 50%; width: 42px; height: 42px; display:flex; align-items:center; justify-content:center;">🌞</button>
+      </div>
     <div class="tabs-nav">
       <button id="btn-tab-analysts" class="tab-btn active"><i class="fa-solid fa-folder-open"></i> 결합 섹터별 애널리스트</button>
       <button id="btn-tab-alerts" class="tab-btn"><i class="fa-solid fa-triangle-exclamation"></i> 투자의견 변동 알림</button>
@@ -170,18 +222,28 @@
       <div class="chart-tab-container">
         <div class="chart-left-panel">
           <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-              <h2 style="font-size: 1.4rem; font-weight: 700; display:flex; align-items:center; gap:10px; color:var(--primary); margin:0;">
-                <i class="fa-solid fa-chart-area" style="color:var(--primary);"></i> 주가 & 코스피 비교 분석 차트
-              </h2>
-              <div style="display: flex; gap: 8px;">
-                <button id="btn-chart-mode-pct" class="filter-btn active" style="padding: 6px 12px; font-size: 0.8rem; height: auto;">누적 수익률 비교 (%)</button>
-                <button id="btn-chart-mode-price" class="filter-btn" style="padding: 6px 12px; font-size: 0.8rem; height: auto;">실제 주가 비교 (KRW/PT)</button>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+              <div>
+                <h2 style="font-size: 1.4rem; font-weight: 700; display:flex; align-items:center; gap:10px; color:var(--primary); margin:0;">
+                  <i class="fa-solid fa-chart-area" style="color:var(--primary);"></i> 주가 & 코스피 비교 분석 차트
+                </h2>
+                <p style="color:var(--text-sub); font-size: 0.88rem; margin-top: 8px;" id="chart-desc">
+                  * 2025년 6월 기점을 0%로 가정하고 코스피 대비 개별 종목들의 누적 수익률 추이를 비교 분석합니다.
+                </p>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                <div style="display: flex; gap: 8px;">
+                  <button id="btn-chart-mode-pct" class="filter-btn active" style="padding: 6px 12px; font-size: 0.8rem; height: auto;">누적 수익률 비교 (%)</button>
+                  <button id="btn-chart-mode-price" class="filter-btn" style="padding: 6px 12px; font-size: 0.8rem; height: auto;">실제 주가 (Candle/Line)</button>
+                </div>
+                <div style="display: flex; gap: 8px;" id="ma-buttons-container">
+                  <button class="filter-btn" onclick="toggleMA(5, this)" style="padding: 4px 8px; font-size: 0.75rem;">5일선</button>
+                  <button class="filter-btn" onclick="toggleMA(20, this)" style="padding: 4px 8px; font-size: 0.75rem;">20일선</button>
+                  <button class="filter-btn" onclick="toggleMA(60, this)" style="padding: 4px 8px; font-size: 0.75rem;">60일선</button>
+                  <button class="filter-btn" onclick="toggleMA(120, this)" style="padding: 4px 8px; font-size: 0.75rem;">120일선</button>
+                </div>
               </div>
             </div>
-            <p style="color:var(--text-sub); font-size: 0.88rem; margin-bottom: 15px;" id="chart-desc">
-              * 2025년 6월 기점을 0%로 가정하고 코스피 대비 개별 종목들의 누적 수익률 추이를 비교 분석합니다.
-            </p>
           </div>
           <div class="chart-wrapper"><canvas id="marketChart"></canvas></div>
           <!-- 하단 연동형 이벤트 타임라인 (매크로 & IR 2단 분할) -->
@@ -231,6 +293,7 @@
     </div>
   </div>
 
+  <div id="quick-info-popup" class="quick-info-popup"></div>
   <script src="analyst_data.js"></script>
   <script src="app.js"></script>
 </body>

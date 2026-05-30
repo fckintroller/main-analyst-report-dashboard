@@ -61,6 +61,14 @@ function switchTab(tabId, clickedBtn) {
   if (tabId === 'tab-chart' && !marketChart) {
     setTimeout(initChart, 50);
   }
+
+  // 모바일 하단 탭 동기화
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.getAttribute('onclick').includes(tabId)) {
+      btn.classList.add('active');
+    }
+  });
 }
 
 // 전역 상태 변수
@@ -68,6 +76,7 @@ let currentDatabase = window.ANALYST_DATABASE || { analysts: [], recommendations
 let marketChart = null;
 let chartMode = 'pct'; // 'pct' 또는 'price'
 let selectedStocks = ['KOSPI']; // 코스피 기본 선택
+let activeMAs = new Set(); // 활성화된 이동평균선 (5, 20, 60, 120)
 
 // 화면 로드 즉시 렌더링
 window.addEventListener('DOMContentLoaded', () => {
@@ -94,6 +103,28 @@ window.addEventListener('DOMContentLoaded', () => {
   const btnNone = document.getElementById('btn-toggle-none');
   if (btnAll) btnAll.addEventListener('click', () => toggleAllStocks(true));
   if (btnNone) btnNone.addEventListener('click', () => toggleAllStocks(false));
+
+  const themeToggle = document.getElementById('theme-toggle');
+  if (themeToggle) {
+    const savedTheme = localStorage.getItem('kar-theme') || 'dark';
+    if (savedTheme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+      themeToggle.innerText = '🌙';
+    }
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'light') {
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('kar-theme', 'dark');
+        themeToggle.innerText = '🌞';
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('kar-theme', 'light');
+        themeToggle.innerText = '🌙';
+      }
+      if (marketChart) initChart();
+    });
+  }
 
   renderDashboard();
 });
@@ -368,6 +399,10 @@ function initChart() {
     return { x: eventPosition.x, y: eventPosition.y };
   };
 
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const gridColor = isLight ? '#e5e7eb' : '#101620';
+  const tickColor = isLight ? '#6b7280' : '#9ca3af';
+
   const config = {
     type: 'line',
     data: { labels: marketData.dates, datasets: [] },
@@ -407,20 +442,31 @@ function initChart() {
       layout: { padding: { top: 80 } },
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { display: true, position: 'top', labels: { color: '#e2e8f0', font: { family: 'Inter', size: 11 } } },
+        legend: { display: true, position: 'top', labels: { color: isLight ? '#374151' : '#e2e8f0', font: { family: 'Inter', size: 11 } } },
         tooltip: {
           position: 'cursor',
-          backgroundColor: '#080c12', titleColor: '#10b981', bodyColor: '#e2e8f0', borderColor: '#101620',
+          backgroundColor: isLight ? '#ffffff' : '#080c12', titleColor: '#10b981', bodyColor: isLight ? '#374151' : '#e2e8f0', borderColor: gridColor,
           borderWidth: 1, padding: 12, titleFont: { weight: 'bold' }
         }
       },
       scales: {
-        x: { grid: { color: '#101620', borderColor: '#101620' }, ticks: { color: '#9ca3af', font: { size: 10 } } },
-        y: { type: 'linear', display: true, position: 'left', grid: { color: '#101620', borderColor: '#101620' }, ticks: { color: '#9ca3af', font: { size: 10 } } }
+        x: { type: 'category', grid: { color: gridColor, borderColor: gridColor }, ticks: { color: tickColor, font: { size: 10 }, maxRotation: 45, minRotation: 45 } },
+        y: { type: 'linear', display: true, position: 'left', grid: { color: gridColor, borderColor: gridColor }, ticks: { color: tickColor, font: { size: 10 } } }
       }
     }
   };
   marketChart = new Chart(ctx, config);
+  updateChart();
+}
+
+function toggleMA(days, btnElement) {
+  if (activeMAs.has(days)) {
+    activeMAs.delete(days);
+    btnElement.classList.remove('active');
+  } else {
+    activeMAs.add(days);
+    btnElement.classList.add('active');
+  }
   updateChart();
 }
 
@@ -437,12 +483,16 @@ function updateChart() {
   let yTitleText = chartMode === 'pct' ? '누적 수익률 (%)' : '주가 (KRW)';
   if (!hasOther && hasKospi) yTitleText = '코스피 지수 (PT)';
 
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const gridColor = isLight ? '#e5e7eb' : '#101620';
+  const tickColor = isLight ? '#6b7280' : '#9ca3af';
+
   const scales = {
     x: marketChart.options.scales.x,
     y: {
-      type: 'linear', display: true, position: 'left', grid: { color: '#101620' },
-      ticks: { color: '#9ca3af', callback: function(v) { if (!hasOther && hasKospi) return v.toLocaleString() + ' pt'; return chartMode === 'pct' ? v.toFixed(1) + '%' : v.toLocaleString(); } },
-      title: { display: true, text: yTitleText, color: '#e2e8f0' }
+      type: 'linear', display: true, position: 'left', grid: { color: gridColor },
+      ticks: { color: tickColor, callback: function(v) { if (!hasOther && hasKospi) return v.toLocaleString() + ' pt'; return chartMode === 'pct' ? v.toFixed(1) + '%' : v.toLocaleString(); } },
+      title: { display: true, text: yTitleText, color: isLight ? '#374151' : '#e2e8f0' }
     }
   };
 
@@ -459,16 +509,65 @@ function updateChart() {
   if (isNaN(lastDate)) lastDate = today;
   for (let i = 1; i <= 30; i++) { const n = new Date(lastDate); n.setDate(n.getDate() + i); paddedDates.push(n.toISOString().split('T')[0]); }
   marketChart.data.labels = paddedDates;
+  
+  const isSingleTarget = (!hasKospi && selectedStocks.length === 1) || (hasKospi && !hasOther);
+  const showCandle = isSingleTarget && chartMode === 'price';
 
   selectedStocks.forEach(stock => {
     const series = marketData.series[stock];
     if (!series) return;
-    let final = [];
-    if (chartMode === 'pct' && stock !== 'KOSPI') { const base = series[0]; final = series.map(p => base === 0 ? 0 : ((p - base) / base) * 100); }
-    else final = series;
-    const paddedSeries = [...final]; for (let i = 0; i < 30; i++) paddedSeries.push(null);
-    const color = colors[stock] || defaultColors[colorIndex++ % defaultColors.length];
-    datasets.push({ label: stock, data: paddedSeries, borderColor: color, backgroundColor: color + '15', borderWidth: stock === 'KOSPI' ? 2.5 : 2, pointRadius: 1, pointHoverRadius: 4, tension: 0.15, yAxisID: (chartMode === 'price' && stock === 'KOSPI' && hasOther) ? 'y2' : 'y' });
+    
+    // 이동평균선(MA) 계산 및 추가 (실제 주가 모드일 때만)
+    if (chartMode === 'price') {
+      const maColors = {5: '#ec4899', 20: '#f59e0b', 60: '#3b82f6', 120: '#8b5cf6'};
+      activeMAs.forEach(days => {
+        const maData = [];
+        for (let i = 0; i < series.length; i++) {
+          if (i < days - 1) { maData.push(null); }
+          else {
+            let sum = 0; for (let j = 0; j < days; j++) sum += series[i - j];
+            maData.push(sum / days);
+          }
+        }
+        const paddedMa = [...maData]; for (let k = 0; k < 30; k++) paddedMa.push(null);
+        datasets.push({
+          type: 'line', label: `${stock} ${days}일선`, data: paddedMa,
+          borderColor: maColors[days], borderWidth: 1.5, pointRadius: 0, tension: 0.2, yAxisID: (stock === 'KOSPI' && hasOther) ? 'y2' : 'y'
+        });
+      });
+    }
+
+    if (showCandle) {
+      const ohlcSeries = marketData.series_ohlc && marketData.series_ohlc[stock] ? marketData.series_ohlc[stock] : null;
+      if (ohlcSeries) {
+        const candleData = [];
+        for (let i = 0; i < series.length; i++) {
+          const o = ohlcSeries[i];
+          if (o && o.o !== 0) {
+            candleData.push({ x: marketData.dates[i], o: o.o, h: o.h, l: o.l, c: o.c });
+          } else {
+            candleData.push({ x: marketData.dates[i], o: series[i], h: series[i], l: series[i], c: series[i] });
+          }
+        }
+        // 캔들은 패딩 데이터(미래) 생략
+        datasets.push({
+          type: 'candlestick',
+          label: stock + ' (Candle)',
+          data: candleData,
+          yAxisID: 'y',
+          color: { up: '#ef4444', down: '#3b82f6', unchanged: '#9ca3af' },
+          borderColor: { up: '#ef4444', down: '#3b82f6', unchanged: '#9ca3af' },
+          borderWidth: 1.5
+        });
+      }
+    } else {
+      let final = [];
+      if (chartMode === 'pct' && stock !== 'KOSPI') { const base = series[0]; final = series.map(p => base === 0 ? 0 : ((p - base) / base) * 100); }
+      else final = series;
+      const paddedSeries = [...final]; for (let i = 0; i < 30; i++) paddedSeries.push(null);
+      const color = colors[stock] || defaultColors[colorIndex++ % defaultColors.length];
+      datasets.push({ label: stock, data: paddedSeries, borderColor: color, backgroundColor: color + '15', borderWidth: stock === 'KOSPI' ? 2.5 : 2, pointRadius: 1, pointHoverRadius: 4, tension: 0.15, yAxisID: (chartMode === 'price' && stock === 'KOSPI' && hasOther) ? 'y2' : 'y' });
+    }
   });
 
   // 어노테이션
@@ -541,16 +640,70 @@ function renderStockChecklist() {
   container.innerHTML = '';
   const marketData = window.MARKET_DATA || { dates: [], series: {} };
   const sortedStocks = ['KOSPI', ...Object.keys(marketData.series).filter(s => s !== 'KOSPI').sort()];
+  const allReports = window.ANALYST_DATABASE?.reports || [];
+  
   sortedStocks.forEach(stock => {
     const series = marketData.series[stock];
     const currentPrice = series[series.length - 1];
     const priceStr = stock === 'KOSPI' ? currentPrice.toLocaleString() + ' pt' : currentPrice.toLocaleString() + ' 원';
     const isChecked = selectedStocks.includes(stock);
+    
+    let recentPct = 0;
+    if (series.length >= 7) {
+      const past = series[series.length - 7];
+      if (past > 0) recentPct = ((currentPrice - past) / past) * 100;
+    }
+    const pctColor = recentPct >= 0 ? 'var(--upgrade)' : 'var(--downgrade)';
+    const pctSign = recentPct > 0 ? '+' : '';
+    
+    const stockReports = allReports.filter(r => r.stock_name === stock);
+    const reportTitle = stockReports.length > 0 ? stockReports[0].title : '최근 리포트 없음';
+
     const item = document.createElement('label');
     item.className = 'stock-item-label';
     item.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border: 1px solid var(--card-border); border-radius: 6px; background: #080c12; cursor: pointer; transition: var(--transition); user-select: none;";
     item.setAttribute('data-stock-name', stock);
-    item.innerHTML = `<div style="display: flex; align-items: center; gap: 10px;"><input type="checkbox" class="stock-chk" value="${escapeHTML(stock)}" ${isChecked ? 'checked' : ''} onchange="handleStockCheck(this)" style="accent-color: var(--primary); cursor: pointer;"><span style="font-size: 0.88rem; font-weight: ${stock === 'KOSPI' ? '700' : '500'}; color: ${stock === 'KOSPI' ? '#10b981' : '#ffffff'};">${escapeHTML(stock)}</span></div><span style="font-size: 0.8rem; color: var(--text-sub);">${priceStr}</span>`;
+
+    item.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" class="stock-chk" value="${escapeHTML(stock)}" ${isChecked ? 'checked' : ''} onchange="handleStockCheck(this)" style="accent-color: var(--primary); cursor: pointer;">
+        <span style="font-size: 0.88rem; font-weight: ${stock === 'KOSPI' ? '700' : '500'}; color: ${stock === 'KOSPI' ? '#10b981' : 'var(--text-main)'};">${escapeHTML(stock)}</span>
+        <i class="fa-solid fa-circle-info info-icon" data-stock="${escapeHTML(stock)}" data-pct="${recentPct.toFixed(1)}" data-color="${pctColor}" data-sign="${pctSign}" data-report="${escapeHTML(reportTitle)}" style="color: var(--text-sub); font-size: 0.85rem; padding: 4px;"></i>
+      </div>
+      <span style="font-size: 0.8rem; color: var(--text-sub);">${priceStr}</span>
+    `;
+    
+    const infoIcon = item.querySelector('.info-icon');
+    if (infoIcon) {
+      infoIcon.addEventListener('mouseenter', (e) => {
+        let popup = document.getElementById('quick-info-popup');
+        if (!popup) {
+          popup = document.createElement('div');
+          popup.id = 'quick-info-popup';
+          popup.className = 'quick-info-popup';
+          document.body.appendChild(popup);
+        }
+        const rect = e.target.getBoundingClientRect();
+        popup.innerHTML = `
+          <div class="quick-info-title">${e.target.dataset.stock} 요약</div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+            <span>최근 1주 수익률:</span>
+            <span style="color: ${e.target.dataset.color}; font-weight: 700;">${e.target.dataset.sign}${e.target.dataset.pct}%</span>
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-sub);">
+            최신리포트: <span style="color:var(--text-main);">${e.target.dataset.report}</span>
+          </div>
+        `;
+        popup.style.top = (rect.top + window.scrollY - 10) + 'px';
+        popup.style.left = (rect.left - 240) + 'px'; 
+        popup.classList.add('show');
+      });
+      infoIcon.addEventListener('mouseleave', () => {
+        const popup = document.getElementById('quick-info-popup');
+        if (popup) popup.classList.remove('show');
+      });
+    }
+
     if (isChecked) { item.style.borderColor = 'rgba(4, 120, 87, 0.4)'; item.style.background = 'rgba(4, 120, 87, 0.04)'; }
     container.appendChild(item);
   });
