@@ -444,7 +444,7 @@ function initChart() {
         }
       },
       scales: {
-        x: { type: 'category', grid: { color: gridColor, borderColor: gridColor }, ticks: { color: tickColor, font: { size: 10 }, maxRotation: 45, minRotation: 45 } },
+        x: { type: 'time', time: { unit: 'day', tooltipFormat: 'yyyy-MM-dd', displayFormats: { day: 'MM/dd' } }, grid: { color: gridColor, borderColor: gridColor }, ticks: { color: tickColor, font: { size: 10 }, maxRotation: 45, minRotation: 45 } },
         y: { type: 'linear', display: true, position: 'left', grid: { color: gridColor, borderColor: gridColor }, ticks: { color: tickColor, font: { size: 10 } } }
       }
     }
