@@ -474,16 +474,17 @@ function updateChart() {
   if (!marketChart) return;
   const marketData = window.MARKET_DATA || { dates: [], series: {} };
   const datasets = [];
-  const colors = { 'KOSPI': '#10b981', 'SK하이닉스': '#06b6d4', '삼성전자': '#3b82f6', '삼양식품': '#f59e0b', '알테오젠': '#ec4899', '한화에어로스페이스': '#f97316', '한국전력': '#a855f7', '에코프로비엠': '#84cc16' };
-  const defaultColors = ['#06b6d4', '#f59e0b', '#ec4899', '#f97316', '#a855f7', '#84cc16', '#3b82f6', '#14b8a6', '#6366f1'];
-  let colorIndex = 0;
+  
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const lightColors = ['#2563eb', '#ea580c', '#db2777', '#7c3aed', '#0d9488', '#e11d48', '#0284c7', '#ca8a04'];
+  const darkColors = ['#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#14b8a6', '#f43f5e', '#06b6d4', '#eab308'];
+  const palette = isLight ? lightColors : darkColors;
 
   const hasKospi = selectedStocks.includes('KOSPI');
   const hasOther = selectedStocks.some(s => s !== 'KOSPI');
   let yTitleText = chartMode === 'pct' ? '누적 수익률 (%)' : '주가 (KRW)';
   if (chartMode !== 'pct' && !hasOther && hasKospi) yTitleText = '코스피 지수 (PT)';
 
-  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
   const gridColor = isLight ? '#e5e7eb' : '#101620';
   const tickColor = isLight ? '#6b7280' : '#9ca3af';
 
@@ -535,9 +536,14 @@ function updateChart() {
         });
       });
 
+    let color = '#10b981';
+    if (stock !== 'KOSPI') {
+      const colorIdx = selectedStocks.filter(s => s !== 'KOSPI').indexOf(stock);
+      if (colorIdx !== -1) color = palette[colorIdx % palette.length];
+    }
+
     if (showCandle) {
       // 캔들차트 플러그인 불안정성으로 인해 일시적으로 라인 차트로 폴백
-      const color = colors[stock] || defaultColors[colorIndex++ % defaultColors.length];
       datasets.push({ 
         label: stock + ' (Price)', 
         data: series, 
@@ -559,7 +565,6 @@ function updateChart() {
         final = series;
       }
       const paddedSeries = [...final]; for (let i = 0; i < 30; i++) paddedSeries.push(null);
-      const color = colors[stock] || defaultColors[colorIndex++ % defaultColors.length];
       datasets.push({ label: stock, data: paddedSeries, borderColor: color, backgroundColor: color + '15', borderWidth: stock === 'KOSPI' ? 2.5 : 2, pointRadius: 1, pointHoverRadius: 4, tension: 0.15, yAxisID: (chartMode === 'price' && stock === 'KOSPI' && hasOther) ? 'y2' : 'y' });
     }
   });
@@ -662,14 +667,29 @@ function renderStockChecklist() {
     const reportTitle = stockReports.length > 0 ? stockReports[0].title : '최근 리포트 없음';
 
     const item = document.createElement('label');
-    item.className = 'stock-item-label';
-    item.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border: 1px solid var(--card-border); border-radius: 6px; background: #080c12; cursor: pointer; transition: var(--transition); user-select: none;";
+    item.className = 'stock-item-card' + (isChecked ? ' active' : '');
+    
+    // 할당된 차트 색상 계산
+    if (isChecked) {
+      let itemColor = '#10b981'; // KOSPI default
+      if (stock !== 'KOSPI') {
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+        // 라이트 모드에서는 좀 더 선명하고 진한 색상 팔레트 사용
+        const lightColors = ['#2563eb', '#ea580c', '#db2777', '#7c3aed', '#0d9488', '#e11d48', '#0284c7', '#ca8a04'];
+        const darkColors = ['#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#14b8a6', '#f43f5e', '#06b6d4', '#eab308'];
+        const palette = isLight ? lightColors : darkColors;
+        const colorIdx = selectedStocks.filter(s => s !== 'KOSPI').indexOf(stock);
+        if (colorIdx !== -1) itemColor = palette[colorIdx % palette.length];
+      }
+      item.style.setProperty('--item-color', itemColor);
+    }
+
     item.setAttribute('data-stock-name', stock);
 
     item.innerHTML = `
       <div style="display: flex; align-items: center; gap: 8px;">
-        <input type="checkbox" class="stock-chk" value="${escapeHTML(stock)}" ${isChecked ? 'checked' : ''} onchange="handleStockCheck(this)" style="accent-color: var(--primary); cursor: pointer;">
-        <span style="font-size: 0.88rem; font-weight: ${stock === 'KOSPI' ? '700' : '500'}; color: ${stock === 'KOSPI' ? '#10b981' : 'var(--text-main)'};">${escapeHTML(stock)}</span>
+        <input type="checkbox" class="stock-chk" value="${escapeHTML(stock)}" ${isChecked ? 'checked' : ''} onchange="handleStockCheck(this)">
+        <span style="font-size: 0.9rem; font-weight: ${isChecked ? '700' : '500'}; color: ${isChecked ? 'var(--text-heading)' : 'var(--text-main)'}; transition: var(--transition);">${escapeHTML(stock)}</span>
         <i class="fa-solid fa-circle-info info-icon" data-stock="${escapeHTML(stock)}" data-pct="${recentPct.toFixed(1)}" data-color="${pctColor}" data-sign="${pctSign}" data-report="${escapeHTML(reportTitle)}" style="color: var(--text-sub); font-size: 0.85rem; padding: 4px;"></i>
       </div>
       <span style="font-size: 0.8rem; color: var(--text-sub);">${priceStr}</span>
