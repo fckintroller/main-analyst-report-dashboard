@@ -365,6 +365,12 @@ function initChart() {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const marketData = window.MARKET_DATA || { dates: [], series: {} };
+  
+  Chart.Tooltip.positioners.cursor = function(elements, eventPosition) {
+    if (!eventPosition) return false;
+    return { x: eventPosition.x, y: eventPosition.y };
+  };
+
   const config = {
     type: 'line',
     data: { labels: marketData.dates, datasets: [] },
@@ -406,6 +412,7 @@ function initChart() {
       plugins: {
         legend: { display: true, position: 'top', labels: { color: '#e2e8f0', font: { family: 'Inter', size: 11 } } },
         tooltip: {
+          position: 'cursor',
           backgroundColor: '#080c12', titleColor: '#10b981', bodyColor: '#e2e8f0', borderColor: '#101620',
           borderWidth: 1, padding: 12, titleFont: { weight: 'bold' }
         }
@@ -470,7 +477,24 @@ function updateChart() {
   // 어노테이션
   const annotations = {};
   const groupedEvents = {};
-  (window.CALENDAR_DATA || []).forEach(ev => {
+  
+  const isSingleStockSelected = !hasKospi && selectedStocks.length === 1;
+  let sourceData = window.CALENDAR_DATA || [];
+  
+  if (isSingleStockSelected) {
+    const stockName = selectedStocks[0];
+    const irData = window.IR_DATA || {};
+    const stockIrEvents = irData[stockName] || [];
+    sourceData = stockIrEvents.map(e => ({
+      date: e.date,
+      title: e.title,
+      country: stockName,
+      impact: 'IR',
+      isIr: true
+    }));
+  }
+  
+  sourceData.forEach(ev => {
     let m = ev.date;
     if (!paddedDates.includes(m)) {
       const t = new Date(m).getTime(); let closest = paddedDates[0], min = Infinity;
@@ -501,6 +525,7 @@ function updateChart() {
   marketChart.options.scales = scales;
   marketChart.data.datasets = datasets;
   marketChart.update();
+  renderIrEvents();
 }
 
 function setChartMode(mode) {
@@ -560,4 +585,47 @@ function toggleAllStocks(select) {
     else { label.style.borderColor = 'var(--card-border)'; label.style.background = '#080c12'; }
   });
   updateChart();
+}
+
+function renderIrEvents() {
+  const container = document.getElementById('ir-events-list');
+  const header = document.getElementById('ir-events-header');
+  if (!container || !header) return;
+  
+  const irData = window.IR_DATA || {};
+  const todayStr = new Date().toISOString().split('T')[0];
+  
+  const isSingleStockSelected = !selectedStocks.includes('KOSPI') && selectedStocks.length === 1;
+  
+  if (!isSingleStockSelected) {
+    header.innerText = '🏢 개별 종목 IR 공시';
+    container.innerHTML = '<div style="color: var(--text-sub); font-size: 0.8rem; text-align: center; padding: 20px;">코스피(KOSPI) 체크를 해제하고, 단일 종목을 선택하시면 해당 종목의 IR 공시 내역이 나타납니다.</div>';
+    return;
+  }
+  
+  const stockName = selectedStocks[0];
+  header.innerText = `🏢 ${stockName} IR 공시`;
+  const events = irData[stockName] || [];
+  
+  container.innerHTML = '';
+  if (events.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-sub); text-align:center; padding: 20px;">해당 종목의 IR 공시가 없습니다.</p>';
+    return;
+  }
+  
+  events.forEach(e => {
+    const item = document.createElement('div');
+    item.className = 'external-event-item';
+    item.setAttribute('data-date', e.date);
+    
+    const isPast = e.date < todayStr;
+    const itemStyle = isPast ? '' : `background: rgba(4, 120, 87, 0.03); border-left: 3px solid #10b981;`;
+    item.style.cssText += itemStyle;
+    
+    item.innerHTML = `
+      <div class="event-date" style="color: #e2e8f0; font-weight: 600; width: 90px;">${escapeHTML(e.date)}</div>
+      <div class="event-title" style="color: #ffffff; font-weight: 500; flex: 1;">${escapeHTML(e.title)}</div>
+    `;
+    container.appendChild(item);
+  });
 }

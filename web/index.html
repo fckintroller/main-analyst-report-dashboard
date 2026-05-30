@@ -184,7 +184,26 @@
             </p>
           </div>
           <div class="chart-wrapper"><canvas id="marketChart"></canvas></div>
-          <div id="external-events-list" style="margin-top:20px; max-height:150px; overflow-y:auto; border-top: 1px solid #101620;"></div>
+          <!-- 하단 연동형 이벤트 타임라인 (매크로 & IR 2단 분할) -->
+          <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <!-- 좌측: 매크로 캘린더 -->
+            <div>
+              <h3 style="font-size: 0.9rem; color: var(--text-sub); margin-bottom: 8px; border-bottom: 1px solid #1f2937; padding-bottom: 4px;">🌍 글로벌 거시경제 지표</h3>
+              <div id="external-events-list" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 5px;">
+                <!-- JS 동적 렌더링 -->
+              </div>
+            </div>
+            <!-- 우측: 개별 종목 IR 공시 -->
+            <div>
+              <h3 style="font-size: 0.9rem; color: var(--text-sub); margin-bottom: 8px; border-bottom: 1px solid #1f2937; padding-bottom: 4px;" id="ir-events-header">🏢 개별 종목 IR 공시</h3>
+              <div id="ir-events-list" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 5px;">
+                <!-- JS 동적 렌더링 -->
+                <div style="color: var(--text-sub); font-size: 0.8rem; text-align: center; padding: 20px;">
+                  코스피(KOSPI) 체크를 해제하고, 단일 종목을 선택하시면 해당 종목의 IR 공시 내역이 나타납니다.
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="chart-right-panel">
           <div style="margin-bottom: 15px;">

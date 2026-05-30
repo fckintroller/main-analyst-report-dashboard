@@ -141,10 +141,15 @@ def main():
             
     # 날짜순 정렬
     merged_events = list(event_dict.values())
-    merged_events.sort(key=lambda x: x['date'])
     
-    if save_calendar(merged_events):
-        logger.info(f"[Calendar] 경제 캘린더 수집 완료. (총 {len(merged_events)}건, 신규 {new_count}건)")
+    # 2025년 6월 1일 이전 데이터 필터링 로직 추가
+    min_date = "2025-06-01"
+    filtered_events = [e for e in merged_events if e['date'] >= min_date]
+    
+    filtered_events.sort(key=lambda x: x['date'])
+    
+    if save_calendar(filtered_events):
+        logger.info(f"[Calendar] 경제 캘린더 수집 완료. (총 {len(filtered_events)}건, 신규 {new_count}건)")
 
 if __name__ == "__main__":
     main()

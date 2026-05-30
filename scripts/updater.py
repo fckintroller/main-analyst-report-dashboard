@@ -9,13 +9,14 @@ from utils import (
     JS_PATH, CSV_PATH, MD_PATH, OUTPUTS_DIR
 )
 
-def generate_js_bridge(db_data, market_data, calendar_data):
+def generate_js_bridge(db_data, market_data, calendar_data, ir_data_dict):
     """자바스크립트 브릿지 파일 갱신"""
     try:
         with open(JS_PATH, "w", encoding="utf-8") as f:
             f.write(f"window.ANALYST_DATABASE = {json.dumps(db_data, ensure_ascii=False, indent=2)};\n")
             f.write(f"window.MARKET_DATA = {json.dumps(market_data, ensure_ascii=False, indent=2)};\n")
             f.write(f"window.CALENDAR_DATA = {json.dumps(calendar_data, ensure_ascii=False, indent=2)};\n")
+            f.write(f"window.IR_DATA = {json.dumps(ir_data_dict, ensure_ascii=False, indent=2)};\n")
         logger.info(f"  [JS 브릿지] {JS_PATH} 업데이트 완료")
         return True
     except Exception as e:
@@ -136,6 +137,47 @@ def fetch_market_data(db_data):
             logger.error(f"  [데이터 패치] {symbol} 실패: {e}")
             return []
 
+    def fetch_naver_ir_data(symbol):
+        import re
+        import ssl
+        ssl_context = ssl._create_unverified_context()
+        ir_list = []
+        page = 1
+        keep_fetching = True
+        
+        while keep_fetching and page <= 20: # 무한 루프 방지
+            url = f"https://finance.naver.com/item/news_notice.naver?code={symbol}&page={page}"
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            try:
+                with urllib.request.urlopen(req, context=ssl_context) as response:
+                    html = response.read().decode('euc-kr', errors='ignore')
+                    pattern = re.compile(r'<td class="title">.*?<a[^>]*>(.*?)</a>.*?<td class="date">(.*?)</td>', re.IGNORECASE | re.DOTALL)
+                    
+                    matches = list(pattern.finditer(html))
+                    if not matches:
+                        break
+                        
+                    for match in matches:
+                        title = match.group(1).strip()
+                        date_str = match.group(2).strip()
+                        clean_date = date_str.split()[0].replace('.', '-')
+                        
+                        if clean_date < '2025-06-01':
+                            keep_fetching = False
+                            continue
+                            
+                        if any(k in title for k in ['기업설명회', '실적', 'IR', '영업잠정실적', '안내', '매출']):
+                            clean_title = re.sub(r'<[^>]+>', '', title).strip()
+                            ir_list.append({"date": clean_date, "title": clean_title})
+            except Exception as e:
+                logger.error(f"  [에러] {symbol} IR 데이터 다운로드 실패: {e}")
+                break
+            
+            page += 1
+            time.sleep(0.1)
+            
+        return ir_list
+
     logger.info("  [데이터 패치] KOSPI 다운로드 중...")
     kospi_rows = fetch_naver_json("KOSPI")
     if not kospi_rows:
@@ -143,6 +185,8 @@ def fetch_market_data(db_data):
 
     dates = [f"{str(row[0])[:4]}-{str(row[0])[4:6]}-{str(row[0])[6:]}" for row in kospi_rows]
     series = {"KOSPI": [round(float(row[4]), 2) for row in kospi_rows]}
+
+    ir_data_dict = {}
 
     for stock in unique_stocks:
         if stock == "KOSPI": continue
@@ -165,17 +209,23 @@ def fetch_market_data(db_data):
                     last_price = date_to_price[d]
                 prices.append(int(round(last_price, -2)))
             series[stock] = prices
+        
+        logger.info(f"  [IR 패치] {stock} ({ticker}) 공시 데이터 다운로드 중...")
+        ir_rows = fetch_naver_ir_data(ticker)
+        if ir_rows:
+            ir_data_dict[stock] = ir_rows
+            
         time.sleep(0.05)
         
-    return {"dates": dates, "series": series}
+    return {"dates": dates, "series": series}, ir_data_dict
 
 def main():
     logger.info("[Updater] 업데이트 프로세스 시작...")
     db_data = load_db()
-    market_data = fetch_market_data(db_data)
+    market_data, ir_data_dict = fetch_market_data(db_data)
     calendar_data = load_calendar()
     
-    if generate_js_bridge(db_data, market_data, calendar_data):
+    if generate_js_bridge(db_data, market_data, calendar_data, ir_data_dict):
         generate_csv(db_data)
         
         markdown_content = compile_markdown(db_data)
