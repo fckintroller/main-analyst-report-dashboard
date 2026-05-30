@@ -288,14 +288,14 @@
           <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
             <!-- 좌측: 매크로 캘린더 -->
             <div>
-              <h3 style="font-size: 0.9rem; color: var(--text-sub); margin-bottom: 8px; border-bottom: 1px solid #1f2937; padding-bottom: 4px;">🌍 글로벌 거시경제 지표</h3>
+              <h3 style="font-size: 0.9rem; color: var(--text-heading); margin-bottom: 8px; border-bottom: 1px solid var(--card-border); padding-bottom: 4px;">🌍 글로벌 거시경제 지표</h3>
               <div id="external-events-list" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 5px;">
                 <!-- JS 동적 렌더링 -->
               </div>
             </div>
             <!-- 우측: 개별 종목 IR 공시 -->
             <div>
-              <h3 style="font-size: 0.9rem; color: var(--text-sub); margin-bottom: 8px; border-bottom: 1px solid #1f2937; padding-bottom: 4px;" id="ir-events-header">🏢 개별 종목 IR 공시</h3>
+              <h3 style="font-size: 0.9rem; color: var(--text-heading); margin-bottom: 8px; border-bottom: 1px solid var(--card-border); padding-bottom: 4px;" id="ir-events-header">🏢 개별 종목 IR 공시</h3>
               <div id="ir-events-list" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 5px;">
                 <!-- JS 동적 렌더링 -->
                 <div style="color: var(--text-sub); font-size: 0.8rem; text-align: center; padding: 20px;">
@@ -307,7 +307,7 @@
         </div>
         <div class="chart-right-panel">
           <div style="margin-bottom: 15px;">
-            <input type="text" id="stock-search" oninput="filterStockChecklist()" placeholder="🔍 종목 검색..." style="width: 100%; background: #040608; border: 1px solid var(--card-border); color: #ffffff; padding: 10px 12px; border-radius: 6px; font-size: 0.88rem; outline: none; transition: var(--transition);">
+            <input type="text" id="stock-search" oninput="filterStockChecklist()" placeholder="🔍 종목 검색..." style="width: 100%; background: var(--btn-bg); border: 1px solid var(--card-border); color: var(--text-heading); padding: 10px 12px; border-radius: 6px; font-size: 0.88rem; outline: none; transition: var(--transition);">
             <div style="display:flex; gap:8px; margin-top:10px;">
               <button id="btn-toggle-all" class="filter-btn" style="flex:1; padding:4px; font-size:0.75rem; text-align:center; height:auto;">전체 선택</button>
               <button id="btn-toggle-none" class="filter-btn" style="flex:1; padding:4px; font-size:0.75rem; text-align:center; height:auto;">전체 해제</button>

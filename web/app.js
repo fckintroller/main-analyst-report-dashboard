@@ -340,10 +340,10 @@ function renderCalendar() {
         const isHigh = e.impact === 'High';
         const itemStyle = isHigh ? `background: rgba(250, 204, 21, 0.03); border-left: 3px solid #facc15;` : '';
         return `
-          <div style="display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-bottom: 1px solid #101620; ${itemStyle}">
-            <div style="color: #e2e8f0; font-weight: 600; width: 100px;">${escapeHTML(e.date)}</div>
+          <div style="display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-bottom: 1px solid var(--card-border); ${itemStyle}">
+            <div style="color: var(--text-sub); font-weight: 600; width: 100px;">${escapeHTML(e.date)}</div>
             <span style="background: ${cColor}15; color: ${cColor}; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem; border: 1px solid ${cColor}40;">${escapeHTML(e.country)}</span>
-            <div style="color: #ffffff; font-weight: 500; flex: 1;">${escapeHTML(e.title)}${resHtml}</div>
+            <div style="color: var(--text-heading); font-weight: 500; flex: 1;">${escapeHTML(e.title)}${resHtml}</div>
           </div>
         `;
       }).join('');
@@ -380,15 +380,17 @@ function renderExternalEvents() {
     const itemStyle = isHigh ? `background: rgba(250, 204, 21, 0.03); border-left: 3px solid #facc15;` : '';
     item.style.cssText += itemStyle;
     item.innerHTML = `
-      <div class="event-date" style="color: #e2e8f0; font-weight: 600; width: 90px;">${escapeHTML(e.date)}</div>
+      <div class="event-date" style="color: var(--text-sub); font-weight: 600; width: 90px;">${escapeHTML(e.date)}</div>
       <span style="background: ${cColor}15; color: ${cColor}; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem; border: 1px solid ${cColor}40;">${escapeHTML(e.country)}</span>
-      <div class="event-title" style="color: #ffffff; font-weight: 500; flex: 1;">${escapeHTML(e.title)}${resHtml}</div>
+      <div class="event-title" style="color: var(--text-heading); font-weight: 500; flex: 1;">${escapeHTML(e.title)}${resHtml}</div>
     `;
     container.appendChild(item);
   });
 }
 
 function initChart() {
+  if (marketChart) marketChart.destroy();
+  
   const canvas = document.getElementById('marketChart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
@@ -726,17 +728,16 @@ function renderStockChecklist() {
       });
     }
 
-    if (isChecked) { item.style.borderColor = 'rgba(4, 120, 87, 0.4)'; item.style.background = 'rgba(4, 120, 87, 0.04)'; }
     container.appendChild(item);
   });
 }
 
 function handleStockCheck(chk) {
   const stock = chk.value;
-  const label = chk.closest('.stock-item-label');
-  if (chk.checked) { if (!selectedStocks.includes(stock)) selectedStocks.push(stock); label.style.borderColor = 'rgba(4, 120, 87, 0.4)'; label.style.background = 'rgba(4, 120, 87, 0.04)'; }
-  else { selectedStocks = selectedStocks.filter(s => s !== stock); label.style.borderColor = 'var(--card-border)'; label.style.background = '#080c12'; }
+  if (chk.checked) { if (!selectedStocks.includes(stock)) selectedStocks.push(stock); }
+  else { selectedStocks = selectedStocks.filter(s => s !== stock); }
   updateChart();
+  renderStockChecklist();
 }
 
 function filterStockChecklist() {
