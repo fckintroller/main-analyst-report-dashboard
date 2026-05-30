@@ -213,7 +213,10 @@
     </div>
 
     <div id="tab-analysts" class="tab-content active">
-      <div class="filter-container" id="filter-buttons"></div>
+      <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+        <div class="filter-container" id="filter-buttons" style="flex-grow: 1; margin-bottom: 0; justify-content: flex-start;"></div>
+        <input type="text" id="analyst-search" oninput="filterAnalysts()" placeholder="🔍 종목명, 섹터 검색..." style="width: 250px; background: var(--btn-bg); border: 1px solid var(--card-border); color: var(--text-heading); padding: 10px 12px; border-radius: 6px; font-size: 0.88rem; outline: none; transition: var(--transition);">
+      </div>
       <div class="analysts-grid" id="analysts-container"></div>
     </div>
 
@@ -249,9 +252,12 @@
         <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; display:flex; align-items:center; gap:10px; color:var(--primary);">
           <i class="fa-solid fa-file-lines" style="color:var(--primary);"></i> 종합 리서치 보고서 센터
         </h2>
-        <p style="color:var(--text-sub); font-size: 0.95rem; margin-bottom: 25px;">
-          * 대한민국 최정상급 베스트 애널리스트들이 심층 작성한 최신 종목 분석 및 섹터전략 리포트 요약본입니다.
-        </p>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px;">
+          <p style="color:var(--text-sub); font-size: 0.95rem; margin: 0; align-self: center;">
+            * 대한민국 최정상급 베스트 애널리스트들이 심층 작성한 최신 종목 분석 및 섹터전략 리포트 요약본입니다.
+          </p>
+          <input type="text" id="report-search" oninput="filterReports()" placeholder="🔍 종목명, 섹터 검색..." style="width: 250px; background: var(--btn-bg); border: 1px solid var(--card-border); color: var(--text-heading); padding: 10px 12px; border-radius: 6px; font-size: 0.88rem; outline: none; transition: var(--transition);">
+        </div>
         <div class="reports-grid" id="reports-container-grid"></div>
       </div>
     </div>
@@ -323,9 +329,16 @@
         <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; display:flex; align-items:center; gap:10px; color:var(--primary);">
           <i class="fa-regular fa-calendar-check" style="color:var(--primary);"></i> 주요 거시경제 캘린더 (High Impact)
         </h2>
-        <p style="color:var(--text-sub); font-size: 0.95rem; margin-bottom: 25px;">
+        <p style="color:var(--text-sub); font-size: 0.95rem; margin-bottom: 20px;">
           * 글로벌 금융 시장에 큰 영향을 미치는 중요도 높은 경제 지표 및 이벤트 일정입니다.
         </p>
+        <div class="filter-container" style="justify-content: flex-start; gap: 8px;">
+          <button class="filter-btn active" onclick="setCalendarFilter('all', this)">전체</button>
+          <button class="filter-btn" onclick="setCalendarFilter('today', this)">오늘</button>
+          <button class="filter-btn" onclick="setCalendarFilter('tomorrow', this)">내일</button>
+          <button class="filter-btn" onclick="setCalendarFilter('this_week', this)">이번 주</button>
+          <button class="filter-btn" onclick="setCalendarFilter('this_month', this)">이번 달</button>
+        </div>
         <div id="calendar-container-body" style="background: var(--card-bg); border-radius: 8px; padding: 20px;"></div>
       </div>
     </div>

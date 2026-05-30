@@ -24,6 +24,43 @@ function getCountryColor(country) {
   return map[country] || '#10b981';
 }
 
+// 글로벌 상태 변수
+window.currentCalendarFilter = 'all';
+window.analystSearchTerm = '';
+window.reportSearchTerm = '';
+
+// 캘린더 필터 설정 함수
+window.setCalendarFilter = function(filter, btnElement) {
+  window.currentCalendarFilter = filter;
+  // 버튼 활성화 상태 처리
+  if (btnElement && btnElement.parentElement) {
+    const btns = btnElement.parentElement.querySelectorAll('.filter-btn');
+    btns.forEach(b => b.classList.remove('active'));
+    btnElement.classList.add('active');
+  }
+  renderCalendar();
+};
+
+// 애널리스트 탭 검색 이벤트 핸들러
+window.filterAnalysts = function() {
+  const input = document.getElementById('analyst-search');
+  if (input) {
+    window.analystSearchTerm = input.value.trim().toLowerCase();
+    renderDashboard();
+  }
+};
+
+// 보고서 탭 검색 이벤트 핸들러
+window.filterReports = function() {
+  const input = document.getElementById('report-search');
+  if (input) {
+    window.reportSearchTerm = input.value.trim().toLowerCase();
+    const reports = window.currentDatabase?.reports || [];
+    const analysts = window.currentDatabase?.analysts || [];
+    renderReports(reports, analysts);
+  }
+};
+
 // 등급별 눈이 편안한 시그니처 색상 매핑
 function getRatingColor(rating) {
   if (!rating) return 'var(--text-main)';
@@ -168,11 +205,21 @@ function renderAnalysts(analystList) {
   const container = document.getElementById('analysts-container');
   if (!container) return;
   container.innerHTML = '';
-  if (analystList.length === 0) {
-    container.innerHTML = '<p style="color:var(--text-sub); text-align:center; grid-column:1/-1;">조건에 부합하는 애널리스트가 없습니다.</p>';
+  let filteredAnalysts = analystList;
+  if (window.analystSearchTerm) {
+    const term = window.analystSearchTerm;
+    filteredAnalysts = analystList.filter(a => {
+      const matchSector = a.merged_sector.toLowerCase().includes(term);
+      const matchTarget = (a.targets || []).some(t => t.toLowerCase().includes(term));
+      return matchSector || matchTarget;
+    });
+  }
+
+  if (filteredAnalysts.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-sub); text-align:center; grid-column:1/-1;">검색 결과가 없습니다.</p>';
     return;
   }
-  analystList.forEach(a => {
+  filteredAnalysts.forEach(a => {
     const card = document.createElement('div');
     card.className = 'analyst-card';
     card.setAttribute('data-sector', a.merged_sector);
@@ -252,11 +299,21 @@ function renderReports(reportList, analysts) {
   const container = document.getElementById('reports-container-grid');
   if (!container) return;
   container.innerHTML = '';
-  if (reportList.length === 0) {
-    container.innerHTML = '<p style="color:var(--text-sub); text-align:center; grid-column:1/-1;">등록된 보고서가 없습니다.</p>';
+  let filteredReports = reportList;
+  if (window.reportSearchTerm) {
+    const term = window.reportSearchTerm;
+    filteredReports = reportList.filter(rep => {
+      const aObj = analysts.find(a => a.id === rep.analyst_id) || {};
+      const sector = aObj.sector || '';
+      return rep.stock_name.toLowerCase().includes(term) || sector.toLowerCase().includes(term);
+    });
+  }
+
+  if (filteredReports.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-sub); text-align:center; grid-column:1/-1;">검색 결과가 없습니다.</p>';
     return;
   }
-  reportList.forEach(rep => {
+  filteredReports.forEach(rep => {
     const aObj = analysts.find(a => a.id === rep.analyst_id) || { name: '외부', firm: '기고', position: '위원' };
     const card = document.createElement('div');
     card.className = 'report-card';
@@ -322,7 +379,18 @@ function renderCalendar() {
     else groups[6].events.push(event);
   });
 
+  const filterMap = {
+    'all': ['과거', '지난주', '오늘', '내일', '이번주', '다음주', '이번달'],
+    'today': ['오늘'],
+    'tomorrow': ['내일'],
+    'this_week': ['오늘', '내일', '이번주'],
+    'this_month': ['오늘', '내일', '이번주', '다음주', '이번달']
+  };
+  const activeGroupIds = filterMap[window.currentCalendarFilter] || filterMap['all'];
+
   groups.forEach(group => {
+    if (!activeGroupIds.includes(group.id)) return;
+
     const groupDiv = document.createElement('div');
     groupDiv.style.marginBottom = '20px';
     let contentHtml = '';
