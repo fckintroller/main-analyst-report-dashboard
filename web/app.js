@@ -528,7 +528,7 @@ function initChart() {
         legend: { display: true, position: 'top', labels: { color: isLight ? '#374151' : '#e2e8f0', font: { family: 'Inter', size: 11 } } },
         tooltip: {
           position: 'cursor',
-          backgroundColor: isLight ? '#ffffff' : '#080c12', titleColor: '#10b981', bodyColor: isLight ? '#374151' : '#e2e8f0', borderColor: gridColor,
+          backgroundColor: isLight ? '#ffffff' : '#080c12', titleColor: isLight ? '#047857' : '#10b981', bodyColor: isLight ? '#374151' : '#e2e8f0', borderColor: gridColor,
           borderWidth: 1, padding: 12, titleFont: { weight: 'bold' }
         }
       },
