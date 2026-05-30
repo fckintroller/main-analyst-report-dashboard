@@ -415,8 +415,19 @@ function initChart() {
         const annotations = chart.options.plugins.annotation?.annotations || {};
         
         let hoveredDate = null;
-        if (activeElements && activeElements.length > 0) {
-          hoveredDate = chart.data.labels[activeElements[0].index];
+        if (chart.scales.x) {
+          const xValueMs = chart.scales.x.getValueForPixel(e.x);
+          let minDiff = Infinity;
+          chart.data.labels.forEach(dateStr => {
+            const dTime = new Date(dateStr).getTime();
+            const diff = Math.abs(dTime - xValueMs);
+            if (diff < minDiff) {
+              minDiff = diff;
+              hoveredDate = dateStr;
+            }
+          });
+          // 마우스가 특정 날짜의 12시간 이내(반경)에 있을 때만 해당 날짜로 인식
+          if (minDiff > 43200000) hoveredDate = null; 
         }
 
         let firstScrolled = false;
