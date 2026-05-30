@@ -503,9 +503,11 @@ function initChart() {
           const ann = annotations[key];
           if (!ann.original) ann.original = { borderColor: ann.borderColor, borderWidth: ann.borderWidth, labelDisplay: ann.label?.display };
           
+          const hoverColor = isLight ? 'rgba(217, 119, 6, 1)' : 'rgba(250, 204, 21, 1)';
+          
           if (hoveredDate && ann.xMin === hoveredDate) {
-            if (ann.borderColor !== 'rgba(250, 204, 21, 1)') {
-              ann.borderColor = 'rgba(250, 204, 21, 1)'; ann.borderWidth = 3; if (ann.label) ann.label.display = true; needsUpdate = true;
+            if (ann.borderColor !== hoverColor) {
+              ann.borderColor = hoverColor; ann.borderWidth = 3; if (ann.label) ann.label.display = true; needsUpdate = true;
             }
             const targetEl = document.querySelector(`.external-event-item[data-date="${ann.originalDate || hoveredDate}"]`);
             if (targetEl) {
@@ -513,7 +515,7 @@ function initChart() {
               if (!firstScrolled) { targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); firstScrolled = true; }
             }
           } else {
-            if (ann.borderColor === 'rgba(250, 204, 21, 1)') {
+            if (ann.borderColor === hoverColor || ann.borderColor === 'rgba(250, 204, 21, 1)' || ann.borderColor === 'rgba(217, 119, 6, 1)') {
               ann.borderColor = ann.original.borderColor; ann.borderWidth = ann.original.borderWidth;
               if (ann.label) ann.label.display = ann.original.labelDisplay; needsUpdate = true;
             }
@@ -692,10 +694,13 @@ function updateChart() {
       if (ev.forecast || ev.previous) contentArr.push(`  ${isPast ? '결과' : '예측'}: 예상 ${ev.forecast} | 이전 ${ev.previous}`);
       if (idx < evs.length - 1) contentArr.push('');
     });
+    const pastColor = isLight ? 'rgba(107, 114, 128, 0.4)' : 'rgba(156, 163, 175, 0.2)';
+    const futureColor = isLight ? 'rgba(217, 119, 6, 0.4)' : 'rgba(250, 204, 21, 0.2)';
+    
     annotations[`event_${fIndex++}`] = {
       type: 'line', xMin: m, xMax: m, originalDate: evs[0].originalDate,
-      borderColor: isPast ? 'rgba(156, 163, 175, 0.2)' : 'rgba(250, 204, 21, 0.2)', borderWidth: 1.5, borderDash: [3, 3],
-      label: { display: false, content: contentArr, position: 'start', color: isPast ? '#ffffff' : '#000000', backgroundColor: isPast ? 'rgba(75, 85, 99, 0.95)' : 'rgba(250, 204, 21, 0.95)', borderRadius: 6, font: { size: 10, weight: 'bold' }, padding: 8, yAdjust: -30 }
+      borderColor: isPast ? pastColor : futureColor, borderWidth: 1.5, borderDash: [3, 3],
+      label: { display: false, content: contentArr, position: 'start', color: isPast ? '#ffffff' : '#000000', backgroundColor: isPast ? 'rgba(75, 85, 99, 0.95)' : (isLight ? 'rgba(217, 119, 6, 0.95)' : 'rgba(250, 204, 21, 0.95)'), borderRadius: 6, font: { size: 10, weight: 'bold' }, padding: 8, yAdjust: -30 }
     };
   });
 
