@@ -471,7 +471,7 @@ function initChart() {
 
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
   const gridColor = isLight ? '#e5e7eb' : '#101620';
-  const tickColor = isLight ? '#6b7280' : '#9ca3af';
+  const tickColor = isLight ? '#1f2937' : '#9ca3af';
 
   const config = {
     type: 'line',
