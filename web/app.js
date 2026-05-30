@@ -551,8 +551,13 @@ function updateChart() {
       });
     } else {
       let final = [];
-      if (chartMode === 'pct' && stock !== 'KOSPI') { const base = series[0]; final = series.map(p => base === 0 ? 0 : ((p - base) / base) * 100); }
-      else final = series;
+      if (chartMode === 'pct') { 
+        const base = series[0]; 
+        final = series.map(p => base === 0 ? 0 : ((p - base) / base) * 100); 
+      }
+      else {
+        final = series;
+      }
       const paddedSeries = [...final]; for (let i = 0; i < 30; i++) paddedSeries.push(null);
       const color = colors[stock] || defaultColors[colorIndex++ % defaultColors.length];
       datasets.push({ label: stock, data: paddedSeries, borderColor: color, backgroundColor: color + '15', borderWidth: stock === 'KOSPI' ? 2.5 : 2, pointRadius: 1, pointHoverRadius: 4, tension: 0.15, yAxisID: (chartMode === 'price' && stock === 'KOSPI' && hasOther) ? 'y2' : 'y' });
