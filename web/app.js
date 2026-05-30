@@ -530,28 +530,19 @@ function updateChart() {
       });
 
     if (showCandle) {
-      const ohlcSeries = marketData.series_ohlc && marketData.series_ohlc[stock] ? marketData.series_ohlc[stock] : null;
-      if (ohlcSeries) {
-        const candleData = [];
-        for (let i = 0; i < series.length; i++) {
-          const o = ohlcSeries[i];
-          if (o && o.o !== 0) {
-            candleData.push({ x: marketData.dates[i], o: o.o, h: o.h, l: o.l, c: o.c });
-          } else {
-            candleData.push({ x: marketData.dates[i], o: series[i], h: series[i], l: series[i], c: series[i] });
-          }
-        }
-        // 캔들은 패딩 데이터(미래) 생략
-        datasets.push({
-          type: 'candlestick',
-          label: stock + ' (Candle)',
-          data: candleData,
-          yAxisID: 'y',
-          color: { up: '#ef4444', down: '#3b82f6', unchanged: '#9ca3af' },
-          borderColor: { up: '#ef4444', down: '#3b82f6', unchanged: '#9ca3af' },
-          borderWidth: 1.5
-        });
-      }
+      // 캔들차트 플러그인 불안정성으로 인해 일시적으로 라인 차트로 폴백
+      const color = colors[stock] || defaultColors[colorIndex++ % defaultColors.length];
+      datasets.push({ 
+        label: stock + ' (Price)', 
+        data: series, 
+        borderColor: color, 
+        backgroundColor: color + '15', 
+        borderWidth: stock === 'KOSPI' ? 2.5 : 2, 
+        pointRadius: 1, 
+        pointHoverRadius: 4, 
+        tension: 0.15, 
+        yAxisID: (stock === 'KOSPI' && hasOther) ? 'y2' : 'y' 
+      });
     } else {
       const paddedSeries = [...series]; for (let i = 0; i < 30; i++) paddedSeries.push(null);
       const color = colors[stock] || defaultColors[colorIndex++ % defaultColors.length];
