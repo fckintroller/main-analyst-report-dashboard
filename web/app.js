@@ -912,7 +912,7 @@ function initBubbleCharts() {
   const configs = [
     { id: 'chart-buffett', label: '버핏지수 (%)', data: data.buffett, color: '#f59e0b', threshold: 100 },
     { id: 'chart-shiller', label: '쉴러 PE', data: data.shiller, color: '#3b82f6', threshold: 14 },
-    { id: 'chart-margin', label: '신용융자 잔고', data: data.margin_loan, color: '#ec4899', threshold: 20 },
+    { id: 'chart-margin', label: '신용융자 잔고', data: data.margin_loan, color: '#ec4899', threshold: 25 },
     { id: 'chart-receivable', label: '미수금', data: data.receivable, color: '#10b981', threshold: 1.0 }
   ];
 
