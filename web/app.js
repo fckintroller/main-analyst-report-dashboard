@@ -914,7 +914,6 @@ function initBubbleCharts() {
     { id: 'chart-shiller', label: '쉴러 PE', data: data.shiller, color: '#3b82f6', threshold: 14 },
     { id: 'chart-concentration', label: '시장 집중도 (%)', data: data.concentration, color: '#8b5cf6', threshold: 45 },
     { id: 'chart-spread', label: '신용 스프레드 (bp)', data: data.credit_spread, color: '#ea580c', threshold: 600 },
-    { id: 'chart-m2', label: 'M2 증가율 (%)', data: data.m2_growth, color: '#0d9488', threshold: 5 },
     { id: 'chart-us-yield', label: '미 10년-2년 금리차 (%)', data: data.us_yield_spread, color: '#e11d48', threshold: 0 }
   ];
 
@@ -1060,5 +1059,69 @@ function initBubbleCharts() {
       }
     });
     window.bubbleCharts.push(chartLev);
+  }
+
+  // M2 통화량 복합 차트 (한국 & 미국)
+  const canvasM2 = document.getElementById('chart-m2');
+  if (canvasM2) {
+    const ctxM2 = canvasM2.getContext('2d');
+    const chartAnnsM2 = { ...annotations };
+    chartAnnsM2.threshold = { type: 'line', yMin: 5, yMax: 5, borderColor: 'rgba(13, 148, 136, 0.5)', borderWidth: 2, borderDash: [5, 5] };
+
+    const chartM2 = new Chart(ctxM2, {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: [
+          {
+            label: '한국 M2 증가율 (%)',
+            data: data.m2_growth,
+            borderColor: '#0d9488',
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            tension: 0.2
+          },
+          {
+            label: '미국 M2 증가율 (%)',
+            data: data.m2_us_growth,
+            borderColor: '#3b82f6', // 파란색 계열
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            tension: 0.2
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: true, labels: { color: textColor } },
+          tooltip: {
+            backgroundColor: isLight ? '#ffffff' : '#080c12',
+            titleColor: textColor,
+            bodyColor: textColor,
+            borderColor: gridColor,
+            borderWidth: 1
+          },
+          annotation: { annotations: chartAnnsM2 }
+        },
+        scales: {
+          x: { 
+            type: 'time', 
+            time: { unit: 'year', tooltipFormat: 'yyyy-MM' },
+            grid: { display: false },
+            ticks: { color: textColor, maxRotation: 0 }
+          },
+          y: { 
+            grid: { color: gridColor },
+            ticks: { color: textColor }
+          }
+        }
+      }
+    });
+    window.bubbleCharts.push(chartM2);
   }
 }
