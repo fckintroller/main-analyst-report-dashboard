@@ -14,19 +14,6 @@ import random
 def generate_js_bridge(db_data, market_data, calendar_data, ir_data_dict):
     """자바스크립트 브릿지 파일 갱신"""
     try:
-        # 감성 점수 추가 (OpenAI API Fallback 모드)
-        for rep in db_data.get('reports', []):
-            if 'sentiment_score' not in rep:
-                if rep['rating'] == '매수 (Buy)': rep['sentiment_score'] = random.randint(70, 95)
-                elif rep['rating'] == '홀딩 (Hold)': rep['sentiment_score'] = random.randint(40, 60)
-                else: rep['sentiment_score'] = random.randint(10, 30)
-                
-        for rec in db_data.get('recommendations', []):
-            if 'sentiment_score' not in rec:
-                if rec['current_rating'] == '매수 (Buy)': rec['sentiment_score'] = random.randint(70, 95)
-                elif rec['current_rating'] == '홀딩 (Hold)': rec['sentiment_score'] = random.randint(40, 60)
-                else: rec['sentiment_score'] = random.randint(10, 30)
-
         with open(JS_PATH, "w", encoding="utf-8") as f:
             f.write(f"window.ANALYST_DATABASE = {json.dumps(db_data, ensure_ascii=False, indent=2)};\n")
             f.write(f"window.MARKET_DATA = {json.dumps(market_data, ensure_ascii=False, indent=2)};\n")

@@ -331,7 +331,7 @@ function renderReports(reportList, analysts) {
           <div>
             <h3 class="report-title">
               ${escapeHTML(rep.title)}
-              ${rep.sentiment_score !== undefined ? `<span style="font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: bold; background: ${rep.sentiment_score >= 60 ? 'rgba(239,68,68,0.1)' : rep.sentiment_score <= 40 ? 'rgba(59,130,246,0.1)' : 'rgba(107,114,128,0.1)'}; color: ${rep.sentiment_score >= 60 ? '#ef4444' : rep.sentiment_score <= 40 ? '#3b82f6' : 'var(--text-sub)'}; border: 1px solid ${rep.sentiment_score >= 60 ? '#ef4444' : rep.sentiment_score <= 40 ? '#3b82f6' : 'var(--text-sub)'};" title="AI 감성 점수">AI ${rep.sentiment_score}점 ${rep.sentiment_score >= 60 ? '🔴' : rep.sentiment_score <= 40 ? '🔵' : '🟡'}</span>` : ''}
+              
             </h3>
             <div class="report-meta"><span class="report-author">${escapeHTML(aObj.firm)} ${escapeHTML(aObj.name)} ${escapeHTML(aObj.position)}</span><span style="margin: 0 4px; color: var(--text-sub);">•</span><span>${escapeHTML(rep.date)}</span></div>
           </div>
