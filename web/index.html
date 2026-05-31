@@ -210,7 +210,6 @@
       <button id="btn-tab-reports" class="tab-btn"><i class="fa-solid fa-file-invoice-dollar"></i> 리서치 보고서</button>
       <button id="btn-tab-chart" class="tab-btn"><i class="fa-solid fa-chart-line"></i> 주가 & 코스피 비교 분석</button>
       <button id="btn-tab-bubble" class="tab-btn" style="color: #ef4444;"><i class="fa-solid fa-chart-pie"></i> 버블 지표 분석</button>
-      <button id="btn-tab-calendar" class="tab-btn"><i class="fa-regular fa-calendar-check"></i> 경제 캘린더</button>
     </div>
 
     <div id="tab-analysts" class="tab-content active">
@@ -323,10 +322,9 @@
           <div id="stock-checklist" style="overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 8px; padding-right: 5px;"></div>
         </div>
       </div>
-    </div>
-
-    <div id="tab-calendar" class="tab-content">
-      <div class="reports-container" style="max-width:900px; margin:0 auto;">
+      
+      <!-- 경제 캘린더 종속 -->
+      <div class="reports-container" style="max-width:900px; margin: 40px auto 0 auto;">
         <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; display:flex; align-items:center; gap:10px; color:var(--primary);">
           <i class="fa-regular fa-calendar-check" style="color:var(--primary);"></i> 주요 거시경제 캘린더 (High Impact)
         </h2>
@@ -367,15 +365,10 @@
             <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">쉴러 PE (CAPE Ratio)</h3>
             <div style="height: 250px; position: relative;"><canvas id="chart-shiller"></canvas></div>
           </div>
-          <!-- 신용융자 잔고 -->
-          <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
-            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">신용융자 잔고 (조 원)</h3>
-            <div style="height: 250px; position: relative;"><canvas id="chart-margin"></canvas></div>
-          </div>
-          <!-- 미수금 -->
-          <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
-            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">미수금 잔고 (조 원)</h3>
-            <div style="height: 250px; position: relative;"><canvas id="chart-receivable"></canvas></div>
+          <!-- 레버리지 종합 (신용융자 & 미수금) -->
+          <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px; grid-column: 1 / -1;">
+            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">레버리지 추이 (신용융자 & 미수금 잔고)</h3>
+            <div style="height: 300px; position: relative;"><canvas id="chart-leverage"></canvas></div>
           </div>
         </div>
       </div>

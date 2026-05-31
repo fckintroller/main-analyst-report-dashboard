@@ -911,9 +911,7 @@ function initBubbleCharts() {
   const dates = data.dates;
   const configs = [
     { id: 'chart-buffett', label: '버핏지수 (%)', data: data.buffett, color: '#f59e0b', threshold: 100 },
-    { id: 'chart-shiller', label: '쉴러 PE', data: data.shiller, color: '#3b82f6', threshold: 14 },
-    { id: 'chart-margin', label: '신용융자 잔고', data: data.margin_loan, color: '#ec4899', threshold: 25 },
-    { id: 'chart-receivable', label: '미수금', data: data.receivable, color: '#10b981', threshold: 1.0 }
+    { id: 'chart-shiller', label: '쉴러 PE', data: data.shiller, color: '#3b82f6', threshold: 14 }
   ];
 
   // 과거 주요 위기구간 (Annotation)
@@ -980,4 +978,83 @@ function initBubbleCharts() {
     });
     window.bubbleCharts.push(chart);
   });
+
+  // 레버리지 복합 차트 (신용융자 & 미수금)
+  const canvasLev = document.getElementById('chart-leverage');
+  if (canvasLev) {
+    const ctxLev = canvasLev.getContext('2d');
+    const chartAnnsLev = { ...annotations };
+    chartAnnsLev.threshold1 = { type: 'line', yMin: 25, yMax: 25, yScaleID: 'y', borderColor: 'rgba(236, 72, 153, 0.5)', borderWidth: 2, borderDash: [5, 5] };
+    chartAnnsLev.threshold2 = { type: 'line', yMin: 1.0, yMax: 1.0, yScaleID: 'y1', borderColor: 'rgba(16, 185, 129, 0.5)', borderWidth: 2, borderDash: [5, 5] };
+
+    const chartLev = new Chart(ctxLev, {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: [
+          {
+            label: '신용융자 잔고 (조 원)',
+            data: data.margin_loan,
+            borderColor: '#ec4899',
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            tension: 0.2,
+            yAxisID: 'y'
+          },
+          {
+            label: '미수금 (조 원)',
+            data: data.receivable,
+            borderColor: '#10b981',
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            tension: 0.2,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: true, labels: { color: textColor } },
+          tooltip: {
+            backgroundColor: isLight ? '#ffffff' : '#080c12',
+            titleColor: textColor,
+            bodyColor: textColor,
+            borderColor: gridColor,
+            borderWidth: 1
+          },
+          annotation: { annotations: chartAnnsLev }
+        },
+        scales: {
+          x: { 
+            type: 'time', 
+            time: { unit: 'year', tooltipFormat: 'yyyy-MM' },
+            grid: { display: false },
+            ticks: { color: textColor, maxRotation: 0 }
+          },
+          y: { 
+            type: 'linear',
+            display: true,
+            position: 'left',
+            grid: { color: gridColor },
+            ticks: { color: textColor },
+            title: { display: true, text: '신용융자 (조 원)', color: '#ec4899' }
+          },
+          y1: { 
+            type: 'linear',
+            display: true,
+            position: 'right',
+            grid: { drawOnChartArea: false },
+            ticks: { color: textColor },
+            title: { display: true, text: '미수금 (조 원)', color: '#10b981' }
+          }
+        }
+      }
+    });
+    window.bubbleCharts.push(chartLev);
+  }
 }
