@@ -1158,9 +1158,18 @@ function initHeatmap() {
     const aObj = analysts.find(a => a.id === rep.analyst_id);
     const sector = aObj ? aObj.merged_sector : '기타';
     if (!sectorMap[sector]) {
-      sectorMap[sector] = { count: 0, buy: 0, hold: 0, sell: 0, reports: [] };
+      sectorMap[sector] = { count: 0, buy: 0, hold: 0, sell: 0, quarters: {}, reports: [] };
     }
     sectorMap[sector].count += 1;
+    
+    // 분기 추출
+    if (rep.date) {
+      const d = new Date(rep.date);
+      const yearStr = String(d.getFullYear()).slice(-2);
+      const q = Math.floor(d.getMonth() / 3) + 1;
+      const qStr = `${yearStr}'${q}Q`;
+      sectorMap[sector].quarters[qStr] = (sectorMap[sector].quarters[qStr] || 0) + 1;
+    }
     
     // 팩트(투자의견) 카운팅
     if (rep.rating && (rep.rating.includes('Buy') || rep.rating.includes('매수'))) {
@@ -1181,12 +1190,16 @@ function initHeatmap() {
     const holdPct = Math.round((data.hold / data.count) * 100);
     const sellPct = Math.round((data.sell / data.count) * 100);
     
+    // 분기별 배열
+    const sortedQuarters = Object.keys(data.quarters || {}).sort().reverse().map(q => `${q} : ${data.quarters[q]}개`);
+    
     treemapData.push({
       sector: sector,
       count: data.count,
       buyPct: buyPct,
       holdPct: holdPct,
       sellPct: sellPct,
+      quartersArray: sortedQuarters,
       // 색상은 매수 의견 비율(buyPct)을 기준으로 칠함
       sentiment: buyPct,
       topPick: data.reports[0] ? data.reports[0].stock_name : ''
@@ -1236,7 +1249,7 @@ function initHeatmap() {
             return [
               data.sector, 
               `총 발행: ${data.count}건`,
-              ...data.quartersArray
+              ...(data.quartersArray || [])
             ];
           }
         }
@@ -1260,6 +1273,7 @@ function initHeatmap() {
               const data = item.raw._data.children[0];
               return [
                 `총 리포트 발행: ${data.count}건`,
+                ...(data.quartersArray || []),
                 `매수(Buy): ${data.buyPct}% | 홀딩(Hold): ${data.holdPct}% | 매도(Sell): ${data.sellPct}%`,
                 `관심 종목(Top Pick): ${data.topPick || '없음'}`
               ];
