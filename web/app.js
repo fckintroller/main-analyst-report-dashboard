@@ -94,9 +94,11 @@ function switchTab(tabId, clickedBtn) {
     if (btn) btn.classList.add('active');
   }
 
-  // 차트 탭 초기화 지연 기동 (Canvas 렌더링 타이밍 보장 - 50ms)
+  // 차트 및 히트맵 탭 초기화 지연 기동 (Canvas 렌더링 타이밍 보장)
   if (tabId === 'tab-chart' && !marketChart) {
     setTimeout(initChart, 50);
+  } else if (tabId === 'tab-heatmap' && !window.heatmapChart) {
+    setTimeout(initHeatmap, 50);
   }
 
   // 모바일 하단 탭 동기화
@@ -124,6 +126,7 @@ window.addEventListener('DOMContentLoaded', () => {
     'btn-tab-reports': 'tab-reports',
     'btn-tab-chart': 'tab-chart',
     'btn-tab-bubble': 'tab-bubble',
+    'btn-tab-heatmap': 'tab-heatmap',
     'btn-tab-calendar': 'tab-calendar'
   };
 
@@ -162,6 +165,7 @@ window.addEventListener('DOMContentLoaded', () => {
       }
       if (marketChart) initChart();
       if (window.bubbleCharts) initBubbleCharts();
+      if (window.heatmapChart) initHeatmap();
     });
   }
 
@@ -202,6 +206,7 @@ function renderDashboard() {
   renderCalendar();
   renderExternalEvents();
   initBubbleCharts();
+  initHeatmap();
 }
 
 function renderAnalysts(analystList) {
@@ -323,7 +328,13 @@ function renderReports(reportList, analysts) {
     card.innerHTML = `
       <div>
         <div class="report-card-header">
-          <div><h3 class="report-title">${escapeHTML(rep.title)}</h3><div class="report-meta"><span class="report-author">${escapeHTML(aObj.firm)} ${escapeHTML(aObj.name)} ${escapeHTML(aObj.position)}</span><span style="margin: 0 4px; color: var(--text-sub);">•</span><span>${escapeHTML(rep.date)}</span></div></div>
+          <div>
+            <h3 class="report-title">
+              ${escapeHTML(rep.title)}
+              ${rep.sentiment_score !== undefined ? `<span style="font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: bold; background: ${rep.sentiment_score >= 60 ? 'rgba(239,68,68,0.1)' : rep.sentiment_score <= 40 ? 'rgba(59,130,246,0.1)' : 'rgba(107,114,128,0.1)'}; color: ${rep.sentiment_score >= 60 ? '#ef4444' : rep.sentiment_score <= 40 ? '#3b82f6' : 'var(--text-sub)'}; border: 1px solid ${rep.sentiment_score >= 60 ? '#ef4444' : rep.sentiment_score <= 40 ? '#3b82f6' : 'var(--text-sub)'};" title="AI 감성 점수">AI ${rep.sentiment_score}점 ${rep.sentiment_score >= 60 ? '🔴' : rep.sentiment_score <= 40 ? '🔵' : '🟡'}</span>` : ''}
+            </h3>
+            <div class="report-meta"><span class="report-author">${escapeHTML(aObj.firm)} ${escapeHTML(aObj.name)} ${escapeHTML(aObj.position)}</span><span style="margin: 0 4px; color: var(--text-sub);">•</span><span>${escapeHTML(rep.date)}</span></div>
+          </div>
         </div>
         <p class="report-summary">${escapeHTML(rep.summary)}</p>
       </div>
@@ -1124,4 +1135,125 @@ function initBubbleCharts() {
     });
     window.bubbleCharts.push(chartM2);
   }
+}
+
+// 섹터별 히트맵(Treemap) 초기화 로직
+function initHeatmap() {
+  const canvas = document.getElementById('chart-heatmap');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  
+  if (window.heatmapChart) {
+    window.heatmapChart.destroy();
+  }
+
+  const reports = window.currentDatabase?.reports || [];
+  const analysts = window.currentDatabase?.analysts || [];
+
+  if (reports.length === 0) return;
+
+  // 1. 보고서를 섹터별로 그룹핑
+  const sectorMap = {};
+  reports.forEach(rep => {
+    const aObj = analysts.find(a => a.id === rep.analyst_id);
+    const sector = aObj ? aObj.merged_sector : '기타';
+    if (!sectorMap[sector]) {
+      sectorMap[sector] = { count: 0, totalSentiment: 0, reports: [] };
+    }
+    sectorMap[sector].count += 1;
+    if (rep.sentiment_score !== undefined) {
+      sectorMap[sector].totalSentiment += rep.sentiment_score;
+    } else {
+      // 감성 점수가 없으면 임의로 중립 부여
+      sectorMap[sector].totalSentiment += 50; 
+    }
+    sectorMap[sector].reports.push(rep);
+  });
+
+  // 2. 트리맵용 데이터 포맷 구성
+  const treemapData = [];
+  for (const [sector, data] of Object.entries(sectorMap)) {
+    const avgSentiment = Math.round(data.totalSentiment / data.count);
+    treemapData.push({
+      sector: sector,
+      count: data.count,
+      sentiment: avgSentiment,
+      topPick: data.reports[0] ? data.reports[0].stock_name : ''
+    });
+  }
+
+  // 감성 점수(0~100)를 색상으로 변환 (파랑 0 -> 회색 50 -> 빨강 100)
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  function getColorBySentiment(score) {
+    const intensity = Math.abs(score - 50) / 50; // 0 ~ 1
+    if (score >= 50) {
+      // 50~100: 빨강
+      const alpha = isLight ? 0.3 + (intensity * 0.5) : 0.4 + (intensity * 0.6);
+      return `rgba(239, 68, 68, ${alpha})`;
+    } else {
+      // 0~49: 파랑
+      const alpha = isLight ? 0.3 + (intensity * 0.5) : 0.4 + (intensity * 0.6);
+      return `rgba(59, 130, 246, ${alpha})`;
+    }
+  }
+
+  const textColor = isLight ? '#ffffff' : '#ffffff';
+
+  window.heatmapChart = new Chart(ctx, {
+    type: 'treemap',
+    data: {
+      datasets: [{
+        tree: treemapData,
+        key: 'count',
+        groups: ['sector'],
+        spacing: 2,
+        borderWidth: 1,
+        borderColor: isLight ? '#ffffff' : '#080c12',
+        backgroundColor: (ctx) => {
+          if (ctx.type !== 'data') return 'transparent';
+          return getColorBySentiment(ctx.raw._data.sentiment);
+        },
+        labels: {
+          display: true,
+          align: 'center',
+          position: 'middle',
+          color: textColor,
+          font: [{ size: 18, weight: 'bold', family: 'Inter' }, { size: 13, family: 'Noto Sans KR' }],
+          formatter: (ctx) => {
+            if (ctx.type !== 'data') return [];
+            return [
+              ctx.raw._data.sector, 
+              `발행: ${ctx.raw._data.count}건 | AI 감성: ${ctx.raw._data.sentiment}점`
+            ];
+          }
+        }
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: isLight ? '#ffffff' : '#080c12',
+          titleColor: isLight ? '#111827' : '#f9fafb',
+          bodyColor: isLight ? '#374151' : '#e2e8f0',
+          borderColor: isLight ? '#e5e7eb' : '#1f2937',
+          borderWidth: 1,
+          displayColors: false,
+          callbacks: {
+            title: (items) => items[0].raw._data.sector,
+            label: (item) => {
+              const d = item.raw._data;
+              return [
+                `총 리포트: ${d.count}건`,
+                `평균 감성: ${d.sentiment}점 (0=Bear, 100=Bull)`,
+                `관심 종목: ${d.topPick}`
+              ];
+            }
+          }
+        }
+      }
+    }
+  });
 }
