@@ -810,6 +810,118 @@
     "previous": "0.2%"
   },
   {
+    "date": "2026-05-31",
+    "title": "중앙은행 총재 연설",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-05-31",
+    "title": "소비자물가지수 전월대비",
+    "country": "호주",
+    "impact": "High",
+    "forecast": "",
+    "previous": "0.6%"
+  },
+  {
+    "date": "2026-06-01",
+    "title": "실업률",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "6.2%",
+    "previous": "6.2%"
+  },
+  {
+    "date": "2026-06-01",
+    "title": "제조업 구매관리자지수(PMI)",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "53.3",
+    "previous": "52.7"
+  },
+  {
+    "date": "2026-06-02",
+    "title": "중앙은행 총재 연설",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-06-02",
+    "title": "고용 변동",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "",
+    "previous": "-62.7K"
+  },
+  {
+    "date": "2026-06-02",
+    "title": "소비자물가지수 전년동기대비",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "2.4%",
+    "previous": "2.2%"
+  },
+  {
+    "date": "2026-06-02",
+    "title": "JOLTs 구인구직",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "6.87M",
+    "previous": "6.87M"
+  },
+  {
+    "date": "2026-06-02",
+    "title": "국내총생산(GDP) 전분기대비",
+    "country": "호주",
+    "impact": "High",
+    "forecast": "0.5%",
+    "previous": "0.8%"
+  },
+  {
+    "date": "2026-06-03",
+    "title": "일본은행(BOJ) 이벤트",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-06-03",
+    "title": "생산자물가지수 전월대비",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "0.5%",
+    "previous": "3.4%"
+  },
+  {
+    "date": "2026-06-03",
+    "title": "비농업 고용지수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "116K",
+    "previous": "109K"
+  },
+  {
+    "date": "2026-06-03",
+    "title": "중앙은행 총재 연설",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-06-03",
+    "title": "서비스업 구매관리자지수(PMI)",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "53.8",
+    "previous": "53.6"
+  },
+  {
     "date": "2026-06-04",
     "title": "ECB Interest Rate Decision",
     "country": "EUR",
@@ -824,6 +936,38 @@
     "previous": ""
   },
   {
+    "date": "2026-06-04",
+    "title": "중앙은행 총재 연설",
+    "country": "호주",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-06-04",
+    "title": "소비자물가지수 전월대비",
+    "country": "스위스",
+    "impact": "High",
+    "forecast": "0.3%",
+    "previous": "0.3%"
+  },
+  {
+    "date": "2026-06-04",
+    "title": "실업률",
+    "country": "스위스",
+    "impact": "High",
+    "forecast": "3.0%",
+    "previous": "3.0%"
+  },
+  {
+    "date": "2026-06-04",
+    "title": "신규 실업수당 청구건수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "211K",
+    "previous": "215K"
+  },
+  {
     "date": "2026-06-05",
     "title": "US Non-Farm Payrolls",
     "country": "USD",
@@ -832,6 +976,46 @@
   {
     "date": "2026-06-05",
     "title": "비농업 고용지수",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-06-05",
+    "title": "고용 변동 전분기대비",
+    "country": "유로존",
+    "impact": "High",
+    "forecast": "0.1%",
+    "previous": "0.1%"
+  },
+  {
+    "date": "2026-06-05",
+    "title": "고용 변동",
+    "country": "캐나다",
+    "impact": "High",
+    "forecast": "10.2K",
+    "previous": "-17.7K"
+  },
+  {
+    "date": "2026-06-05",
+    "title": "실업률",
+    "country": "캐나다",
+    "impact": "High",
+    "forecast": "6.9%",
+    "previous": "6.9%"
+  },
+  {
+    "date": "2026-06-05",
+    "title": "Average Hourly Earnings m/m",
+    "country": "미국",
+    "impact": "High",
+    "forecast": "0.3%",
+    "previous": "0.2%"
+  },
+  {
+    "date": "2026-06-06",
+    "title": "중앙은행 총재 연설",
     "country": "미국",
     "impact": "High",
     "forecast": "",
