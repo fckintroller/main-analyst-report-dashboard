@@ -165,7 +165,7 @@ window.addEventListener('DOMContentLoaded', () => {
       }
       if (marketChart) initChart();
       if (window.bubbleCharts) initBubbleCharts();
-      if (window.heatmapChart) initHeatmap();
+      if (window.heatmapChart) 
     });
   }
 
@@ -206,7 +206,7 @@ function renderDashboard() {
   renderCalendar();
   renderExternalEvents();
   initBubbleCharts();
-  initHeatmap();
+  
 }
 
 function renderAnalysts(analystList) {
