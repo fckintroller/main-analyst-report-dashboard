@@ -911,7 +911,11 @@ function initBubbleCharts() {
   const dates = data.dates;
   const configs = [
     { id: 'chart-buffett', label: '버핏지수 (%)', data: data.buffett, color: '#f59e0b', threshold: 100 },
-    { id: 'chart-shiller', label: '쉴러 PE', data: data.shiller, color: '#3b82f6', threshold: 14 }
+    { id: 'chart-shiller', label: '쉴러 PE', data: data.shiller, color: '#3b82f6', threshold: 14 },
+    { id: 'chart-concentration', label: '시장 집중도 (%)', data: data.concentration, color: '#8b5cf6', threshold: 45 },
+    { id: 'chart-spread', label: '신용 스프레드 (bp)', data: data.credit_spread, color: '#ea580c', threshold: 600 },
+    { id: 'chart-m2', label: 'M2 증가율 (%)', data: data.m2_growth, color: '#0d9488', threshold: 5 },
+    { id: 'chart-us-yield', label: '미 10년-2년 금리차 (%)', data: data.us_yield_spread, color: '#e11d48', threshold: 0 }
   ];
 
   // 과거 주요 위기구간 (Annotation)

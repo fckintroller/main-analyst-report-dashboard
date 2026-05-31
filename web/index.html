@@ -370,6 +370,27 @@
             <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">레버리지 추이 (신용융자 & 미수금 잔고)</h3>
             <div style="height: 300px; position: relative;"><canvas id="chart-leverage"></canvas></div>
           </div>
+          
+          <!-- 시장 집중도 -->
+          <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
+            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">시장 집중도 (Top 10 시총 비중 %)</h3>
+            <div style="height: 250px; position: relative;"><canvas id="chart-concentration"></canvas></div>
+          </div>
+          <!-- 하이일드 스프레드 -->
+          <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
+            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">하이일드 신용 스프레드 (bp)</h3>
+            <div style="height: 250px; position: relative;"><canvas id="chart-spread"></canvas></div>
+          </div>
+          <!-- M2 유동성 -->
+          <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
+            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">M2 통화량 전년동기비 증감률 (%)</h3>
+            <div style="height: 250px; position: relative;"><canvas id="chart-m2"></canvas></div>
+          </div>
+          <!-- 미 장단기 금리차 -->
+          <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
+            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">미 장단기 금리차 (10년물-2년물, %)</h3>
+            <div style="height: 250px; position: relative;"><canvas id="chart-us-yield"></canvas></div>
+          </div>
         </div>
       </div>
     </div>
