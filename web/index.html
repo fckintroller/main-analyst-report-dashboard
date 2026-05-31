@@ -212,7 +212,6 @@
       <button id="btn-tab-reports" class="tab-btn"><i class="fa-solid fa-file-invoice-dollar"></i> 리서치 보고서</button>
       <button id="btn-tab-chart" class="tab-btn"><i class="fa-solid fa-chart-line"></i> 주가 & 코스피 비교 분석</button>
       <button id="btn-tab-bubble" class="tab-btn" style="color: #ef4444;"><i class="fa-solid fa-chart-pie"></i> 버블 지표 분석</button>
-      <button id="btn-tab-heatmap" class="tab-btn" style="color: #8b5cf6;"><i class="fa-solid fa-border-all"></i> 섹터별 보고서 개수</button>
     </div>
 
     <div id="tab-analysts" class="tab-content active">
@@ -398,21 +397,6 @@
       </div>
     </div>
 
-    <!-- 섹터별 자금 흐름 (히트맵) -->
-    <div id="tab-heatmap" class="tab-content">
-      <div class="reports-container" style="max-width:1000px; margin:0 auto;">
-        <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; display:flex; align-items:center; gap:10px; color:#8b5cf6;">
-          <i class="fa-solid fa-border-all" style="color:#8b5cf6;"></i> 섹터별 보고서 개수 히트맵
-        </h2>
-        <p style="color:var(--text-sub); font-size: 0.95rem; margin-bottom: 25px;">
-          * 사각형의 크기(Size)는 해당 섹터의 <b>리포트 발행 빈도(시장 관심도)</b>를 나타냅니다.<br>
-          * 색상(Color)은 해당 섹터 리포트들의 <b>매수(Buy) 의견 비율</b>을 나타냅니다. (<span style="color:#ef4444; font-weight:bold;">빨강: 매수 비율 80% 이상</span> / <span style="color:#3b82f6; font-weight:bold;">파랑: 매수 비율 80% 미만 (상대적 홀딩/매도 우위)</span>)
-        </p>
-        <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 20px; height: 600px; position: relative;">
-          <canvas id="chart-heatmap"></canvas>
-        </div>
-      </div>
-    </div>
   </div>
 
   <div id="quick-info-popup" class="quick-info-popup"></div>
