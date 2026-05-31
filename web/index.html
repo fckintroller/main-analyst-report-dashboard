@@ -209,6 +209,7 @@
       <button id="btn-tab-alerts" class="tab-btn"><i class="fa-solid fa-triangle-exclamation"></i> 투자의견 변동 알림</button>
       <button id="btn-tab-reports" class="tab-btn"><i class="fa-solid fa-file-invoice-dollar"></i> 리서치 보고서</button>
       <button id="btn-tab-chart" class="tab-btn"><i class="fa-solid fa-chart-line"></i> 주가 & 코스피 비교 분석</button>
+      <button id="btn-tab-bubble" class="tab-btn" style="color: #ef4444;"><i class="fa-solid fa-chart-pie"></i> 버블 지표 분석</button>
       <button id="btn-tab-calendar" class="tab-btn"><i class="fa-regular fa-calendar-check"></i> 경제 캘린더</button>
     </div>
 
@@ -342,9 +343,47 @@
         <div id="calendar-container-body" style="background: var(--card-bg); border-radius: 8px; padding: 20px;"></div>
       </div>
     </div>
+
+    <div id="tab-bubble" class="tab-content">
+      <div class="reports-container">
+        <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; display:flex; align-items:center; gap:10px; color:#ef4444;">
+          <i class="fa-solid fa-chart-pie" style="color:#ef4444;"></i> 대한민국 증시 버블 지표 분석
+        </h2>
+        <p style="color:var(--text-sub); font-size: 0.95rem; margin-bottom: 25px;">
+          * 버핏지수, 쉴러 PE, 신용융자 잔고, 미수금 데이터를 통해 현재 코스피 시장의 과열(Bubble) 상태를 진단합니다. <br>
+          <span style="display:inline-block; margin-top:5px; font-size:0.85rem; padding:4px 8px; background:rgba(239, 68, 68, 0.1); border-radius:4px; color:#ef4444; border:1px solid rgba(239, 68, 68, 0.3);">
+            붉은색 배경 구간은 과거 주요 위기(닷컴 버블, 글로벌 금융위기, 코로나19) 당시의 흐름입니다.
+          </span>
+        </p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <!-- 버핏지수 -->
+          <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
+            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">버핏지수 (시가총액 / 명목 GDP)</h3>
+            <div style="height: 250px; position: relative;"><canvas id="chart-buffett"></canvas></div>
+          </div>
+          <!-- 쉴러 PE -->
+          <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
+            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">쉴러 PE (CAPE Ratio)</h3>
+            <div style="height: 250px; position: relative;"><canvas id="chart-shiller"></canvas></div>
+          </div>
+          <!-- 신용융자 잔고 -->
+          <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
+            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">신용융자 잔고 (조 원)</h3>
+            <div style="height: 250px; position: relative;"><canvas id="chart-margin"></canvas></div>
+          </div>
+          <!-- 미수금 -->
+          <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
+            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">미수금 잔고 (조 원)</h3>
+            <div style="height: 250px; position: relative;"><canvas id="chart-receivable"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div id="quick-info-popup" class="quick-info-popup"></div>
+  <script src="bubble_data.js"></script>
   <script src="analyst_data.js"></script>
   <script src="app.js"></script>
 </body>

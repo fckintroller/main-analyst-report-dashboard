@@ -1,0 +1,27 @@
+{
+  "name": "anal_reports",
+  "version": "1.0.0",
+  "description": "> **\"주식 시장의 브레인들이 분석하는 투자 전략을 한눈에 확인하는 올인원 데이터베이스\"**",
+  "main": "test.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fckintroller/main-analyst-report-dashboard.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/fckintroller/main-analyst-report-dashboard/issues"
+  },
+  "homepage": "https://github.com/fckintroller/main-analyst-report-dashboard#readme",
+  "dependencies": {
+    "puppeteer": "^25.1.0"
+  }
+}

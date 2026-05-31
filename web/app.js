@@ -123,6 +123,7 @@ window.addEventListener('DOMContentLoaded', () => {
     'btn-tab-alerts': 'tab-alerts',
     'btn-tab-reports': 'tab-reports',
     'btn-tab-chart': 'tab-chart',
+    'btn-tab-bubble': 'tab-bubble',
     'btn-tab-calendar': 'tab-calendar'
   };
 
@@ -160,6 +161,7 @@ window.addEventListener('DOMContentLoaded', () => {
         themeToggle.innerText = '🌙';
       }
       if (marketChart) initChart();
+      if (window.bubbleCharts) initBubbleCharts();
     });
   }
 
@@ -199,6 +201,7 @@ function renderDashboard() {
   renderStockChecklist();
   renderCalendar();
   renderExternalEvents();
+  initBubbleCharts();
 }
 
 function renderAnalysts(analystList) {
@@ -886,5 +889,95 @@ function renderIrEvents() {
       <div class="event-title" style="color: #ffffff; font-weight: 500; flex: 1;">${escapeHTML(e.title)}</div>
     `;
     container.appendChild(item);
+  });
+}
+
+// 전역 버블 차트 인스턴스 저장소
+window.bubbleCharts = [];
+
+function initBubbleCharts() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const textColor = isLight ? '#374151' : '#e2e8f0';
+  const gridColor = isLight ? '#e5e7eb' : '#1f2937';
+  
+  if (window.bubbleCharts.length > 0) {
+    window.bubbleCharts.forEach(c => c.destroy());
+    window.bubbleCharts = [];
+  }
+
+  const data = window.BUBBLE_DATA;
+  if (!data) return;
+
+  const dates = data.dates;
+  const configs = [
+    { id: 'chart-buffett', label: '버핏지수 (%)', data: data.buffett, color: '#f59e0b', threshold: 100 },
+    { id: 'chart-shiller', label: '쉴러 PE', data: data.shiller, color: '#3b82f6', threshold: 20 },
+    { id: 'chart-margin', label: '신용융자 잔고', data: data.margin_loan, color: '#ec4899', threshold: 20 },
+    { id: 'chart-receivable', label: '미수금', data: data.receivable, color: '#10b981', threshold: 1.5 }
+  ];
+
+  // 과거 주요 위기구간 (Annotation)
+  const annotations = {
+    dotcom: { type: 'box', xMin: '1999-06-01', xMax: '2000-12-01', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderWidth: 0 },
+    gfc: { type: 'box', xMin: '2007-06-01', xMax: '2009-06-01', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderWidth: 0 },
+    covid: { type: 'box', xMin: '2020-03-01', xMax: '2021-12-01', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderWidth: 0 }
+  };
+
+  configs.forEach(cfg => {
+    const canvas = document.getElementById(cfg.id);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    
+    // 위험 구간선 (Threshold)
+    const chartAnns = { ...annotations };
+    chartAnns.threshold = {
+      type: 'line', yMin: cfg.threshold, yMax: cfg.threshold,
+      borderColor: 'rgba(239, 68, 68, 0.5)', borderWidth: 2, borderDash: [5, 5]
+    };
+
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: [{
+          label: cfg.label,
+          data: cfg.data,
+          borderColor: cfg.color,
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          tension: 0.2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: isLight ? '#ffffff' : '#080c12',
+            titleColor: cfg.color,
+            bodyColor: textColor,
+            borderColor: gridColor,
+            borderWidth: 1
+          },
+          annotation: { annotations: chartAnns }
+        },
+        scales: {
+          x: { 
+            type: 'time', 
+            time: { unit: 'year', tooltipFormat: 'yyyy-MM' },
+            grid: { display: false },
+            ticks: { color: textColor, maxRotation: 0 }
+          },
+          y: { 
+            grid: { color: gridColor },
+            ticks: { color: textColor }
+          }
+        }
+      }
+    });
+    window.bubbleCharts.push(chart);
   });
 }
