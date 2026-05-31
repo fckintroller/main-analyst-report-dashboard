@@ -41,28 +41,32 @@ def get_sector(stock_name):
         return "금융 & 지주사"
         
     # 키워드 기반 동적 매핑
-    if any(k in stock_name for k in ["지주", "금융", "은행", "증권", "보험", "캐피탈", "투자"]):
+    if any(k in stock_name for k in ["지주", "금융", "은행", "증권", "보험", "캐피탈", "투자", "홀딩스", "생명", "해상", "화재", "SK", "CJ", "LG", "한화", "효성", "GS", "두산", "물산"]):
         return "금융 & 지주사"
-    if any(k in stock_name for k in ["제약", "바이오", "메디", "팜", "생명과학", "헬스케어", "약품"]):
+    if any(k in stock_name for k in ["제약", "바이오", "메디", "팜", "생명과학", "헬스케어", "약품", "녹십자", "종근당", "동아", "파마", "덴티움", "바텍", "뷰웍스", "씨젠", "루닛"]):
         return "제약·바이오"
-    if any(k in stock_name for k in ["건설", "엔지니어링", "개발", "시멘트", "건자재"]):
+    if any(k in stock_name for k in ["건설", "엔지니어링", "개발", "시멘트", "건자재", "E&A"]):
         return "건설 & 인프라"
-    if any(k in stock_name for k in ["화학", "에너지", "정유", "석유", "가스", "솔루션"]):
+    if any(k in stock_name for k in ["화학", "에너지", "정유", "석유", "가스", "솔루션", "전력", "난방", "E1"]):
         return "화학 & 에너지"
-    if any(k in stock_name for k in ["식품", "제과", "음료", "푸드", "유통", "쇼핑", "리테일", "마트", "백화점", "F&B", "호텔", "면세"]):
+    if any(k in stock_name for k in ["식품", "제과", "음료", "푸드", "유통", "쇼핑", "리테일", "마트", "백화점", "F&B", "호텔", "면세", "아모레", "생활건강", "코스맥스", "콜마", "클래시스", "달바", "농심", "인터내셔널", "렌탈", "프레시웨이"]):
         return "소비재 & 유통"
-    if any(k in stock_name for k in ["엔터", "미디어", "스튜디오", "콘텐츠", "영화", "방송", "기획", "JYP", "YG", "SM", "하이브"]):
+    if any(k in stock_name for k in ["엔터", "미디어", "스튜디오", "콘텐츠", "영화", "방송", "기획", "JYP", "YG", "SM", "하이브", "ENM", "SBS", "CGV"]):
         return "엔터 & 미디어"
-    if any(k in stock_name for k in ["통신", "텔레콤", "네트웍스"]):
+    if any(k in stock_name for k in ["게임", "네오위즈", "위메이드", "시프트업", "컴투스", "NC", "소프트", "펄어비스"]):
+        return "플랫폼 & 게임"
+    if any(k in stock_name for k in ["통신", "텔레콤", "네트웍스", "KT", "유플러스"]):
         return "통신"
-    if any(k in stock_name for k in ["해운", "조선", "항공", "운송", "물류", "택배", "오션", "마린", "에어"]):
+    if any(k in stock_name for k in ["해운", "조선", "항공", "운송", "물류", "택배", "오션", "마린", "에어", "중공업", "글로비스", "HMM"]):
         return "운송 & 조선"
-    if any(k in stock_name for k in ["반도체", "일렉트론", "테스", "원익", "마이크로"]):
+    if any(k in stock_name for k in ["반도체", "일렉트론", "테스", "원익", "마이크로", "테크놀로지", "시스템스", "솔브레인", "티씨케이", "코미코", "피에스케이", "네패스", "심텍", "대덕전자"]):
         return "반도체 (Semiconductors)"
-    if any(k in stock_name for k in ["스틸", "철강", "금속", "비철", "알루미늄", "동제련"]):
+    if any(k in stock_name for k in ["스틸", "철강", "금속", "비철", "알루미늄", "동제련", "고려아연", "풍산", "제철"]):
         return "철강 & 금속"
-    if any(k in stock_name for k in ["전기", "전선", "일렉트릭", "LS", "HD현대"]):
+    if any(k in stock_name for k in ["전기", "전선", "일렉트릭", "LS", "HD현대", "로보틱스", "로봇", "비에이치", "에코프로"]):
         return "전기 & 기계"
+    if any(k in stock_name for k in ["타이어", "에스엘", "모비스", "만도"]):
+        return "자동차 & 부품"
     
     return "기타"
 
