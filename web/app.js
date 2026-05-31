@@ -1147,8 +1147,8 @@ function initHeatmap() {
     window.heatmapChart.destroy();
   }
 
-  const reports = window.currentDatabase?.reports || [];
-  const analysts = window.currentDatabase?.analysts || [];
+  const reports = currentDatabase?.reports || [];
+  const analysts = currentDatabase?.analysts || [];
 
   if (reports.length === 0) return;
 
