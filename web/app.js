@@ -1162,16 +1162,24 @@ function initHeatmap() {
     }
     sectorMap[sector].count += 1;
     
-    // 계산 로직: 투자의견(50%) + 모멘텀(50%)
-    let ratingScore = 50;
-    if (rep.rating && (rep.rating.includes('Buy') || rep.rating.includes('매수'))) ratingScore = 100;
-    else if (rep.rating && (rep.rating.includes('Sell') || rep.rating.includes('매도'))) ratingScore = 0;
+    // 계산 로직: 비대칭 스코어링 (감점 요소를 훨씬 크게 반영)
+    // 기본 점수 50점 시작
+    let compositeScore = 50;
     
-    let momentumScore = 50;
-    if (rep.title && (rep.title.includes('상향') || rep.title.includes('서프라이즈') || rep.title.includes('개선') || rep.title.includes('턴어라운드') || rep.title.includes('기대') || rep.title.includes('성장'))) momentumScore = 100;
-    else if (rep.title && (rep.title.includes('하향') || rep.title.includes('우려') || rep.title.includes('악재') || rep.title.includes('소멸') || rep.title.includes('선반영'))) momentumScore = 0;
+    // 1. 투자의견 (한국 시장 특성상 'Hold'는 사실상 매도 시그널)
+    if (rep.rating && (rep.rating.includes('Buy') || rep.rating.includes('매수'))) compositeScore += 20;
+    else if (rep.rating && (rep.rating.includes('Hold') || rep.rating.includes('홀딩'))) compositeScore -= 30; // 강력한 감점
+    else if (rep.rating && (rep.rating.includes('Sell') || rep.rating.includes('매도'))) compositeScore -= 50; // 극단적 감점
     
-    const compositeScore = (ratingScore + momentumScore) / 2;
+    // 2. 모멘텀 (목표가 하향/우려 등의 키워드에 페널티 가중치)
+    if (rep.title && (rep.title.includes('상향') || rep.title.includes('서프라이즈') || rep.title.includes('개선') || rep.title.includes('턴어라운드') || rep.title.includes('기대') || rep.title.includes('성장'))) {
+      compositeScore += 30;
+    } else if (rep.title && (rep.title.includes('하향') || rep.title.includes('우려') || rep.title.includes('악재') || rep.title.includes('소멸') || rep.title.includes('선반영') || rep.title.includes('보수적'))) {
+      compositeScore -= 50; // 하향 리포트에는 치명적인 페널티
+    }
+    
+    // 0 ~ 100점 사이로 보정
+    compositeScore = Math.max(0, Math.min(100, compositeScore));
     sectorMap[sector].totalScore += compositeScore;
     
     sectorMap[sector].reports.push(rep);
