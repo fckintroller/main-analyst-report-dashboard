@@ -24,21 +24,46 @@ code_to_name = {code: name for name, code in stock_mapping.items()}
 
 # 섹터 매핑 (간소화)
 def get_sector(stock_name):
-    # 주요 반도체
-    if stock_name in ["삼성전자", "SK하이닉스", "한미반도체", "이수페타시스"]:
+    # 주요 개별 종목 매핑
+    if stock_name in ["삼성전자", "SK하이닉스", "한미반도체", "이수페타시스", "리노공업", "HPSP", "ISC"]:
         return "반도체 (Semiconductors)"
-    if stock_name in ["네이버", "NAVER", "카카오", "크래프톤", "엔씨소프트"]:
+    if stock_name in ["네이버", "NAVER", "카카오", "크래프톤", "엔씨소프트", "넷마블", "펄어비스"]:
         return "플랫폼 & 게임"
-    if stock_name in ["현대차", "기아", "현대모비스"]:
+    if stock_name in ["현대차", "기아", "현대모비스", "HL만도", "한온시스템"]:
         return "자동차 & 부품"
-    if stock_name in ["LG에너지솔루션", "삼성SDI", "LG화학", "에코프로"]:
+    if stock_name in ["LG에너지솔루션", "삼성SDI", "LG화학", "에코프로", "에코프로비엠", "포스코퓨처엠", "엘앤에프"]:
         return "2차전지"
-    if stock_name in ["한화에어로스페이스", "LIG넥스원", "한국항공우주"]:
+    if stock_name in ["한화에어로스페이스", "LIG넥스원", "한국항공우주", "현대로템", "한화시스템"]:
         return "방산"
-    if stock_name in ["셀트리온", "삼성바이오로직스", "알테오젠"]:
+    if stock_name in ["셀트리온", "삼성바이오로직스", "알테오젠", "유한양행", "한미약품", "HLB"]:
         return "제약·바이오"
-    if stock_name in ["KB금융", "신한지주", "하나금융지주", "메리츠금융지주"]:
+    if stock_name in ["KB금융", "신한지주", "하나금융지주", "메리츠금융지주", "우리금융지주", "삼성생명", "삼성화재"]:
         return "금융 & 지주사"
+        
+    # 키워드 기반 동적 매핑
+    if any(k in stock_name for k in ["지주", "금융", "은행", "증권", "보험", "캐피탈", "투자"]):
+        return "금융 & 지주사"
+    if any(k in stock_name for k in ["제약", "바이오", "메디", "팜", "생명과학", "헬스케어", "약품"]):
+        return "제약·바이오"
+    if any(k in stock_name for k in ["건설", "엔지니어링", "개발", "시멘트", "건자재"]):
+        return "건설 & 인프라"
+    if any(k in stock_name for k in ["화학", "에너지", "정유", "석유", "가스", "솔루션"]):
+        return "화학 & 에너지"
+    if any(k in stock_name for k in ["식품", "제과", "음료", "푸드", "유통", "쇼핑", "리테일", "마트", "백화점", "F&B", "호텔", "면세"]):
+        return "소비재 & 유통"
+    if any(k in stock_name for k in ["엔터", "미디어", "스튜디오", "콘텐츠", "영화", "방송", "기획", "JYP", "YG", "SM", "하이브"]):
+        return "엔터 & 미디어"
+    if any(k in stock_name for k in ["통신", "텔레콤", "네트웍스"]):
+        return "통신"
+    if any(k in stock_name for k in ["해운", "조선", "항공", "운송", "물류", "택배", "오션", "마린", "에어"]):
+        return "운송 & 조선"
+    if any(k in stock_name for k in ["반도체", "일렉트론", "테스", "원익", "마이크로"]):
+        return "반도체 (Semiconductors)"
+    if any(k in stock_name for k in ["스틸", "철강", "금속", "비철", "알루미늄", "동제련"]):
+        return "철강 & 금속"
+    if any(k in stock_name for k in ["전기", "전선", "일렉트릭", "LS", "HD현대"]):
+        return "전기 & 기계"
+    
     return "기타"
 
 def infer_rating(title):
