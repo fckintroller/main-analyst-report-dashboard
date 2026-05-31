@@ -1232,9 +1232,11 @@ function initHeatmap() {
           font: [{ size: 18, weight: 'bold', family: 'Inter' }, { size: 13, family: 'Noto Sans KR' }],
           formatter: (ctx) => {
             if (ctx.type !== 'data') return [];
+            const data = ctx.raw._data.children[0];
             return [
-              ctx.raw._data.sector, 
-              `매수 ${ctx.raw._data.children[0].buyPct}% | 홀딩 ${ctx.raw._data.children[0].holdPct}% | 매도 ${ctx.raw._data.children[0].sellPct}%`
+              data.sector, 
+              `총 발행: ${data.count}건`,
+              ...data.quartersArray
             ];
           }
         }
