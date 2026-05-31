@@ -26,6 +26,8 @@ FIXED_EVENTS_PATH = os.path.join(CONFIG_DIR, "fixed_events.json")
 # 웹 경로
 WEB_DIR = os.path.join(ROOT_DIR, "web")
 JS_PATH = os.path.join(WEB_DIR, "analyst_data.js")
+HEATMAP_JS_PATH = os.path.join(WEB_DIR, "heatmap_data.js")
+HEATMAP_DB_PATH = os.path.join(DATA_DIR, "heatmap_database.json")
 
 # 리포트 경로
 REPORTS_DIR = os.path.join(ROOT_DIR, "reports")

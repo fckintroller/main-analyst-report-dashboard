@@ -1147,16 +1147,16 @@ function initHeatmap() {
     window.heatmapChart.destroy();
   }
 
-  const reports = currentDatabase?.reports || [];
-  const analysts = currentDatabase?.analysts || [];
+  const reports = (window.HEATMAP_DATABASE && window.HEATMAP_DATABASE.heatmap_reports) 
+                  ? window.HEATMAP_DATABASE.heatmap_reports 
+                  : [];
 
   if (reports.length === 0) return;
 
   // 1. 보고서를 섹터별로 그룹핑
   const sectorMap = {};
   reports.forEach(rep => {
-    const aObj = analysts.find(a => a.id === rep.analyst_id);
-    const sector = aObj ? aObj.merged_sector : '기타';
+    const sector = rep.merged_sector || '기타';
     if (!sectorMap[sector]) {
       sectorMap[sector] = { count: 0, buy: 0, hold: 0, sell: 0, quarters: {}, reports: [] };
     }

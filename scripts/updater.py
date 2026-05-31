@@ -6,7 +6,8 @@ import ast
 import time
 from utils import (
     load_db, load_stocks, load_calendar, logger,
-    JS_PATH, CSV_PATH, MD_PATH, OUTPUTS_DIR
+    JS_PATH, CSV_PATH, MD_PATH, OUTPUTS_DIR,
+    HEATMAP_JS_PATH, HEATMAP_DB_PATH
 )
 
 import random
@@ -20,6 +21,16 @@ def generate_js_bridge(db_data, market_data, calendar_data, ir_data_dict):
             f.write(f"window.CALENDAR_DATA = {json.dumps(calendar_data, ensure_ascii=False, indent=2)};\n")
             f.write(f"window.IR_DATA = {json.dumps(ir_data_dict, ensure_ascii=False, indent=2)};\n")
         logger.info(f"  [JS 브릿지] {JS_PATH} 업데이트 완료")
+        
+        # Heatmap JS 갱신
+        heatmap_data = {"heatmap_reports": []}
+        if os.path.exists(HEATMAP_DB_PATH):
+            with open(HEATMAP_DB_PATH, "r", encoding="utf-8") as hf:
+                heatmap_data = json.load(hf)
+        with open(HEATMAP_JS_PATH, "w", encoding="utf-8") as hf2:
+            hf2.write(f"window.HEATMAP_DATABASE = {json.dumps(heatmap_data, ensure_ascii=False, indent=2)};\n")
+        logger.info(f"  [JS 브릿지] {HEATMAP_JS_PATH} 업데이트 완료")
+        
         return True
     except Exception as e:
         logger.error(f"  [JS 브릿지] 업데이트 실패: {e}")
