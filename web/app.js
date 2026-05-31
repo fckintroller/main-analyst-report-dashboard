@@ -1189,7 +1189,7 @@ function initHeatmap() {
     });
   }
 
-  // 감성 점수(0~100)를 색상으로 변환 (파랑 0 -> 회색 50 -> 빨강 100)
+  // 감성 점수(0~100)를 색상으로 변환 
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
   function getColorBySentiment(score) {
     const intensity = Math.abs(score - 50) / 50; // 0 ~ 1
@@ -1218,7 +1218,7 @@ function initHeatmap() {
         borderColor: isLight ? '#ffffff' : '#080c12',
         backgroundColor: (ctx) => {
           if (ctx.type !== 'data') return 'transparent';
-          return getColorBySentiment(ctx.raw._data.sentiment);
+          return getColorBySentiment(ctx.raw._data.children[0].sentiment);
         },
         labels: {
           display: true,
@@ -1230,7 +1230,7 @@ function initHeatmap() {
             if (ctx.type !== 'data') return [];
             return [
               ctx.raw._data.sector, 
-              `발행: ${ctx.raw._data.count}건 | AI 감성: ${ctx.raw._data.sentiment}점`
+              `발행: ${ctx.raw._data.children[0].count}건 | 과열도 점수: ${ctx.raw._data.children[0].sentiment}점`
             ];
           }
         }
