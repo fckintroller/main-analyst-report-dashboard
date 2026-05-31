@@ -1158,29 +1158,18 @@ function initHeatmap() {
     const aObj = analysts.find(a => a.id === rep.analyst_id);
     const sector = aObj ? aObj.merged_sector : '기타';
     if (!sectorMap[sector]) {
-      sectorMap[sector] = { count: 0, totalScore: 0, reports: [] };
+      sectorMap[sector] = { count: 0, buy: 0, hold: 0, sell: 0, reports: [] };
     }
     sectorMap[sector].count += 1;
     
-    // 계산 로직: 비대칭 스코어링 (감점 요소를 훨씬 크게 반영)
-    // 기본 점수 50점 시작
-    let compositeScore = 50;
-    
-    // 1. 투자의견 (한국 시장 특성상 'Hold'는 사실상 매도 시그널)
-    if (rep.rating && (rep.rating.includes('Buy') || rep.rating.includes('매수'))) compositeScore += 20;
-    else if (rep.rating && (rep.rating.includes('Hold') || rep.rating.includes('홀딩'))) compositeScore -= 30; // 강력한 감점
-    else if (rep.rating && (rep.rating.includes('Sell') || rep.rating.includes('매도'))) compositeScore -= 50; // 극단적 감점
-    
-    // 2. 모멘텀 (목표가 하향/우려 등의 키워드에 페널티 가중치)
-    if (rep.title && (rep.title.includes('상향') || rep.title.includes('서프라이즈') || rep.title.includes('개선') || rep.title.includes('턴어라운드') || rep.title.includes('기대') || rep.title.includes('성장'))) {
-      compositeScore += 30;
-    } else if (rep.title && (rep.title.includes('하향') || rep.title.includes('우려') || rep.title.includes('악재') || rep.title.includes('소멸') || rep.title.includes('선반영') || rep.title.includes('보수적'))) {
-      compositeScore -= 50; // 하향 리포트에는 치명적인 페널티
+    // 팩트(투자의견) 카운팅
+    if (rep.rating && (rep.rating.includes('Buy') || rep.rating.includes('매수'))) {
+      sectorMap[sector].buy += 1;
+    } else if (rep.rating && (rep.rating.includes('Sell') || rep.rating.includes('매도'))) {
+      sectorMap[sector].sell += 1;
+    } else {
+      sectorMap[sector].hold += 1; // 그 외에는 홀딩(Hold)으로 간주
     }
-    
-    // 0 ~ 100점 사이로 보정
-    compositeScore = Math.max(0, Math.min(100, compositeScore));
-    sectorMap[sector].totalScore += compositeScore;
     
     sectorMap[sector].reports.push(rep);
   });
@@ -1188,25 +1177,32 @@ function initHeatmap() {
   // 2. 트리맵용 데이터 포맷 구성
   const treemapData = [];
   for (const [sector, data] of Object.entries(sectorMap)) {
-    const avgScore = Math.round(data.totalScore / data.count);
+    const buyPct = Math.round((data.buy / data.count) * 100);
+    const holdPct = Math.round((data.hold / data.count) * 100);
+    const sellPct = Math.round((data.sell / data.count) * 100);
+    
     treemapData.push({
       sector: sector,
       count: data.count,
-      sentiment: avgScore,
+      buyPct: buyPct,
+      holdPct: holdPct,
+      sellPct: sellPct,
+      // 색상은 매수 의견 비율(buyPct)을 기준으로 칠함
+      sentiment: buyPct,
       topPick: data.reports[0] ? data.reports[0].stock_name : ''
     });
   }
 
-  // 감성 점수(0~100)를 색상으로 변환 
+  // 매수 비율(0~100%)을 색상으로 변환 (매수 비율이 낮을수록 파랑, 높을수록 빨강)
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
   function getColorBySentiment(score) {
     const intensity = Math.abs(score - 50) / 50; // 0 ~ 1
-    if (score >= 50) {
-      // 50~100: 빨강
+    if (score >= 80) {
+      // 매수 비율 80% 이상: 빨강 (한국 시장 특성상 80% 이상이 정상적인 매수 우위)
       const alpha = isLight ? 0.3 + (intensity * 0.5) : 0.4 + (intensity * 0.6);
       return `rgba(239, 68, 68, ${alpha})`;
     } else {
-      // 0~49: 파랑
+      // 매수 비율 80% 미만: 파랑 (상대적으로 홀딩/매도 비중 높음)
       const alpha = isLight ? 0.3 + (intensity * 0.5) : 0.4 + (intensity * 0.6);
       return `rgba(59, 130, 246, ${alpha})`;
     }
@@ -1238,7 +1234,7 @@ function initHeatmap() {
             if (ctx.type !== 'data') return [];
             return [
               ctx.raw._data.sector, 
-              `발행: ${ctx.raw._data.children[0].count}건 | 과열도 점수: ${ctx.raw._data.children[0].sentiment}점`
+              `매수 ${ctx.raw._data.children[0].buyPct}% | 홀딩 ${ctx.raw._data.children[0].holdPct}% | 매도 ${ctx.raw._data.children[0].sellPct}%`
             ];
           }
         }
@@ -1259,11 +1255,11 @@ function initHeatmap() {
           callbacks: {
             title: (items) => items[0].raw._data.sector,
             label: (item) => {
-              const d = item.raw._data;
+              const data = item.raw._data.children[0];
               return [
-                `총 리포트: ${d.count}건`,
-                `평균 감성: ${d.sentiment}점 (0=Bear, 100=Bull)`,
-                `관심 종목: ${d.topPick}`
+                `총 리포트 발행: ${data.count}건`,
+                `매수(Buy): ${data.buyPct}% | 홀딩(Hold): ${data.holdPct}% | 매도(Sell): ${data.sellPct}%`,
+                `관심 종목(Top Pick): ${data.topPick || '없음'}`
               ];
             }
           }
