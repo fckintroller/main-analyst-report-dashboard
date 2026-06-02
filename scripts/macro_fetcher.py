@@ -133,7 +133,7 @@ def generate_mock_data():
             if y >= 2025:
                 margin_surge_add = max(margin_surge_add, 22.0 + (y-2025 + m/12)*3.0 - base_margin)
                 recv_surge_add = max(recv_surge_add, 1.0 - base_recv)
-                deposit_surge_add = max(deposit_surge_add, 55.0 + (y-2025 + m/12)*2.0 - base_deposit)
+                deposit_surge_add = max(deposit_surge_add, 55.0 + (y-2025 + m/12)*50.0 - base_deposit)
                 base_concentration += 4.0 
                 
             noise = lambda: random.uniform(0.95, 1.05)
@@ -156,7 +156,7 @@ def generate_mock_data():
                 val_shiller = 15.2
                 val_margin = 27.2
                 val_recv = 1.15
-                val_deposit = 58.4
+                val_deposit = 132.0
                 val_conc = 48.5 
                 val_spread = 320 
                 val_m2 = 3.5     
