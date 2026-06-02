@@ -1025,6 +1025,16 @@ function initBubbleCharts() {
             pointHoverRadius: 4,
             tension: 0.2,
             yAxisID: 'y1'
+          },
+          {
+            label: '투자자예탁금 (조 원)',
+            data: data.investor_deposit,
+            borderColor: '#8b5cf6',
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            tension: 0.2,
+            yAxisID: 'y'
           }
         ]
       },
@@ -1056,7 +1066,7 @@ function initBubbleCharts() {
             position: 'left',
             grid: { color: gridColor },
             ticks: { color: textColor },
-            title: { display: true, text: '신용융자 (조 원)', color: '#ec4899' }
+            title: { display: true, text: '융자 & 예탁금 (조 원)', color: '#ec4899' }
           },
           y1: { 
             type: 'linear',

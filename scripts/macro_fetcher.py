@@ -46,6 +46,7 @@ def generate_mock_data():
     shiller = []
     margin_loan = []
     receivable = []
+    investor_deposit = []
     concentration_top10 = []
     credit_spread = []
     m2_growth = []
@@ -74,6 +75,7 @@ def generate_mock_data():
             base_shiller = 9.0 + (3.0 * progress)
             base_margin = 1.0 * math.exp(progress * 3.0) 
             base_recv = 0.1 * math.exp(progress * 2.1)
+            base_deposit = 5.0 * math.exp(progress * 2.5) # starts around 5T, ends around 60T
             
             base_concentration = 35 + (10 * progress) 
             base_spread = 200 
@@ -84,6 +86,7 @@ def generate_mock_data():
             bubble_mult = 1.0
             margin_surge_add = 0
             recv_surge_add = 0
+            deposit_surge_add = 0
             
             for by, bm, mag, m_surge, r_surge, length in bubbles:
                 dist = abs((y - by) * 12 + (m - bm))
@@ -94,6 +97,7 @@ def generate_mock_data():
                     if by == 2021:
                         margin_surge_add += (22.0 - base_margin) * intensity if 22.0 > base_margin else 0
                         recv_surge_add += (1.2 - base_recv) * intensity if 1.2 > base_recv else 0
+                        deposit_surge_add += (70.0 - base_deposit) * intensity if 70.0 > base_deposit else 0
                         base_concentration += 5 * intensity 
                         base_m2 += 6 * intensity 
                         base_m2_us += 18 * intensity 
@@ -101,6 +105,7 @@ def generate_mock_data():
                     elif by == 2007:
                         margin_surge_add += (7.0 - base_margin) * intensity if 7.0 > base_margin else 0
                         recv_surge_add += (0.6 - base_recv) * intensity if 0.6 > base_recv else 0
+                        deposit_surge_add += (15.0 - base_deposit) * intensity if 15.0 > base_deposit else 0
                         base_concentration += 3 * intensity
                         base_m2 += 4 * intensity
                         base_m2_us += 4 * intensity
@@ -108,6 +113,7 @@ def generate_mock_data():
                     elif by == 1999:
                         margin_surge_add += (3.0 - base_margin) * intensity if 3.0 > base_margin else 0
                         recv_surge_add += (0.4 - base_recv) * intensity if 0.4 > base_recv else 0
+                        deposit_surge_add += (10.0 - base_deposit) * intensity if 10.0 > base_deposit else 0
                         base_concentration += 6 * intensity
                         base_m2 += 3 * intensity
                         base_m2_us += 2 * intensity
@@ -127,6 +133,7 @@ def generate_mock_data():
             if y >= 2025:
                 margin_surge_add = max(margin_surge_add, 22.0 + (y-2025 + m/12)*3.0 - base_margin)
                 recv_surge_add = max(recv_surge_add, 1.0 - base_recv)
+                deposit_surge_add = max(deposit_surge_add, 55.0 + (y-2025 + m/12)*2.0 - base_deposit)
                 base_concentration += 4.0 
                 
             noise = lambda: random.uniform(0.95, 1.05)
@@ -135,6 +142,8 @@ def generate_mock_data():
             val_shiller = base_shiller * bubble_mult * noise()
             val_margin = (base_margin + margin_surge_add) * random.uniform(0.97, 1.03)
             val_recv = (base_recv + recv_surge_add) * random.uniform(0.97, 1.03)
+            val_deposit = (base_deposit + deposit_surge_add) * random.uniform(0.97, 1.03)
+            
             
             val_conc = base_concentration * random.uniform(0.98, 1.02)
             val_spread = base_spread * random.uniform(0.9, 1.1)
@@ -147,6 +156,7 @@ def generate_mock_data():
                 val_shiller = 15.2
                 val_margin = 27.2
                 val_recv = 1.15
+                val_deposit = 58.4
                 val_conc = 48.5 
                 val_spread = 320 
                 val_m2 = 3.5     
@@ -157,6 +167,7 @@ def generate_mock_data():
             shiller.append(round(val_shiller, 1))
             margin_loan.append(round(val_margin, 2))
             receivable.append(round(val_recv, 3))
+            investor_deposit.append(round(val_deposit, 1))
             concentration_top10.append(round(val_conc, 1))
             credit_spread.append(round(val_spread, 0))
             m2_growth.append(round(val_m2, 1))
@@ -169,6 +180,7 @@ def generate_mock_data():
         "shiller": shiller,
         "margin_loan": margin_loan,
         "receivable": receivable,
+        "investor_deposit": investor_deposit,
         "concentration": concentration_top10,
         "credit_spread": credit_spread,
         "m2_growth": m2_growth,
@@ -186,6 +198,7 @@ window.BUBBLE_DATA = {{
     shiller: {json.dumps(data['shiller'])},
     margin_loan: {json.dumps(data['margin_loan'])},
     receivable: {json.dumps(data['receivable'])},
+    investor_deposit: {json.dumps(data['investor_deposit'])},
     concentration: {json.dumps(data['concentration'])},
     credit_spread: {json.dumps(data['credit_spread'])},
     m2_growth: {json.dumps(data['m2_growth'])},
