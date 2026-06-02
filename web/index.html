@@ -157,8 +157,8 @@
     .report-meta { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--text-sub); }
     .report-author { color: #10b981; font-weight: 600; }
     .report-summary { font-size: 0.88rem; color: var(--text-main); line-height: 1.5; margin-bottom: 20px; flex-grow: 1; }
-    .report-footer { display: flex; justify-content: space-between; align-items: center; background: var(--report-footer-bg); padding: 10px 15px; border-radius: 6px; border: 1px solid var(--card-border); font-size: 0.85rem; flex-wrap: nowrap; gap: 12px; }
-    .report-footer > div { white-space: nowrap; }
+    .report-footer { display: flex; justify-content: space-between; align-items: center; background: var(--report-footer-bg); padding: 10px 15px; border-radius: 6px; border: 1px solid var(--card-border); font-size: 0.85rem; flex-wrap: wrap; gap: 8px; overflow: hidden; }
+    .report-footer > div { white-space: nowrap; min-width: 0; }
     .report-target-box { font-weight: 700; color: #10b981; }
 
     /* 차트 및 이벤트 타임라인 */
