@@ -35,6 +35,7 @@ def main():
     # 1. 수집 (Collect)
     steps = [
         (os.path.join(base_dir, "01_collect", "report_crawler.py"), "1단계: 리포트 크롤링 (수집)"),
+        (os.path.join(base_dir, "01_collect", "kospi_fetcher.py"), "1단계: KOSPI 과거 지수 수집 (수집)"),
         (os.path.join(base_dir, "01_collect", "calendar_fetcher.py"), "1단계: 경제 캘린더 수집 (수집)"),
         (os.path.join(base_dir, "01_collect", "macro_fetcher.py"), "1단계: 매크로 지표 수집 (수집)"),
         # 2. 분석 (Analyze) - 추후 구현
