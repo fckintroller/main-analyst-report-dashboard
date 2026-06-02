@@ -1,13 +1,15 @@
 import json
 import os
+import sys
 import datetime
 import urllib.request
 import ast
 import time
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils import (
     load_db, load_stocks, load_calendar, logger,
     JS_PATH, CSV_PATH, MD_PATH, OUTPUTS_DIR,
-    
 )
 
 import random

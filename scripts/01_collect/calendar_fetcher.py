@@ -1,7 +1,10 @@
 import urllib.request
 import json
 import os
+import sys
 from datetime import datetime
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils import load_calendar, save_calendar, load_json, logger, FIXED_EVENTS_PATH
 
 def fetch_economic_calendar():

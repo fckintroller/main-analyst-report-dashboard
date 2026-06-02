@@ -2,7 +2,11 @@ import urllib.request
 import re
 import json
 import os
+import sys
 import datetime
+
+# 부모 디렉터리(scripts)를 경로에 추가하여 utils를 임포트
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils import load_db, save_db, logger
 
 def fetch_recent_reports():

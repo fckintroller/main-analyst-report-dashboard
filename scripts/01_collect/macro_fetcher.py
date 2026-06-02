@@ -1,10 +1,12 @@
 import os
+import sys
 import json
 import math
 import random
 import requests
 from datetime import datetime
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # ==========================================
 # 1. Configuration & API Keys
 # ==========================================
@@ -12,7 +14,7 @@ from datetime import datetime
 FRED_API_KEY = os.environ.get('FRED_API_KEY')
 ECOS_API_KEY = os.environ.get('ECOS_API_KEY')
 
-WEB_DIR = os.path.join(os.path.dirname(__file__), '..', 'web')
+WEB_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'web')
 OUTPUT_JS = os.path.join(WEB_DIR, 'bubble_data.js')
 
 def fetch_real_data_or_mock():
