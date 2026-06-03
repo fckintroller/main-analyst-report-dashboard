@@ -28,6 +28,19 @@ function getCountryColor(country) {
 window.currentCalendarFilter = 'all';
 window.analystSearchTerm = '';
 window.reportSearchTerm = '';
+window.alertFilter = 'all'; // 'all' | 'upgrade' | 'downgrade'
+
+// 알림 필터 설정
+window.setAlertFilter = function(filter, btnElement) {
+  window.alertFilter = filter;
+  if (btnElement && btnElement.parentElement) {
+    btnElement.parentElement.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btnElement.classList.add('active');
+  }
+  const recs = [...(window.currentDatabase?.recommendations || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const analysts = window.currentDatabase?.analysts || [];
+  renderAlerts(recs, analysts);
+};
 
 // 캘린더 필터 설정 함수
 window.setCalendarFilter = function(filter, btnElement) {
@@ -99,6 +112,8 @@ function switchTab(tabId, clickedBtn) {
     setTimeout(initChart, 50);
   } else if (tabId === 'tab-heatmap' && !window.heatmapChart) {
     setTimeout(initHeatmap, 50);
+  } else if (tabId === 'tab-bubble' && (!window.bubbleCharts || window.bubbleCharts.length === 0)) {
+    setTimeout(initBubbleCharts, 50);
   }
 
   // 모바일 하단 탭 동기화
@@ -164,7 +179,7 @@ window.addEventListener('DOMContentLoaded', () => {
         themeToggle.innerText = '🌙';
       }
       if (marketChart) initChart();
-      if (window.bubbleCharts) initBubbleCharts();
+      if (window.bubbleCharts && window.bubbleCharts.length > 0) initBubbleCharts();
       if (window.heatmapChart) initHeatmap();
     });
   }
@@ -205,7 +220,6 @@ function renderDashboard() {
   renderStockChecklist();
   renderCalendar();
   renderExternalEvents();
-  initBubbleCharts();
   initHeatmap();
 }
 
@@ -283,11 +297,16 @@ function renderAlerts(recs, analysts) {
   const tbody = document.getElementById('alerts-container-body');
   if (!tbody) return;
   tbody.innerHTML = '';
-  if (recs.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-sub);">최근 의견 변동 감지 내역이 없습니다.</td></tr>';
+
+  const filtered = (window.alertFilter && window.alertFilter !== 'all')
+    ? recs.filter(r => r.change_type === window.alertFilter)
+    : recs;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-sub);">해당 조건의 의견 변동 내역이 없습니다.</td></tr>`;
     return;
   }
-  recs.forEach(r => {
+  filtered.forEach(r => {
     const aObj = analysts.find(a => a.id === r.analyst_id) || { name: '외부', firm: '기고', position: '위원' };
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -329,10 +348,7 @@ function renderReports(reportList, analysts) {
       <div>
         <div class="report-card-header">
           <div>
-            <h3 class="report-title">
-              ${escapeHTML(rep.title)}
-              
-            </h3>
+            <h3 class="report-title">${escapeHTML(rep.title)}</h3>
             <div class="report-meta"><span class="report-author">${escapeHTML(aObj.firm)} ${escapeHTML(aObj.name)} ${escapeHTML(aObj.position)}</span><span style="margin: 0 4px; color: var(--text-sub);">•</span><span>${escapeHTML(rep.date)}</span></div>
           </div>
         </div>
@@ -342,6 +358,7 @@ function renderReports(reportList, analysts) {
         <div><span style="color:var(--text-sub);">종목: </span><span style="font-weight:700; color:var(--text-heading);">${escapeHTML(rep.stock_name)}</span></div>
         <div><span style="color:var(--text-sub);">의견: </span><span style="color:${getRatingColor(rep.rating)}; font-weight:700;">${escapeHTML(rep.rating)}</span></div>
         <div class="report-target-box"><span style="color:var(--text-sub); font-weight:normal; font-size:0.8rem;">목표가: </span><span>${escapeHTML(rep.target_price)}</span></div>
+        <button onclick="openStockModal('${escapeHTML(rep.stock_name)}')" style="background:rgba(4,120,87,0.1); border:1px solid rgba(4,120,87,0.3); color:#10b981; padding:4px 10px; border-radius:4px; font-size:0.75rem; cursor:pointer; white-space:nowrap;">상세보기 →</button>
       </div>
     `;
     container.appendChild(card);
@@ -842,7 +859,7 @@ function handleStockCheck(chk) {
 
 function filterStockChecklist() {
   const query = document.getElementById('stock-search').value.toLowerCase().trim();
-  document.querySelectorAll('.stock-item-label').forEach(label => {
+  document.querySelectorAll('.stock-item-card').forEach(label => {
     const name = label.getAttribute('data-stock-name').toLowerCase();
     label.style.display = (name === 'kospi' || name.includes(query)) ? 'flex' : 'none';
   });
@@ -853,7 +870,7 @@ function toggleAllStocks(select) {
   selectedStocks = ['KOSPI'];
   chks.forEach(chk => {
     const stock = chk.value; if (stock === 'KOSPI') return;
-    chk.checked = select; const label = chk.closest('.stock-item-label');
+    chk.checked = select; const label = chk.closest('.stock-item-card');
     if (select) { selectedStocks.push(stock); label.style.borderColor = 'rgba(4, 120, 87, 0.4)'; label.style.background = 'rgba(4, 120, 87, 0.04)'; }
     else { label.style.borderColor = 'var(--card-border)'; label.style.background = '#080c12'; }
   });
@@ -925,7 +942,9 @@ function initBubbleCharts() {
     { id: 'chart-shiller', label: '쉴러 PE', data: data.shiller, color: '#3b82f6', threshold: 14 },
     { id: 'chart-concentration', label: '시장 집중도 (%)', data: data.concentration, color: '#8b5cf6', threshold: 45 },
     { id: 'chart-spread', label: '신용 스프레드 (bp)', data: data.credit_spread, color: '#ea580c', threshold: 600 },
-    { id: 'chart-us-yield', label: '미 10년-2년 금리차 (%)', data: data.us_yield_spread, color: '#e11d48', threshold: 0 }
+    { id: 'chart-us-yield', label: '미 10년-2년 금리차 (%)', data: data.us_yield_spread, color: '#e11d48', threshold: 0 },
+    { id: 'chart-us-yield-2y', label: '미 2년물 국채금리 (%)', data: data.us_yield_2y, color: '#06b6d4', threshold: 5 },
+    { id: 'chart-us-yield-30y', label: '미 30년물 국채금리 (%)', data: data.us_yield_30y, color: '#a78bfa', threshold: 5 }
   ];
 
   // 과거 주요 위기구간 (Annotation)
@@ -979,7 +998,7 @@ function initBubbleCharts() {
         scales: {
           x: { 
             type: 'time', 
-            time: { unit: 'year', tooltipFormat: 'yyyy-MM' },
+            time: { unit: 'year', tooltipFormat: 'yyyy-MM', displayFormats: { year: 'yyyy' } },
             grid: { display: false },
             ticks: { color: textColor, maxRotation: 0 }
           },
@@ -1056,7 +1075,7 @@ function initBubbleCharts() {
         scales: {
           x: { 
             type: 'time', 
-            time: { unit: 'year', tooltipFormat: 'yyyy-MM' },
+            time: { unit: 'year', tooltipFormat: 'yyyy-MM', displayFormats: { year: 'yyyy' } },
             grid: { display: false },
             ticks: { color: textColor, maxRotation: 0 }
           },
@@ -1132,7 +1151,7 @@ function initBubbleCharts() {
         scales: {
           x: { 
             type: 'time', 
-            time: { unit: 'year', tooltipFormat: 'yyyy-MM' },
+            time: { unit: 'year', tooltipFormat: 'yyyy-MM', displayFormats: { year: 'yyyy' } },
             grid: { display: false },
             ticks: { color: textColor, maxRotation: 0 }
           },
@@ -1294,3 +1313,105 @@ function initHeatmap() {
     }
   });
 }
+
+
+// ─── 종목 상세 모달 ──────────────────────────────────────────────────
+
+window.openStockModal = function(stockName) {
+  var overlay = document.getElementById('stock-modal-overlay');
+  var content = document.getElementById('stock-modal-content');
+  if (!overlay || !content) return;
+
+  var db = window.currentDatabase || {};
+  var analysts = db.analysts || [];
+  var reports = (db.reports || []).filter(function(r){ return r.stock_name === stockName; })
+    .sort(function(a,b){ return new Date(b.date) - new Date(a.date); });
+  var recs = (db.recommendations || []).filter(function(r){ return r.stock_name === stockName; })
+    .sort(function(a,b){ return new Date(b.date) - new Date(a.date); });
+
+  var reportsHtml = reports.length > 0
+    ? reports.map(function(rep){
+        var aObj = analysts.find(function(a){ return a.id === rep.analyst_id; }) || {name:'외부',firm:'기고',position:'위원'};
+        return '<tr>' +
+          '<td style="color:var(--text-sub);">' + escapeHTML(rep.date) + '</td>' +
+          '<td style="font-weight:600;">' + escapeHTML(aObj.firm) + ' ' + escapeHTML(aObj.name) + '</td>' +
+          '<td style="font-weight:700;color:var(--text-heading);">' + escapeHTML(rep.title) + '</td>' +
+          '<td><span style="color:' + getRatingColor(rep.rating) + ';font-weight:700;">' + escapeHTML(rep.rating) + '</span></td>' +
+          '<td style="color:#10b981;font-weight:700;">' + escapeHTML(rep.target_price || '—') + '</td>' +
+          '</tr>';
+      }).join('')
+    : '<tr><td colspan="5" style="text-align:center;color:var(--text-sub);padding:20px;">수집된 리포트가 없습니다.</td></tr>';
+
+  var recsHtml = recs.length > 0
+    ? recs.map(function(r){
+        var badge = r.change_type === 'upgrade'
+          ? '<span class="badge-alert upgrade">🟢 상향</span>'
+          : '<span class="badge-alert downgrade">🔴 하향</span>';
+        var aObj = analysts.find(function(a){ return a.id === r.analyst_id; }) || {name:'외부',firm:'기고'};
+        return '<tr>' +
+          '<td style="color:var(--text-sub);">' + escapeHTML(r.date) + '</td>' +
+          '<td>' + badge + '</td>' +
+          '<td>' + escapeHTML(aObj.firm) + ' ' + escapeHTML(aObj.name) + '</td>' +
+          '<td><span style="color:' + getRatingColor(r.previous_rating) + ';">' + escapeHTML(r.previous_rating) + '</span>' +
+            ' → <span style="color:' + getRatingColor(r.current_rating) + ';font-weight:700;">' + escapeHTML(r.current_rating) + '</span></td>' +
+          '<td style="color:#10b981;">' + escapeHTML(r.target_price || '—') + '</td>' +
+          '</tr>';
+      }).join('')
+    : '<tr><td colspan="5" style="text-align:center;color:var(--text-sub);padding:20px;">의견 변동 내역이 없습니다.</td></tr>';
+
+  // ADR 데이터
+  var adrHtml = '';
+  var valuation = window.QUANT_DATA && window.QUANT_DATA.valuation;
+  var adrs = valuation && valuation.adrs ? valuation.adrs : {};
+  var adrKey = Object.keys(adrs).find(function(k){ return k.toLowerCase() === stockName.replace(/\s/g,'').toLowerCase(); });
+  var adrArr = adrKey ? adrs[adrKey] : null;
+  if (adrArr && adrArr.length > 0) {
+    var recent = adrArr.slice(-5).reverse();
+    var rows = recent.map(function(d){
+      var pRaw = d.premium_pct !== undefined ? d.premium_pct : null;
+      var pStr = pRaw !== null ? parseFloat(pRaw).toFixed(2) + '%' : '—';
+      var col = parseFloat(pRaw) > 0 ? '#ef4444' : '#3b82f6';
+      return '<tr>' +
+        '<td style="color:var(--text-sub);">' + escapeHTML(String(d.date || d.Date || '')) + '</td>' +
+        '<td style="font-weight:600;">' + escapeHTML(String(d.adr_price || d.Close || '')) + '</td>' +
+        '<td style="color:' + col + ';font-weight:700;">' + pStr + '</td>' +
+        '</tr>';
+    }).join('');
+    adrHtml = '<h4 style="color:var(--primary);margin:24px 0 12px;font-size:1rem;">' +
+      '<i class="fa-solid fa-dollar-sign"></i> ADR 가격 및 괴리율 (최근 5거래일)</h4>' +
+      '<div class="table-responsive"><table class="alerts-table">' +
+      '<thead><tr><th>날짜</th><th>ADR 가격</th><th>괴리율</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table></div>';
+  }
+
+  content.innerHTML =
+    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--card-border);">' +
+      '<div style="width:4px;height:40px;background:var(--primary);border-radius:2px;"></div>' +
+      '<div>' +
+        '<h2 style="font-size:1.6rem;font-weight:800;color:var(--text-heading);margin:0;">' + escapeHTML(stockName) + '</h2>' +
+        '<p style="color:var(--text-sub);font-size:0.88rem;margin:4px 0 0;">리포트 ' + reports.length + '건 · 의견 변동 ' + recs.length + '건</p>' +
+      '</div>' +
+    '</div>' +
+    '<h4 style="color:var(--primary);margin-bottom:12px;font-size:1rem;"><i class="fa-solid fa-file-lines"></i> 리포트 히스토리</h4>' +
+    '<div class="table-responsive" style="max-height:240px;overflow-y:auto;margin-bottom:8px;">' +
+      '<table class="alerts-table"><thead><tr><th>날짜</th><th>애널리스트</th><th>리포트 제목</th><th>의견</th><th>목표가</th></tr></thead>' +
+      '<tbody>' + reportsHtml + '</tbody></table></div>' +
+    '<h4 style="color:var(--primary);margin:24px 0 12px;font-size:1rem;"><i class="fa-solid fa-bell"></i> 투자의견 변동 히스토리</h4>' +
+    '<div class="table-responsive" style="max-height:200px;overflow-y:auto;">' +
+      '<table class="alerts-table"><thead><tr><th>날짜</th><th>변동</th><th>애널리스트</th><th>의견 흐름</th><th>목표가</th></tr></thead>' +
+      '<tbody>' + recsHtml + '</tbody></table></div>' +
+    adrHtml;
+
+  overlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+};
+
+window.closeStockModal = function() {
+  var overlay = document.getElementById('stock-modal-overlay');
+  if (overlay) overlay.style.display = 'none';
+  document.body.style.overflow = '';
+};
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && window.closeStockModal) window.closeStockModal();
+});

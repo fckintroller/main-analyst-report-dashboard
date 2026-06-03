@@ -53,7 +53,9 @@ def generate_mock_data():
     credit_spread = []
     m2_growth = []
     m2_us_growth = []
-    us_yield_spread = [] 
+    us_yield_spread = []
+    us_yield_2y = []
+    us_yield_30y = []
 
     bubbles = [
         (1999, 12, 1.4, 2.0, 3.0, 12),  
@@ -79,11 +81,43 @@ def generate_mock_data():
             base_recv = 0.1 * math.exp(progress * 2.1)
             base_deposit = 5.0 * math.exp(progress * 2.5) # starts around 5T, ends around 60T
             
-            base_concentration = 35 + (10 * progress) 
-            base_spread = 200 
+            base_concentration = 35 + (10 * progress)
+            base_spread = 200
             base_m2 = 6.0
             base_m2_us = 6.0
-            base_us_spread = 1.5 
+            base_us_spread = 1.5
+
+            # 미 2년물: Fed 사이클 반영 (1995 ~6% → 2010s 초저금리 → 2022 급등 → 현재 ~4.5%)
+            if y <= 2001:
+                base_2y = 5.5 - (y - 1995) * 0.2
+            elif y <= 2004:
+                base_2y = 1.5 + (y - 2001) * 0.5
+            elif y <= 2007:
+                base_2y = 3.0 + (y - 2004) * 0.7
+            elif y <= 2015:
+                base_2y = max(0.2, 5.0 - (y - 2007) * 0.6)
+            elif y <= 2018:
+                base_2y = 0.7 + (y - 2015) * 0.8
+            elif y <= 2021:
+                base_2y = max(0.1, 2.9 - (y - 2018) * 0.9)
+            elif y <= 2023:
+                base_2y = 0.2 + (y - 2021) * 2.5
+            else:
+                base_2y = 4.8 - (y - 2023) * 0.2
+
+            # 미 30년물: 장기 하향 추세 (1995 ~7% → 2020 ~1.7% → 2023 ~5% → 현재 ~4.8%)
+            if y <= 2000:
+                base_30y = 6.5 - (y - 1995) * 0.15
+            elif y <= 2008:
+                base_30y = 5.7 - (y - 2000) * 0.25
+            elif y <= 2016:
+                base_30y = 3.8 - (y - 2008) * 0.2
+            elif y <= 2021:
+                base_30y = max(1.7, 2.2 - (y - 2016) * 0.1)
+            elif y <= 2023:
+                base_30y = 1.9 + (y - 2021) * 1.5
+            else:
+                base_30y = 4.7 - (y - 2023) * 0.05
             
             bubble_mult = 1.0
             margin_surge_add = 0
@@ -153,18 +187,23 @@ def generate_mock_data():
             val_m2_us = base_m2_us * random.uniform(0.8, 1.2)
             val_us_spread = base_us_spread + random.uniform(-0.2, 0.2)
             
+            val_2y  = base_2y  + random.uniform(-0.15, 0.15)
+            val_30y = base_30y + random.uniform(-0.1,  0.1)
+
             if y == 2026 and m == 5:
                 val_buffett = 115.5
                 val_shiller = 15.2
                 val_margin = 27.2
                 val_recv = 1.15
                 val_deposit = 132.0
-                val_conc = 48.5 
-                val_spread = 320 
-                val_m2 = 3.5     
-                val_m2_us = 0.5 
-                val_us_spread = -0.4 
-                
+                val_conc = 48.5
+                val_spread = 320
+                val_m2 = 3.5
+                val_m2_us = 0.5
+                val_us_spread = -0.4
+                val_2y  = 3.93   # 2026-05 실제치
+                val_30y = 4.82   # 2026-05 실제치
+
             buffett.append(round(val_buffett, 1))
             shiller.append(round(val_shiller, 1))
             margin_loan.append(round(val_margin, 2))
@@ -175,6 +214,8 @@ def generate_mock_data():
             m2_growth.append(round(val_m2, 1))
             m2_us_growth.append(round(val_m2_us, 1))
             us_yield_spread.append(round(val_us_spread, 2))
+            us_yield_2y.append(round(max(0.0, val_2y), 2))
+            us_yield_30y.append(round(max(0.0, val_30y), 2))
 
     return {
         "dates": dates,
@@ -187,7 +228,9 @@ def generate_mock_data():
         "credit_spread": credit_spread,
         "m2_growth": m2_growth,
         "m2_us_growth": m2_us_growth,
-        "us_yield_spread": us_yield_spread
+        "us_yield_spread": us_yield_spread,
+        "us_yield_2y": us_yield_2y,
+        "us_yield_30y": us_yield_30y
     }
 
 if __name__ == "__main__":
@@ -205,7 +248,9 @@ window.BUBBLE_DATA = {{
     credit_spread: {json.dumps(data['credit_spread'])},
     m2_growth: {json.dumps(data['m2_growth'])},
     m2_us_growth: {json.dumps(data['m2_us_growth'])},
-    us_yield_spread: {json.dumps(data['us_yield_spread'])}
+    us_yield_spread: {json.dumps(data['us_yield_spread'])},
+    us_yield_2y: {json.dumps(data['us_yield_2y'])},
+    us_yield_30y: {json.dumps(data['us_yield_30y'])}
 }};
 """
     with open(OUTPUT_JS, 'w', encoding='utf-8') as f:

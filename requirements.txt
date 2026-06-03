@@ -1,0 +1,9 @@
+pandas
+yfinance
+FinanceDataReader
+pykrx
+requests
+fear-and-greed
+OpenDartReader
+beautifulsoup4
+lxml
