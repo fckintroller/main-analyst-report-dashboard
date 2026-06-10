@@ -1,0 +1,7 @@
+﻿factor_family,question,factor_name,source_column,interpretation,preferred_use
+investor_flow_momentum,"최근 한 달 외국인·기관이 순매수했는가, 순매도했는가?",foreign_net_ratio / inst_net_ratio,외국인·기관 순매매거래량 합계 ÷ 총 거래량 합계,"월간 거래량 대비 순매매 강도 (양수=순매수 우위, 음수=순매도 우위)",핵심
+investor_flow_momentum,외국인 수급 방향이 전월 대비 가속/둔화되고 있는가?,foreign_net_ratio_change / inst_net_ratio_change,월간 순매매강도 변화,1개월 전 대비 순매매강도 변화 (양수=매수 가속 또는 매도 둔화),핵심
+investor_flow_momentum,지금 외국인 수급이 이 종목 자신의 최근 추세 대비 이례적인가?,foreign_net_ratio_zscore_own_6m,월간 순매매강도,"자기 과거 6개월 평균 대비 z-score (수집 이력이 짧아 6개월 윈도우 사용, 절대치가 클수록 이례적)",필터
+investor_flow_momentum,다른 종목들과 비교했을 때 외국인 수급 강도가 강한 편인가?,foreign_net_ratio_percentile_cross,월간 순매매강도,같은 달 전 종목 대비 백분위 (1에 가까울수록 외국인 순매수 강도 상위),필터
+investor_flow_momentum,외국인 보유비중이 늘고 있는가?,foreign_ratio_pct / foreign_ratio_pct_change,외국인 보유율(%),월말 외국인 보유율과 전월 대비 변화(%p) — 양수면 보유비중 확대,해석
+investor_flow_momentum,종합적으로 수급이 우호적인 매수 후보인가?,flow_score / flow_bucket / flow_direction,수급 강도+가속도+단면순위 합성,"0~1 합성 점수, strong_outflow~strong_inflow 5단계 버킷, net_buying/flat/net_selling 방향 라벨",핵심

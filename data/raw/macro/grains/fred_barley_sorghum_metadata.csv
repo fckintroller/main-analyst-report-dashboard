@@ -1,0 +1,4 @@
+﻿series_id,status,rows,start_date,end_date,message
+PBARLUSDM,failed,0,,,"failed to download https://fred.stlouisfed.org/graph/fredgraph.csv?id=PBARLUSDM: HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=120)"
+WPU01220101,failed,0,,,"failed to download https://fred.stlouisfed.org/graph/fredgraph.csv?id=WPU01220101: HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=120)"
+WPU01220501,failed,0,,,"failed to download https://fred.stlouisfed.org/graph/fredgraph.csv?id=WPU01220501: HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=120)"

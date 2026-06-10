@@ -1,0 +1,6 @@
+﻿factor_family,question,factor_name,source_column,interpretation,preferred_use
+valuation_per_pbr,지금 이 종목의 PER/PBR이 같은 섹터(업종) 내에서 어느 위치인가?,per_percentile_sector / pbr_percentile_sector,PER/PBR,"같은 달 동일 섹터 내 종목 대비 백분위(0=섹터 내 가장 쌈, 1=섹터 내 가장 비쌈)",필터
+valuation_per_pbr,이 종목 자신의 과거 밸류에이션 대비 지금은 싼 편인가?,per_zscore_own_24m / pbr_zscore_own_24m,PER/PBR,자기 과거 24개월 평균 대비 z-score (낮을수록 자기 역사상 저평가),핵심
+valuation_per_pbr,최근 밸류에이션이 빠르게 재평가(re-rating)되고 있는가?,per_rerating_momentum_3m / pbr_rerating_momentum_3m,PER/PBR,"3개월 전 대비 PER/PBR 변화율 (양수=re-rating, 멀티플 확대 / 음수=de-rating, 멀티플 축소)",핵심
+valuation_per_pbr,종합적으로 저평가 신호로 볼 수 있는가?,valuation_score / valuation_bucket,PER/PBR 합성,단면 백분위 + 자기 과거 z-score를 합성한 0~1 점수 (deep_value~rich 5단계 버킷),핵심
+valuation_per_pbr,밸류에이션 재평가 방향은 상승(de-rating)인가 하락(re-rating)인가?,rerating_momentum_score / rerating_direction,PER/PBR 모멘텀 합성,PER/PBR 모멘텀 평균과 방향 라벨(re_rating_up/flat/de_rating_down),해석

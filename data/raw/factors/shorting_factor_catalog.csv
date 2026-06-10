@@ -1,0 +1,6 @@
+﻿factor_family,question,factor_name,source_column,interpretation,preferred_use
+shorting,현재 공매도 잔고율이 높은가?,balance_ratio,공매도잔고/상장주식수 (%),높을수록 기관/외인의 약세 베팅 집중,공매도 압박 1차 필터
+shorting,공매도 잔고율이 최근 급변했는가?,balance_ratio_3m_chg,balance_ratio diff(3),음수 급락 = 쇼트 커버링 진행 중 (쇼트 스퀴즈 전조),쇼트 스퀴즈 후보 탐지
+shorting,자기 과거 대비 잔고율이 이례적으로 높은가?,balance_ratio_zscore_own_6m,balance_ratio rolling 6M z-score,양수 높을수록 과거 대비 공매도 비중 급증,신규 공매도 집중 종목 탐지
+shorting,쇼트 스퀴즈 후보인가?,short_squeeze_flag,balance_ratio_3m_chg < -0.3 AND ret_1m > 0,True = 잔고 급감 + 주가 상승 동시 = 쇼트 커버링 가속 가능성,단기 모멘텀 강화 신호 보조
+shorting,종합 공매도 압박 강도는?,shorting_pressure_score,balance_ratio_pct_cross + z-score 정규화 평균,"0~1, 높을수록 공매도 압박 강함 (상승 시 스퀴즈 잠재력)",전체 팩터 결합 시 리스크/기회 이중 신호

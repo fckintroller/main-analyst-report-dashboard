@@ -1058,6 +1058,22 @@
     "previous": ""
   },
   {
+    "date": "2026-06-16",
+    "title": "일본은행(BOJ) 기준금리 결정",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-06-16",
+    "title": "일본은행(BOJ) 기자회견",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
     "date": "2026-06-18",
     "title": "BOE Official Bank Rate",
     "country": "GBP",
@@ -1067,6 +1083,14 @@
     "date": "2026-06-18",
     "title": "기준금리 결정",
     "country": "영국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-06-19",
+    "title": "일본 소비자물가지수 전년동기대비 (5월)",
+    "country": "일본",
     "impact": "High",
     "forecast": "",
     "previous": ""
@@ -1089,6 +1113,14 @@
     "date": "2026-06-25",
     "title": "국내총생산 성장률",
     "country": "미국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-07-01",
+    "title": "일본 단칸 대형 제조업 지수 (Q2)",
+    "country": "일본",
     "impact": "High",
     "forecast": "",
     "previous": ""
@@ -1130,6 +1162,14 @@
     "previous": ""
   },
   {
+    "date": "2026-07-21",
+    "title": "일본 소비자물가지수 전년동기대비 (6월)",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
     "date": "2026-07-29",
     "title": "FOMC Statement & Fed Funds Rate",
     "country": "USD",
@@ -1139,6 +1179,126 @@
     "date": "2026-07-29",
     "title": "기준금리 결정",
     "country": "미국",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-07-31",
+    "title": "일본은행(BOJ) 기준금리 결정",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-07-31",
+    "title": "일본은행(BOJ) 기자회견",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-08-17",
+    "title": "일본 국내총생산(GDP) 전분기대비 예비치 (Q2)",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-08-21",
+    "title": "일본 소비자물가지수 전년동기대비 (7월)",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-09-18",
+    "title": "일본은행(BOJ) 기준금리 결정",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-09-18",
+    "title": "일본 소비자물가지수 전년동기대비 (8월)",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-10-01",
+    "title": "일본 단칸 대형 제조업 지수 (Q3)",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-10-23",
+    "title": "일본 소비자물가지수 전년동기대비 (9월)",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-10-30",
+    "title": "일본은행(BOJ) 기준금리 결정",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-10-30",
+    "title": "일본은행(BOJ) 기자회견",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-11-16",
+    "title": "일본 국내총생산(GDP) 전분기대비 예비치 (Q3)",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-11-20",
+    "title": "일본 소비자물가지수 전년동기대비 (10월)",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-12-18",
+    "title": "일본은행(BOJ) 기준금리 결정",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-12-18",
+    "title": "일본은행(BOJ) 기자회견",
+    "country": "일본",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "date": "2026-12-18",
+    "title": "일본 소비자물가지수 전년동기대비 (11월)",
+    "country": "일본",
     "impact": "High",
     "forecast": "",
     "previous": ""

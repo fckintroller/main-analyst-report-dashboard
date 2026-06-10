@@ -1,0 +1,5 @@
+﻿factor_family,question,factor_name,source_column,interpretation,preferred_use
+forward_per,선행 PER 기준 섹터 내 상대 저평가인가?,forward_per / forward_per_sector_pct,컨센서스 EPS,"현재가 / 선행EPS(컨센서스 연간 예상). 섹터 내 백분위(0=가장 쌈, 1=가장 비쌈)",핵심
+forward_per,이익 성장으로 선행이 후행보다 얼마나 저렴한가?,per_discount_vs_trailing,컨센서스 EPS,forward_per / trailing_per_consensus - 1. 음수 = 이익 성장 기대로 선행이 저렴,핵심
+forward_per,컨센서스 기준 내년 이익 성장률 기대치는?,eps_growth_expected,컨센서스 EPS,(forward_eps / trailing_eps) - 1. 양수 = 이익 성장 기대,해석
+forward_per,선행 밸류에이션 종합 신호는?,forward_valuation_score / forward_valuation_bucket,forward_per + eps_growth 합성,섹터내 저평가 + 이익성장 기대를 합성한 0~1 점수 (deep_value~expensive),핵심

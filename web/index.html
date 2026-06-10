@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KOREA ANALYST REPORT</title>
+  <title>jongTF</title>
   <!-- Google Fonts & Font Awesome Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -218,7 +218,7 @@
         <h1 style="font-size: 2.2rem; font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
           KOREA ANALYST REPORT
         </h1>
-        <button id="theme-toggle" class="filter-btn" style="position:absolute; right:0; padding: 8px 12px; font-size: 1.2rem; border-radius: 50%; width: 42px; height: 42px; display:flex; align-items:center; justify-content:center;">?뙙</button>
+        <button id="theme-toggle" class="filter-btn" style="position:absolute; right:0; padding: 8px 12px; font-size: 1.2rem; border-radius: 50%; width: 42px; height: 42px; display:flex; align-items:center; justify-content:center;">🌙</button>
       </div>
     </header>
 
@@ -226,34 +226,36 @@
       <!-- ?쇱そ ???ъ씠?쒕컮 -->
       <div class="tabs-nav" style="flex: 0 0 220px; display: flex; flex-direction: column; gap: 10px; border-bottom: none; border-right: 1px solid var(--card-border); padding-right: 20px;">
 
-        <button id="btn-tab-reports" class="tab-btn active"><i class="fa-solid fa-file-invoice-dollar"></i> ?듯빀 由ы룷??/button>
+        <button id="btn-tab-reports" class="tab-btn active"><i class="fa-solid fa-file-invoice-dollar"></i> 통합 리포트</button>
         <div id="nav-sub-reports" class="sidebar-sub-nav" style="display:flex; flex-direction:column; padding-left: 20px; gap:8px;">
-          <button class="sub-tab-btn active" onclick="switchSubTab('analysts', this)">寃고빀 ?뱁꽣蹂??좊꼸由ъ뒪??/button>
-          <button class="sub-tab-btn" onclick="switchSubTab('alerts', this)">?ъ옄?섍껄 蹂???뚮┝</button>
-          <button class="sub-tab-btn" onclick="switchSubTab('research', this)">由ъ꽌移?蹂닿퀬??/button>
+          <button class="sub-tab-btn active" onclick="switchSubTab('analysts', this)">결합 섹터별 애널리스트</button>
+          <button class="sub-tab-btn" onclick="switchSubTab('alerts', this)">투자의견 변동 알림</button>
+          <button class="sub-tab-btn" onclick="switchSubTab('research', this)">리서치 보고서</button>
         </div>
 
-        <button id="btn-tab-analysis" class="tab-btn"><i class="fa-solid fa-magnifying-glass-chart"></i> 醫낅ぉ遺꾩꽍</button>
-        <button id="btn-tab-quant" class="tab-btn"><i class="fa-solid fa-calculator"></i> ???/button>
+        <button id="btn-tab-analysis" class="tab-btn"><i class="fa-solid fa-magnifying-glass-chart"></i> 종목분석</button>
+        <button id="btn-tab-quant" class="tab-btn"><i class="fa-solid fa-calculator"></i> 퀀트</button>
         <div id="nav-sub-quant" class="sidebar-sub-nav" style="display:none; flex-direction:column; padding-left: 20px; gap:8px;">
-          <button class="sub-tab-btn active" onclick="switchSubTab('quant-sector', this)">?낆쥌 ?쒗솚留?/button>
-          <button class="sub-tab-btn" onclick="switchSubTab('quant-scorecard', this)">留ㅽ겕濡??ㅼ퐫?댁뭅??/button>
-          <button class="sub-tab-btn" onclick="switchSubTab('quant-heatmap', this)">?뱁꽣 ?덊듃留?/button>
+          <button class="sub-tab-btn active" onclick="switchSubTab('quant-sector', this)">업종 순환맵</button>
+          <button class="sub-tab-btn" onclick="switchSubTab('quant-scorecard', this)">매크로 스코어카드</button>
+          <button class="sub-tab-btn" onclick="switchSubTab('quant-sector-momentum', this)">섹터 모멘텀</button>
+          <button class="sub-tab-btn" onclick="switchSubTab('quant-heatmap', this)">섹터 히트맵</button>
         </div>
 
-        <button id="btn-tab-macro" class="tab-btn"><i class="fa-solid fa-globe"></i> 留ㅽ겕濡?& ?쒖옣</button>
+        <button id="btn-tab-macro" class="tab-btn"><i class="fa-solid fa-globe"></i> 매크로 & 시장</button>
         <div id="nav-sub-macro" class="sidebar-sub-nav" style="display:none; flex-direction:column; padding-left: 20px; gap:8px;">
-          <button class="sub-tab-btn active" onclick="switchSubTab('macro-index', this)">二쇨? 吏??/button>
-          <button class="sub-tab-btn" onclick="switchSubTab('macro-global', this)">湲濡쒕쾶 ?쒗솴</button>
-          <button class="sub-tab-btn" onclick="switchSubTab('macro-econ', this)">寃쎌젣 吏??/button>
-          <button class="sub-tab-btn" onclick="switchSubTab('macro-rates', this)">湲덈━/梨꾧텒</button>
-          <button class="sub-tab-btn" onclick="switchSubTab('macro-commodity', this)">?먯옄??媛寃?/button>
-          <button class="sub-tab-btn" onclick="switchSubTab('macro-industry', this)">?곗뾽 遺꾩꽍</button>
+          <button class="sub-tab-btn active" onclick="switchSubTab('macro-index', this)">주가 지표</button>
+          <button class="sub-tab-btn" onclick="switchSubTab('macro-global', this)">글로벌 현황</button>
+          <button class="sub-tab-btn" onclick="switchSubTab('macro-leading', this)">경기 선행 & 심리</button>
+          <button class="sub-tab-btn" onclick="switchSubTab('macro-econ', this)">경제 지표</button>
+          <button class="sub-tab-btn" onclick="switchSubTab('macro-rates', this)">금리/채권</button>
+          <button class="sub-tab-btn" onclick="switchSubTab('macro-commodity', this)">원자재 가격</button>
+          <button class="sub-tab-btn" onclick="switchSubTab('macro-industry', this)">산업 분석</button>
         </div>
 
-        <button id="btn-tab-bubble" class="tab-btn"><i class="fa-solid fa-chart-pie" style="color:#ef4444;"></i> 踰꾨툝 吏??/button>
-        <button id="btn-tab-news" class="tab-btn"><i class="fa-solid fa-newspaper"></i> ?댁뒪 & 由ъ꽌移?/button>
-        <button id="btn-tab-chart" class="tab-btn"><i class="fa-solid fa-chart-line"></i> 二쇨? 李⑦듃 & 遺꾩꽍</button>
+        <button id="btn-tab-bubble" class="tab-btn"><i class="fa-solid fa-chart-pie" style="color:#ef4444;"></i> 버블 지표</button>
+        <button id="btn-tab-news" class="tab-btn"><i class="fa-solid fa-newspaper"></i> 뉴스 & 리서치</button>
+        <button id="btn-tab-chart" class="tab-btn"><i class="fa-solid fa-chart-line"></i> 주가 차트 & 분석</button>
       </div>
 
       <!-- ?ㅻⅨ履?硫붿씤 肄섑뀗痢??곸뿭 -->
@@ -279,7 +281,7 @@
       <div id="sub-analysts" class="sub-tab-content active">
       <div style="display: flex; gap: 15px; margin-bottom: 20px;">
         <div class="filter-container" id="filter-buttons" style="flex-grow: 1; margin-bottom: 0; justify-content: flex-start;"></div>
-        <input type="text" id="analyst-search" oninput="filterAnalysts()" placeholder="?뵇 醫낅ぉ紐? ?뱁꽣 寃??.." style="width: 250px; background: var(--btn-bg); border: 1px solid var(--card-border); color: var(--text-heading); padding: 10px 12px; border-radius: 6px; font-size: 0.88rem; outline: none; transition: var(--transition);">
+        <input type="text" id="analyst-search" oninput="filterAnalysts()" placeholder="🔎 종목명, 섹터 검색..." style="width: 250px; background: var(--btn-bg); border: 1px solid var(--card-border); color: var(--text-heading); padding: 10px 12px; border-radius: 6px; font-size: 0.88rem; outline: none; transition: var(--transition);">
       </div>
       <div class="analysts-grid" id="analysts-container"></div>
       </div>
@@ -287,27 +289,28 @@
       <div class="alerts-container">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
           <h2 style="font-size: 1.4rem; font-weight: 700; margin:0; display:flex; align-items:center; gap:10px; color:var(--primary);">
-            <i class="fa-solid fa-bell-slash" style="color:var(--downgrade);"></i> ?ы듃?대━???섍껄 蹂??異붿쟻 ??쒕낫??          </h2>
+            <i class="fa-solid fa-bell-slash" style="color:var(--downgrade);"></i> 투자의견 변동 추적 대시보드
+          </h2>
           <div style="display:flex; gap:8px;">
-            <button class="filter-btn active" id="alert-filter-all"     onclick="setAlertFilter('all',this)">?꾩껜</button>
-            <button class="filter-btn"        id="alert-filter-upgrade"  onclick="setAlertFilter('upgrade',this)">?윟 ?곹뼢留?/button>
-            <button class="filter-btn"        id="alert-filter-downgrade" onclick="setAlertFilter('downgrade',this)">?뵶 ?섑뼢留?/button>
+            <button class="filter-btn active" id="alert-filter-all"     onclick="setAlertFilter('all',this)">전체</button>
+            <button class="filter-btn"        id="alert-filter-upgrade"  onclick="setAlertFilter('upgrade',this)">상향만</button>
+            <button class="filter-btn"        id="alert-filter-downgrade" onclick="setAlertFilter('downgrade',this)">하향만</button>
           </div>
         </div>
         <p style="color:var(--text-sub); font-size: 0.95rem; margin-bottom: 25px;">
-          * ?좊꼸由ъ뒪?몃뱾???댁쟾 ?깃툒 ?鍮?<b>[留ㅼ닔 ???????留ㅻ룄]</b> ???ъ옄?섍껄??蹂寃쏀븳 ?뺣? ?몃옒???댁뿭?낅땲?? 援ш? ?쒗듃濡쒖쓽 蹂듭궗 ?곕룞??媛?ν빀?덈떎.
+          * 애널리스트들이 이전 등급 대비 <b>[매수 · 중립 · 매도]</b> 투자의견을 변경한 정보를 추적한 내역입니다. 구글 시트로 복사 연동이 가능합니다.
         </p>
         <div class="table-responsive">
           <table class="alerts-table">
             <thead>
               <tr>
-                <th>湲곗뾽紐?(醫낅ぉ肄붾뱶)</th>
-                <th>?대떦 ?좊꼸由ъ뒪??/th>
-                <th>蹂??諛⑺뼢</th>
-                <th>?섍껄 蹂???먮쫫</th>
-                <th>紐⑺몴 二쇨?</th>
-                <th>由ъ꽌移?肄붾찘??/th>
-                <th>議곗젙 ?쇱옄</th>
+                <th>기업명(종목코드)</th>
+                <th>담당 애널리스트</th>
+                <th>변동 방향</th>
+                <th>의견 변동 흐름</th>
+                <th>목표 주가</th>
+                <th>리서치 코멘트</th>
+                <th>조정 일자</th>
               </tr>
             </thead>
             <tbody id="alerts-container-body"></tbody>
@@ -318,13 +321,13 @@
       <div id="sub-research" class="sub-tab-content">
       <div class="reports-container">
         <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; display:flex; align-items:center; gap:10px; color:var(--primary);">
-          <i class="fa-solid fa-file-lines" style="color:var(--primary);"></i> 醫낇빀 由ъ꽌移?蹂닿퀬???쇳꽣
+          <i class="fa-solid fa-file-lines" style="color:var(--primary);"></i> 종합 리서치 보고서 필터
         </h2>
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px;">
           <p style="color:var(--text-sub); font-size: 0.95rem; margin: 0; align-self: center;">
-            * ??쒕?援?理쒖젙?곴툒 踰좎뒪???좊꼸由ъ뒪?몃뱾???ъ링 ?묒꽦??理쒖떊 醫낅ぉ 遺꾩꽍 諛??뱁꽣?꾨왂 由ы룷???붿빟蹂몄엯?덈떎.
+            * 국내 최정상급 베스트 애널리스트들이 작성한 최신 종목 분석 및 섹터 전략 리포트 요약본입니다.
           </p>
-          <input type="text" id="report-search" oninput="filterReports()" placeholder="?뵇 醫낅ぉ紐? ?뱁꽣 寃??.." style="width: 250px; background: var(--btn-bg); border: 1px solid var(--card-border); color: var(--text-heading); padding: 10px 12px; border-radius: 6px; font-size: 0.88rem; outline: none; transition: var(--transition);">
+          <input type="text" id="report-search" oninput="filterReports()" placeholder="🔎 종목명, 섹터 검색..." style="width: 250px; background: var(--btn-bg); border: 1px solid var(--card-border); color: var(--text-heading); padding: 10px 12px; border-radius: 6px; font-size: 0.88rem; outline: none; transition: var(--transition);">
         </div>
         <div class="reports-grid" id="reports-container-grid"></div>
       </div>
@@ -337,34 +340,75 @@
       <!-- 1) 二쇨? 吏??-->
       <div id="sub-macro-index" class="sub-tab-content active">
         <div class="data-card">
-          <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-chart-line"></i> 援?궡 利앹떆 ?섍툒 諛??꾨줈洹몃옩 留ㅻℓ</h3>
+          <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-chart-line"></i> 국내 증시 수급 및 프로그램 매매</h3>
           <div id="macro-index-charts" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;"></div>
+        </div>
+        <div class="data-card" style="margin-top:16px;">
+          <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-chart-bar"></i> 선물 매매동향 &amp; 고객예탁금</h3>
+          <div id="macro-index-futures-charts" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;"></div>
         </div>
       </div>
 
       <!-- 2) 湲濡쒕쾶 ?쒗솴 -->
       <div id="sub-macro-global" class="sub-tab-content">
         <div class="data-card">
-          <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-globe"></i> 湲濡쒕쾶 ?좊룞??諛??쒗솴</h3>
+          <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-globe"></i> 글로벌 자산 및 시장 현황</h3>
           <div id="macro-global-charts" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;"></div>
         </div>
       </div>
 
       <!-- 3) 寃쎌젣 吏??-->
-      <div id="sub-macro-econ" class="sub-tab-content">
+      <!-- 3) 경기 선행 & 심리 -->
+      <div id="sub-macro-leading" class="sub-tab-content">
+        <div class="data-card">
+          <h3 style="color: var(--primary); margin-bottom: 15px;">
+            <i class="fa-solid fa-arrow-trend-up"></i> OECD 복합선행지수 (CLI)
+          </h3>
+          <p style="color:var(--text-sub); font-size:0.85rem; margin-bottom:12px;">
+            100 이상 상승 추세 = 경기 확장 국면 / 100 이하 하락 추세 = 경기 수축 국면 (6~9개월 선행)
+          </p>
+          <div id="macro-leading-cli-charts" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(380px,1fr)); gap:20px;"></div>
+        </div>
+        <div class="data-card" style="margin-top:16px;">
+          <h3 style="color: var(--primary); margin-bottom: 15px;">
+            <i class="fa-solid fa-brain"></i> 투자 심리 &amp; 공포 지수
+          </h3>
+          <div id="macro-leading-sentiment-charts" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(380px,1fr)); gap:20px;"></div>
+        </div>
+        <div class="data-card" style="margin-top:16px;">
+          <h3 style="color: var(--primary); margin-bottom: 15px;">
+            <i class="fa-solid fa-plug-circle-bolt"></i> 신용 &amp; 파생 지표
+          </h3>
+          <p style="color:var(--text-sub); font-size:0.85rem; margin-bottom:12px;">
+            Credit Impulse = &Delta;(신규대출/GDP) YoY — 양수 전환 시 경기 9~12개월 후 회복 선행
+          </p>
+          <div id="macro-leading-derived-charts" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(380px,1fr)); gap:20px;"></div>
+        </div>
+        <div class="data-card" style="margin-top:16px;">
+          <h3 style="color: var(--primary); margin-bottom: 15px;">
+            <i class="fa-solid fa-magnifying-glass"></i> 네이버 DataLab 테마 관심도
+          </h3>
+          <p style="color:var(--text-sub); font-size:0.85rem; margin-bottom:12px;">
+            네이버 검색 상대 지수 (기간 내 최대=100 기준). 반도체·2차전지·AI·바이오·방산·EV 테마.
+          </p>
+          <div id="macro-leading-naver-charts" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(380px,1fr)); gap:20px;"></div>
+        </div>
+      </div>
+
+            <div id="sub-macro-econ" class="sub-tab-content">
         <div class="reports-container" style="max-width:900px; margin: 0 auto;">
           <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; display:flex; align-items:center; gap:10px; color:var(--primary);">
-            <i class="fa-regular fa-calendar-check" style="color:var(--primary);"></i> 二쇱슂 嫄곗떆寃쎌젣 罹섎┛??(High Impact)
+            <i class="fa-regular fa-calendar-check" style="color:var(--primary);"></i> 주요 거시경제 캘린더 (High Impact)
           </h2>
           <p style="color:var(--text-sub); font-size: 0.95rem; margin-bottom: 20px;">
-            * 湲濡쒕쾶 湲덉쑖 ?쒖옣?????곹뼢??誘몄튂??以묒슂???믪? 寃쎌젣 吏??諛??대깽???쇱젙?낅땲??
+            * 글로벌 금융 시장에 영향을 미치는 중요도가 높은 경제 지표 및 이벤트 일정입니다.
           </p>
           <div class="filter-container" style="justify-content: flex-start; gap: 8px;">
-            <button class="filter-btn active" onclick="setCalendarFilter('all', this)">?꾩껜</button>
-            <button class="filter-btn" onclick="setCalendarFilter('today', this)">?ㅻ뒛</button>
-            <button class="filter-btn" onclick="setCalendarFilter('tomorrow', this)">?댁씪</button>
-            <button class="filter-btn" onclick="setCalendarFilter('this_week', this)">?대쾲 二?/button>
-            <button class="filter-btn" onclick="setCalendarFilter('this_month', this)">?대쾲 ??/button>
+            <button class="filter-btn active" onclick="setCalendarFilter('all', this)">전체</button>
+            <button class="filter-btn" onclick="setCalendarFilter('today', this)">오늘</button>
+            <button class="filter-btn" onclick="setCalendarFilter('tomorrow', this)">내일</button>
+            <button class="filter-btn" onclick="setCalendarFilter('this_week', this)">이번 주</button>
+            <button class="filter-btn" onclick="setCalendarFilter('this_month', this)">이번 달</button>
           </div>
           <div id="calendar-container-body" style="background: var(--card-bg); border-radius: 8px; padding: 20px;"></div>
         </div>
@@ -373,27 +417,33 @@
       <!-- 4) 湲덈━/梨꾧텒 -->
       <div id="sub-macro-rates" class="sub-tab-content">
         <div class="data-card">
-          <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-percent"></i> 梨꾧텒 湲덈━ 諛??ㅽ봽?덈뱶</h3>
+          <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-percent"></i> 채권 금리 및 스프레드</h3>
 
+          <!-- 한국 금리 섹션 -->
+          <h4 style="color: var(--text-sub); font-size:0.9rem; margin-bottom:10px; margin-top:4px;">🇰🇷 한국 금리</h4>
+          <div id="macro-rates-kor-charts" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-bottom: 24px;"></div>
+
+          <!-- 미국 금리 섹션 -->
+          <h4 style="color: var(--text-sub); font-size:0.9rem; margin-bottom:10px;">🇺🇸 미국 금리</h4>
           <!-- ?숈쟻 李⑦듃 ?ㅼ뼱媛?怨?-->
           <div id="macro-rates-charts-dynamic" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-bottom: 20px;"></div>
 
           <!-- ?뺤쟻 罹붾쾭??(踰꾨툝/?ㅽ봽?덈뱶 ?곗씠?곗슜) -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">
             <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
-              <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">誘?2?꾨Ъ 援?콈湲덈━ (%)</h3>
+              <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">미 2년물 국채금리 (%)</h3>
               <div style="height: 250px; position: relative;"><canvas id="chart-us-yield-2y"></canvas></div>
             </div>
             <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
-              <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">誘?30?꾨Ъ 援?콈湲덈━ (%)</h3>
+              <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">미 30년물 국채금리 (%)</h3>
               <div style="height: 250px; position: relative;"><canvas id="chart-us-yield-30y"></canvas></div>
             </div>
             <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
-              <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">?섏씠?쇰뱶 ?좎슜 ?ㅽ봽?덈뱶 (bp)</h3>
+              <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">하이일드 신용 스프레드 (bp)</h3>
               <div style="height: 250px; position: relative;"><canvas id="chart-spread"></canvas></div>
             </div>
             <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
-              <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">誘??λ떒湲?湲덈━李?(10?꾨Ъ-2?꾨Ъ, %)</h3>
+              <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">미 장단기 금리차 (10년물-2년물, %)</h3>
               <div style="height: 250px; position: relative;"><canvas id="chart-us-yield"></canvas></div>
             </div>
           </div>
@@ -403,15 +453,29 @@
       <!-- 5) ?먯옄??媛寃?-->
       <div id="sub-macro-commodity" class="sub-tab-content">
         <div class="data-card">
-          <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-oil-can"></i> ?먯옄??諛??섏쑉 吏??/h3>
+          <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-oil-can"></i> 원자재 및 환율 지표</h3>
           <div id="macro-commodity-charts" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;"></div>
+          <h4 style="color: var(--text-sub); font-size:0.9rem; margin:20px 0 10px;">🔩 비철금속 현재가 (LME 기준)</h4>
+          <div id="macro-commodity-nonferrous-table"></div>
         </div>
       </div>
 
-      <!-- 6) ?곗뾽 遺꾩꽍 -->
+      <!-- 6) 산업 분석 -->
       <div id="sub-macro-industry" class="sub-tab-content">
-        <div class="reports-container" style="text-align: center; padding: 50px;">
-          <h2 style="color: var(--text-sub);"><i class="fa-solid fa-industry"></i> ?곗뾽蹂??곸꽭 遺꾩꽍 ?곗씠?곌? ?낅뜲?댄듃 ???덉젙?낅땲??</h2>
+        <div class="data-card">
+          <h3 style="color: var(--primary); margin-bottom: 15px;">
+            <i class="fa-brands fa-google"></i> Google Trends 테마 모멘텀 (최근 90일, 한국)
+          </h3>
+          <p style="color:var(--text-sub); font-size:0.85rem; margin-bottom:12px;">
+            검색량 급등 = 개인 투자자 모멘텀 선행 신호. 100=기간 내 최고 검색량.
+          </p>
+          <div id="macro-industry-trends-charts" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(380px,1fr)); gap:20px; margin-bottom:24px;"></div>
+        </div>
+        <div class="data-card" style="margin-top:16px;">
+          <h3 style="color: var(--primary); margin-bottom: 15px;">
+            <i class="fa-solid fa-chart-area"></i> Google Trends 투자심리 키워드 (월별, 5년)
+          </h3>
+          <div id="macro-industry-trends-monthly-charts" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(380px,1fr)); gap:20px;"></div>
         </div>
       </div>
 
@@ -421,34 +485,34 @@
     <div id="tab-bubble" class="tab-content">
       <div class="reports-container">
         <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; display:flex; align-items:center; gap:10px; color:#ef4444;">
-          <i class="fa-solid fa-chart-pie" style="color:#ef4444;"></i> EWS 議곌린寃쎈낫 諛?踰꾨툝 吏??吏꾨떒
+          <i class="fa-solid fa-chart-pie" style="color:#ef4444;"></i> EWS 조기경보 및 버블 지표 진단
         </h2>
         <p style="color:var(--text-sub); font-size: 0.95rem; margin-bottom: 25px;">
-          * 踰꾪븦吏?? ?대윭 PE, ?좎슜?듭옄 ?붽퀬 ??利앹떆 怨쇱뿴 ?곹깭瑜?吏꾨떒?섏뿬 ?ъ옄 留ㅻ젰??諛?由ъ뒪??Early Warning)瑜??됯??⑸땲?? <br>
+          * 버핏지수, 실러 PE, 신용융자 잔고 등 증시 과열 상태를 진단하여 투자 매력도와 리스크를 평가합니다. <br>
           <span style="display:inline-block; margin-top:5px; font-size:0.85rem; padding:4px 8px; background:rgba(239, 68, 68, 0.1); border-radius:4px; color:#ef4444; border:1px solid rgba(239, 68, 68, 0.3);">
-            遺됱???諛곌꼍 援ш컙? 怨쇨굅 二쇱슂 ?꾧린(?룹뺨 踰꾨툝, 湲濡쒕쾶 湲덉쑖?꾧린, 肄붾줈??9) ?뱀떆???먮쫫?낅땲??
+            붉은 배경 구간은 과거 주요 위기(닷컴 버블, 글로벌 금융위기, 코로나19) 당시의 흐름입니다.
           </span>
         </p>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
           <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
-            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">踰꾪븦吏??(?쒓?珥앹븸 / 紐낅ぉ GDP)</h3>
+            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">버핏지수(시가총액 / 명목 GDP)</h3>
             <div style="height: 250px; position: relative;"><canvas id="chart-buffett"></canvas></div>
           </div>
           <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
-            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">?대윭 PE (CAPE Ratio)</h3>
+            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">실러 PE (CAPE Ratio)</h3>
             <div style="height: 250px; position: relative;"><canvas id="chart-shiller"></canvas></div>
           </div>
           <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px; grid-column: 1 / -1;">
-            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">?덈쾭由ъ? 異붿씠 (?좎슜?듭옄 & 誘몄닔湲?& ?ъ옄?먯삁?곴툑)</h3>
+            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">레버리지 추이 (신용융자 & 미수금 & 투자자예탁금)</h3>
             <div style="height: 300px; position: relative;"><canvas id="chart-leverage"></canvas></div>
           </div>
           <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
-            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">?쒖옣 吏묒쨷??(Top 10 ?쒖킑 鍮꾩쨷 %)</h3>
+            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">시장 집중도(Top 10 시총 비중 %)</h3>
             <div style="height: 250px; position: relative;"><canvas id="chart-concentration"></canvas></div>
           </div>
           <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px;">
-            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">M2 ?듯솕???꾨뀈?숆린鍮?利앷컧瑜?(%)</h3>
+            <h3 style="font-size: 1rem; color: var(--text-heading); margin-bottom: 10px;">M2 통화량 전년동기비 증가율(%)</h3>
             <div style="height: 250px; position: relative;"><canvas id="chart-m2"></canvas></div>
           </div>
         </div>
@@ -459,19 +523,19 @@
     <div id="tab-analysis" class="tab-content">
       <div class="data-grid">
         <div class="data-card" style="grid-column: span 2;">
-          <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-bullhorn"></i> DART ?듭떖 怨듭떆 (?먯궗二?諛곕떦/?꾩썝留ㅼ닔)</h3>
+          <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-bullhorn"></i> DART 특이 공시 (자사주 배당/임원매수)</h3>
           <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
             <table class="alerts-table" id="dart-table">
-              <thead><tr><th>怨듭떆??/th><th>醫낅ぉ紐?/th><th>蹂닿퀬?쒕챸</th><th>?묒닔踰덊샇</th></tr></thead>
+              <thead><tr><th>공시일</th><th>종목명</th><th>보고서명</th><th>접수번호</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
         </div>
         <div class="data-card" style="grid-column: span 2;">
-          <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-magnifying-glass-chart"></i> KOSPI/KOSDAQ ?ㅼ쟻 而⑥꽱?쒖뒪 (?대뀈 ?덉긽 ?곸뾽?댁씡)</h3>
+          <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-magnifying-glass-chart"></i> KOSPI/KOSDAQ 실적 컨센서스 (올해 예상 영업이익)</h3>
           <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
             <table class="alerts-table" id="eps-table">
-              <thead><tr><th>醫낅ぉ肄붾뱶</th><th>?ㅼ쟻 ?곗씠??(Raw)</th></tr></thead>
+              <thead><tr><th>종목코드</th><th>실적 데이터 (Raw)</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
@@ -485,7 +549,7 @@
       <!-- ?낆쥌 ?쒗솚留?-->
       <div id="sub-quant-sector" class="sub-tab-content active">
         <div class="data-card">
-          <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-rotate"></i> ?ㅼ씠踰?湲덉쑖 ?낆쥌蹂??깅씫瑜?留?/h3>
+          <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-rotate"></i> 네이버 금융 업종별 등락률 맵</h3>
           <div id="sector-map" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;"></div>
         </div>
       </div>
@@ -493,8 +557,8 @@
       <!-- ?뱁꽣 ?덊듃留?-->
       <div id="sub-quant-heatmap" class="sub-tab-content">
         <div class="data-card">
-          <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-table-cells"></i> ?뱁꽣蹂?由ы룷???덊듃留?(留ㅼ닔/???留ㅻ룄 鍮꾩쨷)</h3>
-          <p style="color: var(--text-sub); font-size: 0.85rem; margin-bottom: 15px;">* ?좊꼸由ъ뒪??由ы룷?몃? ?뱁꽣蹂꾨줈 吏묎퀎???몃━留듭엯?덈떎. 硫댁쟻? 由ы룷???? ?됱긽? 留ㅼ닔 鍮꾩쑉(?믪쓣?섎줉 鍮④컯)???섑??낅땲??</p>
+          <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-table-cells"></i> 섹터별 리포트 히트맵(매수/중립/매도 비중)</h3>
+          <p style="color: var(--text-sub); font-size: 0.85rem; margin-bottom: 15px;">* 애널리스트 리포트를 섹터별로 집계한 트리맵입니다. 면적은 리포트 수, 색상은 매수 비중을 나타냅니다.</p>
           <div style="position: relative; height: 450px;">
             <canvas id="chart-heatmap"></canvas>
           </div>
@@ -505,11 +569,26 @@
       <div id="sub-quant-scorecard" class="sub-tab-content">
         <div class="reports-container">
           <h2 style="font-size:1.4rem; font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; color:var(--primary);">
-            <i class="fa-solid fa-signal"></i> 留ㅽ겕濡??⑺꽣 由ъ뒪???ㅼ퐫?댁뭅??          </h2>
+            <i class="fa-solid fa-signal"></i> 매크로 팩터 리스크 스코어카드
+          </h2>
           <p style="color:var(--text-sub); font-size:0.88rem; margin-bottom:24px;">
-            * 二쇱슂 嫄곗떆寃쎌젣 吏?쒕? 湲곕컲?쇰줈 ?꾩옱 ?쒖옣??Risk On / Off 援?㈃??醫낇빀 吏꾨떒?⑸땲??
+            * 주요 거시경제 지표를 기반으로 현재 시장의 Risk On / Off 국면을 종합 진단합니다.
           </p>
+          <div id="regime-card" style="margin-bottom:20px; padding:16px; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px;"></div>
           <div id="scorecard-container"></div>
+        </div>
+      </div>
+
+      <!-- 섹터 모멘텀 (NAVER DataLab 35섹터) -->
+      <div id="sub-quant-sector-momentum" class="sub-tab-content">
+        <div class="reports-container">
+          <h2 style="font-size:1.4rem; font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; color:var(--primary);">
+            <i class="fa-solid fa-ranking-star"></i> 섹터 관심도 모멘텀 랭킹 (네이버 DataLab)
+          </h2>
+          <p style="color:var(--text-sub); font-size:0.88rem; margin-bottom:16px;">
+            * 시장(market_anchor) 대비 섹터별 상대 검색 관심도. 값이 클수록 해당 섹터가 시장 대비 높은 관심 집중.
+          </p>
+          <div id="quant-sector-momentum-charts" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(420px,1fr)); gap:20px;"></div>
         </div>
       </div>
 
@@ -518,7 +597,7 @@
     <!-- 5. ?댁뒪 & 由ъ꽌移???-->
     <div id="tab-news" class="tab-content">
       <div class="reports-container" style="text-align: center; padding: 50px;">
-        <h2 style="color: var(--text-sub);"><i class="fa-solid fa-newspaper"></i> 愿???댁뒪 諛??ъ링 由ъ꽌移??먮즺媛 怨??낅뜲?댄듃 ???덉젙?낅땲??</h2>
+        <h2 style="color: var(--text-sub);"><i class="fa-solid fa-newspaper"></i> 관련 뉴스 및 리서치 자료가 곧 업데이트될 예정입니다.</h2>
       </div>
     </div>
 
@@ -530,22 +609,22 @@
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
               <div>
                 <h2 style="font-size: 1.4rem; font-weight: 700; display:flex; align-items:center; gap:10px; color:var(--primary); margin:0;">
-                  <i class="fa-solid fa-chart-area" style="color:var(--primary);"></i> 二쇨? & 肄붿뒪??鍮꾧탳 遺꾩꽍 李⑦듃
+                  <i class="fa-solid fa-chart-area" style="color:var(--primary);"></i> 주가 & 코스피 비교 분석 차트
                 </h2>
                 <p style="color:var(--text-sub); font-size: 0.88rem; margin-top: 8px;" id="chart-desc">
-                  * ?좏깮??醫낅ぉ?ㅼ쓽 ?먰솕(KRW) ?ㅼ젣 二쇨? 異붿씠瑜?肄붿뒪??吏???곗륫 異?? ?곕룞?섏뿬 鍮꾧탳 遺꾩꽍?⑸땲??
+                  * 선택한 종목들의 원화(KRW) 실제 주가 추이를 코스피 지수와 연동하여 비교 분석합니다.
                 </p>
               </div>
               <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
                 <div style="display: flex; gap: 8px;">
-                  <button id="btn-chart-mode-pct" class="filter-btn active" style="padding: 6px 12px; font-size: 0.8rem; height: auto;">?꾩쟻 ?섏씡瑜?鍮꾧탳 (%)</button>
-                  <button id="btn-chart-mode-price" class="filter-btn" style="padding: 6px 12px; font-size: 0.8rem; height: auto;">?ㅼ젣 二쇨? (Candle/Line)</button>
+                  <button id="btn-chart-mode-pct" class="filter-btn active" style="padding: 6px 12px; font-size: 0.8rem; height: auto;">누적 수익률 비교 (%)</button>
+                  <button id="btn-chart-mode-price" class="filter-btn" style="padding: 6px 12px; font-size: 0.8rem; height: auto;">실제 주가 (Candle/Line)</button>
                 </div>
                 <div style="display: flex; gap: 8px;" id="ma-buttons-container">
-                  <button class="filter-btn" onclick="toggleMA(5, this)" style="padding: 4px 8px; font-size: 0.75rem;">5?쇱꽑</button>
-                  <button class="filter-btn" onclick="toggleMA(20, this)" style="padding: 4px 8px; font-size: 0.75rem;">20?쇱꽑</button>
-                  <button class="filter-btn" onclick="toggleMA(60, this)" style="padding: 4px 8px; font-size: 0.75rem;">60?쇱꽑</button>
-                  <button class="filter-btn" onclick="toggleMA(120, this)" style="padding: 4px 8px; font-size: 0.75rem;">120?쇱꽑</button>
+                  <button class="filter-btn" onclick="toggleMA(5, this)" style="padding: 4px 8px; font-size: 0.75rem;">5일선</button>
+                  <button class="filter-btn" onclick="toggleMA(20, this)" style="padding: 4px 8px; font-size: 0.75rem;">20일선</button>
+                  <button class="filter-btn" onclick="toggleMA(60, this)" style="padding: 4px 8px; font-size: 0.75rem;">60일선</button>
+                  <button class="filter-btn" onclick="toggleMA(120, this)" style="padding: 4px 8px; font-size: 0.75rem;">120일선</button>
                 </div>
               </div>
             </div>
@@ -555,17 +634,17 @@
           <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
             <!-- 醫뚯륫: 留ㅽ겕濡?罹섎┛??-->
             <div>
-              <h3 style="font-size: 0.9rem; color: var(--text-heading); margin-bottom: 8px; border-bottom: 1px solid var(--card-border); padding-bottom: 4px;">?뙇 湲濡쒕쾶 嫄곗떆寃쎌젣 吏??/h3>
+              <h3 style="font-size: 0.9rem; color: var(--text-heading); margin-bottom: 8px; border-bottom: 1px solid var(--card-border); padding-bottom: 4px;">📌 글로벌 거시경제 지표</h3>
               <div id="external-events-list" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 5px;">
                 <!-- JS ?숈쟻 ?뚮뜑留?-->
               </div>
             </div>
             <!-- ?곗륫: 媛쒕퀎 醫낅ぉ IR 怨듭떆 -->
             <div>
-              <h3 style="font-size: 0.9rem; color: var(--text-heading); margin-bottom: 8px; border-bottom: 1px solid var(--card-border); padding-bottom: 4px;" id="ir-events-header">?룫 媛쒕퀎 醫낅ぉ IR 怨듭떆</h3>
+              <h3 style="font-size: 0.9rem; color: var(--text-heading); margin-bottom: 8px; border-bottom: 1px solid var(--card-border); padding-bottom: 4px;" id="ir-events-header">📎 개별 종목 IR 공시</h3>
               <div id="ir-events-list" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 5px;">
                 <div style="color: var(--text-sub); font-size: 0.8rem; text-align: center; padding: 20px;">
-                  肄붿뒪??KOSPI) 泥댄겕瑜??댁젣?섍퀬, ?⑥씪 醫낅ぉ???좏깮?섏떆硫??대떦 醫낅ぉ??IR 怨듭떆 ?댁뿭???섑??⑸땲??
+                  코스피(KOSPI) 체크를 해제하고, 단일 종목을 선택하시면 해당 종목의 IR 공시 내역을 확인할 수 있습니다.
                 </div>
               </div>
             </div>
@@ -573,10 +652,10 @@
         </div>
         <div class="chart-right-panel">
           <div style="margin-bottom: 15px;">
-            <input type="text" id="stock-search" oninput="filterStockChecklist()" placeholder="?뵇 醫낅ぉ 寃??.." style="width: 100%; background: var(--btn-bg); border: 1px solid var(--card-border); color: var(--text-heading); padding: 10px 12px; border-radius: 6px; font-size: 0.88rem; outline: none; transition: var(--transition);">
+            <input type="text" id="stock-search" oninput="filterStockChecklist()" placeholder="🔎 종목 검색..." style="width: 100%; background: var(--btn-bg); border: 1px solid var(--card-border); color: var(--text-heading); padding: 10px 12px; border-radius: 6px; font-size: 0.88rem; outline: none; transition: var(--transition);">
             <div style="display:flex; gap:8px; margin-top:10px;">
-              <button id="btn-toggle-all" class="filter-btn" style="flex:1; padding:4px; font-size:0.75rem; text-align:center; height:auto;">?꾩껜 ?좏깮</button>
-              <button id="btn-toggle-none" class="filter-btn" style="flex:1; padding:4px; font-size:0.75rem; text-align:center; height:auto;">?꾩껜 ?댁젣</button>
+              <button id="btn-toggle-all" class="filter-btn" style="flex:1; padding:4px; font-size:0.75rem; text-align:center; height:auto;">전체 선택</button>
+              <button id="btn-toggle-none" class="filter-btn" style="flex:1; padding:4px; font-size:0.75rem; text-align:center; height:auto;">전체 해제</button>
             </div>
           </div>
           <div id="stock-checklist" style="overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 8px; padding-right: 5px;"></div>
@@ -594,7 +673,7 @@
   <!-- 醫낅ぉ ?곸꽭 紐⑤떖 -->
   <div id="stock-modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:2000; justify-content:center; align-items:flex-start; padding:40px 20px; overflow-y:auto;" onclick="if(event.target===this)closeStockModal()">
     <div id="stock-modal" style="background:var(--card-bg); border:1px solid var(--card-border); border-radius:12px; width:100%; max-width:860px; padding:30px; position:relative;">
-      <button onclick="closeStockModal()" style="position:absolute; top:16px; right:16px; background:none; border:none; color:var(--text-sub); font-size:1.4rem; cursor:pointer;">??/button>
+      <button onclick="closeStockModal()" style="position:absolute; top:16px; right:16px; background:none; border:none; color:var(--text-sub); font-size:1.4rem; cursor:pointer;">×</button>
       <div id="stock-modal-content"></div>
     </div>
   </div>
@@ -602,13 +681,13 @@
   <!-- 紐⑤컮???섎떒 ??諛?-->
   <nav class="bottom-nav" id="bottom-nav">
     <button class="bottom-nav-item active" onclick="document.getElementById('btn-tab-reports').click(); document.querySelectorAll('.bottom-nav-item').forEach(b=>b.classList.remove('active')); this.classList.add('active')">
-      <i class="fa-solid fa-file-invoice-dollar"></i><span>由ы룷??/span>
+      <i class="fa-solid fa-file-invoice-dollar"></i><span>리포트</span>
     </button>
     <button class="bottom-nav-item" onclick="document.getElementById('btn-tab-quant').click(); document.querySelectorAll('.bottom-nav-item').forEach(b=>b.classList.remove('active')); this.classList.add('active')">
-      <i class="fa-solid fa-calculator"></i><span>???/span>
+      <i class="fa-solid fa-calculator"></i><span>퀀트</span>
     </button>
     <button class="bottom-nav-item" onclick="document.getElementById('btn-tab-macro').click(); document.querySelectorAll('.bottom-nav-item').forEach(b=>b.classList.remove('active')); this.classList.add('active')">
-      <i class="fa-solid fa-globe"></i><span>留ㅽ겕濡?/span>
+      <i class="fa-solid fa-globe"></i><span>매크로</span>
     </button>
     <button class="bottom-nav-item" onclick="document.getElementById('btn-tab-chart').click(); document.querySelectorAll('.bottom-nav-item').forEach(b=>b.classList.remove('active')); this.classList.add('active')">
       <i class="fa-solid fa-chart-line"></i><span>李⑦듃</span>

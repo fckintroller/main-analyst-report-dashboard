@@ -1,0 +1,5 @@
+﻿factor_family,question,factor_name,source_column,interpretation,preferred_use
+peg,이 종목의 PER은 예상 이익 성장률에 비해 비싼가?,peg_ratio,forward_per / (eps_growth_expected × 100),"낮을수록 성장 대비 저평가. 1.0 이하=합리적, 0.5 이하=매력적",성장주 밸류에이션 필터; 이익 역성장 종목 제외
+peg,섹터 내에서 PEG가 낮은 편인가?,peg_sector_pct,peg_ratio,"0=섹터 내 가장 저PEG(매력적), 1=가장 고PEG(비쌈)",섹터 로테이션 및 종목 선별 필터
+peg,PEG와 선행PER을 종합하면 종합 점수는?,peg_composite_score,peg_sector_pct + forward_valuation_score,"0~1, 높을수록 성장+밸류 모두 매력적",1차 스크리닝 점수로 활용
+peg,PEG 절대값 기준 어느 구간인가?,peg_bucket,peg_ratio,deep_value(<0.5) > cheap(<1) > neutral(<1.5) > rich(<2) > expensive,직관적 분류 레이블로 활용

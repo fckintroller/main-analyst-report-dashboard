@@ -1,0 +1,6 @@
+﻿factor_family,question,factor_name,source_column,interpretation,preferred_use
+stock_price_momentum,최근 12개월(최근 1개월 제외) 가격 모멘텀이 시장 대비 강한가?,mom_12_1 / momentum_percentile_cross,종가,Jegadeesh-Titman 12-1 모멘텀과 단면 백분위 (1에 가까울수록 모멘텀 강함),핵심
+stock_price_momentum,최근 1~6개월 단기 추세는 어떤가?,ret_1m / ret_3m / ret_6m,종가,최근 1/3/6개월 누적 수익률,필터
+stock_price_momentum,최근 거래대금이 평소 대비 급증했는가?,turnover_zscore_own / turnover_spike_flag,종가×거래량 근사 거래대금,"자기 과거 12개월 평균 대비 거래대금 z-score, 1.5 이상이면 급증 플래그",핵심
+stock_price_momentum,최근 변동성(리스크 크기)은 어느 정도인가?,month_volatility,일간 수익률,최근 약 3개월(63거래일) 일간 수익률 표준편차,필터
+stock_price_momentum,종합적으로 단기 모멘텀이 강한 매수 후보인가?,momentum_score / momentum_bucket,모멘텀+단기추세+거래대금 합성,0~1 합성 점수와 strong_down~strong_up 5단계 버킷,핵심

@@ -15,6 +15,8 @@ set "PYTHON_EXE=python"
 :: 실행할 배치 스크립트 임시 생성
 set "RUNNER_SCRIPT=%PROJECT_DIR%run_automation.bat"
 echo @echo off > "%RUNNER_SCRIPT%"
+echo cd /d "%PROJECT_DIR%" >> "%RUNNER_SCRIPT%"
+echo if exist env.bat call env.bat >> "%RUNNER_SCRIPT%"
 echo cd /d "%PROJECT_DIR%scripts" >> "%RUNNER_SCRIPT%"
 echo echo [ETL] 파이프라인 일괄 실행 중... >> "%RUNNER_SCRIPT%"
 echo %PYTHON_EXE% pipeline.py >> "%RUNNER_SCRIPT%"

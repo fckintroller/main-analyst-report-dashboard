@@ -1,0 +1,23 @@
+﻿indicator,name,frequency,category,unit,source,series_id,status,rows,start_date,end_date,message,value_col,date_col
+vix,CBOE Volatility Index,daily,risk_sentiment,Index,Yahoo Finance,^VIX,success,4132,2010-01-04,2026-06-05,,,
+move,ICE BofAML MOVE Index,daily,bond_volatility,Index,Yahoo Finance,^MOVE,success,4046,2010-01-04,2026-06-03,,,
+dxy,U.S. Dollar Index,daily,fx_liquidity,Index,Yahoo Finance,DX-Y.NYB,success,4132,2010-01-04,2026-06-05,,,
+us_10y_3m_spread,10-Year Treasury Minus 3-Month Treasury,daily,yield_curve,Percent,FRED,T10Y3M,failed,0,,,"HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)",,
+chicago_fed_nfci,Chicago Fed National Financial Conditions Index,weekly,financial_conditions,Index,FRED,NFCI,failed,0,,,"HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)",,
+chicago_fed_anfci,Chicago Fed Adjusted National Financial Conditions Index,weekly,financial_conditions,Index,FRED,ANFCI,failed,0,,,"HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)",,
+us_10y_real_rate,10-Year Treasury Inflation-Indexed Security,daily,real_rates,Percent,FRED,DFII10,failed,0,,,"HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)",,
+us_10y_breakeven_inflation,10-Year Breakeven Inflation Rate,daily,inflation_expectations,Percent,FRED,T10YIE,failed,0,,,"HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)",,
+us_ig_oas,ICE BofA US Corporate Index OAS,daily,credit_spread,Percent,FRED,BAMLC0A0CM,failed,0,,,"HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)",,
+korea_oecd_cli,OECD CLI Amplitude Adjusted: Korea,monthly,leading_indicator,Index,FRED/OECD,KORLOLITOAASTSAM,failed,0,,,"HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)",,
+us_oecd_cli,OECD CLI Amplitude Adjusted: United States,monthly,leading_indicator,Index,FRED/OECD,USALOLITOAASTSAM,failed,0,,,"HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)",,
+china_oecd_cli,OECD CLI Amplitude Adjusted: China,monthly,leading_indicator,Index,FRED/OECD,CHNLOLITOAASTSAM,failed,0,,,"HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)",,
+japan_oecd_cli,OECD CLI Amplitude Adjusted: Japan,monthly,leading_indicator,Index,FRED/OECD,JPNLOLITOAASTSAM,failed,0,,,"HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)",,
+korea_imports,Korea Merchandise Imports,monthly,trade,"USD, exchange-rate converted",FRED/OECD,XTIMVA01KRM667S,failed,0,,,"HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)",,
+us_10y_yield,U.S. 10-Year Treasury Constant Maturity,daily,rates,Percent,Existing SQLite table,macro_macro_indices_dgs10,success,12108,1980-01-02,2026-05-29,,DGS10,DATE
+us_2y_yield,U.S. 2-Year Treasury Constant Maturity,daily,rates,Percent,Existing SQLite table,macro_macro_indices_dgs2,success,12108,1980-01-02,2026-05-29,,DGS2,DATE
+us_high_yield_oas,ICE BofA US High Yield OAS,daily,credit_spread,Percent,Existing SQLite table,macro_macro_indices_bamlh0a0hym2,success,795,2023-06-05,2026-06-03,,BAMLH0A0HYM2,DATE
+us_cpi,U.S. CPI All Urban Consumers,monthly,inflation,Index 1982-84=100,Existing SQLite table,macro_macro_indices_cpiaucsl,success,556,1980-01-01,2026-04-01,,CPIAUCSL,DATE
+us_unemployment_rate,U.S. Unemployment Rate,monthly,labor,Percent,Existing SQLite table,macro_macro_indices_unrate,success,556,1980-01-01,2026-04-01,,UNRATE,DATE
+us_m2,U.S. M2 Money Stock,monthly,liquidity,Billions of USD,Existing SQLite table,macro_macro_indices_m2sl,success,556,1980-01-01,2026-04-01,,M2SL,DATE
+fed_total_assets,Federal Reserve Total Assets,weekly,liquidity,Millions of USD,Existing SQLite table,macro_macro_indices_walcl,success,1225,2002-12-18,2026-06-03,,WALCL,DATE
+korea_exports,Korea Merchandise Exports,monthly,trade,"USD, exchange-rate converted",Existing SQLite table,macro_macro_indices_kor_exports,success,555,1980-01-01,2026-03-01,,XTEXVA01KRM667S,DATE

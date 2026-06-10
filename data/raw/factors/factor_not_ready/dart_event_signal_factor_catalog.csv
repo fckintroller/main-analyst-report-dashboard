@@ -1,0 +1,5 @@
+﻿factor_family,question,factor_name,source_column,interpretation,preferred_use
+dart_event_signal,이번 달 자사주 매입/처분 또는 배당 결정 공시가 있었는가?,buyback_event_flag / dividend_event_flag,DART 공시 report_nm 분류,해당 월에 자사주·배당 관련 공시가 1건이라도 있으면 True (자사주 매입은 통상 주가 하방 지지 시그널로 해석),핵심
+dart_event_signal,최근 3개월 누적으로 보면 이벤트가 얼마나 있었나?,buyback_count_3m / dividend_count_3m / insider_count_3m,월별 이벤트 건수의 trailing 합,최근 3개월 누적 이벤트 건수 (단발성 vs 지속성 구분에 사용),필터
+dart_event_signal,임원·주요주주 지분변동 신고 빈도가 평소보다 활발한가?,insider_count / insider_count_zscore_own_6m,임원ㆍ주요주주 소유상황보고 등 신고 건수,자기 과거 6개월 평균 대비 z-score. 주의: 이 신고는 매수/매도 방향을 구분하지 않으므로 '내부자 매수'가 아니라 '신고 활동의 활발함'으로만 해석한다,필터
+dart_event_signal,종합적으로 이 종목의 공시 이벤트 활동이 활발한 편인가?,event_activity_score / event_activity_bucket,자사주·배당 발생 여부 + 내부자 신고 이례성 합성,0~1 합성 점수와 quiet~high_activity 4단계 버킷,핵심

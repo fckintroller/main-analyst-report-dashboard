@@ -1,0 +1,196 @@
+{
+  "downloaded_at": "2026-06-04T19:19:05+09:00",
+  "database": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\database\\quant_data.sqlite",
+  "backup": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\database\\quant_data.sqlite.backup_grains_20260604_191905",
+  "raw_dir": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\grains",
+  "worldbank_xlsx": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\grains\\worldbank_CMO_Historical_Data_Monthly_20260604_191905.xlsx",
+  "worldbank_long_csv": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\grains\\worldbank_grains_monthly_long.csv",
+  "stooq_latest_csv": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\grains\\stooq_grains_latest.csv",
+  "metadata_csv": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\grains\\grains_metadata.csv",
+  "yahoo_metadata_csv": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\grains\\yahoo_grains_metadata.csv",
+  "worldbank_update_text": "Updated on June 02, 2026",
+  "missing_worldbank_commodities": [],
+  "stooq_rows": 12,
+  "verification": [
+    {
+      "table": "macro_grains_worldbank_monthly",
+      "rows": 8021
+    },
+    {
+      "table": "macro_grains_stooq_latest",
+      "rows": 12
+    },
+    {
+      "table": "macro_grains_metadata",
+      "rows": 32
+    },
+    {
+      "table": "macro_grains_corn_daily_yahoo",
+      "rows": 4127
+    },
+    {
+      "table": "macro_grains_hard_red_winter_wheat_daily_yahoo",
+      "rows": 4129
+    },
+    {
+      "table": "macro_grains_wheat_cbot_daily_yahoo",
+      "rows": 4129
+    },
+    {
+      "table": "macro_grains_soybean_daily_yahoo",
+      "rows": 4129
+    },
+    {
+      "table": "macro_grains_soybean_oil_daily_yahoo",
+      "rows": 4129
+    },
+    {
+      "table": "macro_grains_soybean_meal_daily_yahoo",
+      "rows": 4129
+    },
+    {
+      "table": "macro_grains_rough_rice_daily_yahoo",
+      "rows": 4128
+    },
+    {
+      "table": "macro_grains_oats_daily_yahoo",
+      "rows": 4129
+    }
+  ],
+  "worldbank_latest_by_commodity": [
+    [
+      "barley",
+      "2020-08-01",
+      728
+    ],
+    [
+      "maize",
+      "2026-05-01",
+      797
+    ],
+    [
+      "rice_thai_25pct",
+      "2026-05-01",
+      477
+    ],
+    [
+      "rice_thai_5pct",
+      "2026-05-01",
+      797
+    ],
+    [
+      "rice_thai_a1",
+      "2026-05-01",
+      485
+    ],
+    [
+      "rice_vietnamese_5pct",
+      "2026-05-01",
+      259
+    ],
+    [
+      "sorghum",
+      "2020-08-01",
+      728
+    ],
+    [
+      "soybean_meal",
+      "2026-05-01",
+      797
+    ],
+    [
+      "soybean_oil",
+      "2026-05-01",
+      797
+    ],
+    [
+      "soybeans",
+      "2026-05-01",
+      797
+    ],
+    [
+      "wheat_us_hrw",
+      "2026-05-01",
+      797
+    ],
+    [
+      "wheat_us_srw",
+      "2026-05-01",
+      562
+    ]
+  ],
+  "yahoo_downloads": [
+    {
+      "commodity": "corn",
+      "ticker": "ZC=F",
+      "status": "success",
+      "rows": 4127,
+      "start_date": "2010-01-04",
+      "end_date": "2026-06-04",
+      "message": ""
+    },
+    {
+      "commodity": "hard_red_winter_wheat",
+      "ticker": "KE=F",
+      "status": "success",
+      "rows": 4129,
+      "start_date": "2010-01-04",
+      "end_date": "2026-06-04",
+      "message": ""
+    },
+    {
+      "commodity": "wheat_cbot",
+      "ticker": "ZW=F",
+      "status": "success",
+      "rows": 4129,
+      "start_date": "2010-01-04",
+      "end_date": "2026-06-04",
+      "message": ""
+    },
+    {
+      "commodity": "soybean",
+      "ticker": "ZS=F",
+      "status": "success",
+      "rows": 4129,
+      "start_date": "2010-01-04",
+      "end_date": "2026-06-04",
+      "message": ""
+    },
+    {
+      "commodity": "soybean_oil",
+      "ticker": "ZL=F",
+      "status": "success",
+      "rows": 4129,
+      "start_date": "2010-01-04",
+      "end_date": "2026-06-04",
+      "message": ""
+    },
+    {
+      "commodity": "soybean_meal",
+      "ticker": "ZM=F",
+      "status": "success",
+      "rows": 4129,
+      "start_date": "2010-01-04",
+      "end_date": "2026-06-04",
+      "message": ""
+    },
+    {
+      "commodity": "rough_rice",
+      "ticker": "ZR=F",
+      "status": "success",
+      "rows": 4128,
+      "start_date": "2010-01-04",
+      "end_date": "2026-06-03",
+      "message": ""
+    },
+    {
+      "commodity": "oats",
+      "ticker": "ZO=F",
+      "status": "success",
+      "rows": 4129,
+      "start_date": "2010-01-04",
+      "end_date": "2026-06-04",
+      "message": ""
+    }
+  ]
+}

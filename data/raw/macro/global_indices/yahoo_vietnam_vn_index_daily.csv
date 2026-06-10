@@ -1,0 +1,2 @@
+﻿date,region,country,index_name,slug,ticker,open,high,low,close,adj_close,volume,source,source_url,downloaded_at
+2026-06-04,Asia,Vietnam,VN Index,vietnam_vn_index,^VNINDEX.VN,1819.010009765625,1831.550048828125,1812.6500244140625,1831.550048828125,1831.550048828125,0,Yahoo Finance via yfinance,https://finance.yahoo.com/quote/%5EVNINDEX.VN/,2026-06-04T20:11:11+09:00

@@ -41,6 +41,10 @@ def main():
         (os.path.join(base_dir, "01_collect", "04_valuation.py"), "1?④퀎: 媛移?媛쒕퀎湲곗뾽(Valuation) ?곗씠???섏쭛"),
         (os.path.join(base_dir, "01_collect", "calendar_fetcher.py"), "1?④퀎: 寃쎌젣 罹섎┛???섏쭛 (?섏쭛)"),
         (os.path.join(base_dir, "01_collect", "macro_fetcher.py"), "1?④퀎: ?띿뒪??留ㅽ겕濡??섏쭛 (?섏쭛)"),
+        (os.path.join(base_dir, "01_collect", "05_breadth.py"), "1단계: 미국/한국 TRIN·ADL (Breadth) 수집"),
+        (os.path.join(base_dir, "01_collect", "06_stock_detail.py"), "1단계: KOSPI200+코스닥150 종목별 상세 (OHLCV/Fundamental/ShortCap)"),
+        (os.path.join(base_dir, "01_collect", "07_semi_bb.py"), "1단계: SEMI 반도체 장비 B/B 비율 수집"),
+        (os.path.join(base_dir, "01_collect", "collect_pytrends.py"), "1단계: Google Trends 검색모멘텀 수집 (월요일만 실행)"),
 
         # 2. ?곸옱 (Store) - ?뺥빀??寃????SQLite DB ?듯빀
         (os.path.join(base_dir, "02_store", "sanitize.py"), "2?④퀎: ?곗씠???뺥빀??寃??(Sanitize)"),

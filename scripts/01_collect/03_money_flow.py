@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+import time
 
 import FinanceDataReader as fdr
 import pandas as pd
@@ -45,6 +46,41 @@ def fetch_investor_net_purchases(date_str):
             logger.error(" - %s net purchase failed: %s", investor_type, e)
 
 
+def fetch_market_trading_value_history(years=20):
+    logger.info("[MONEY FLOW] collecting %sy KOSPI/KOSDAQ investor net purchase history", years)
+    today = datetime.datetime.today()
+    start = today - datetime.timedelta(days=365 * years + 10)
+    fromdate = start.strftime("%Y%m%d")
+    todate = today.strftime("%Y%m%d")
+
+    for file_key, market in {"kospi": "KOSPI", "kosdaq": "KOSDAQ"}.items():
+        try:
+            df = stock.get_market_trading_value_by_date(
+                fromdate,
+                todate,
+                market,
+                on="순매수",
+                detail=False,
+                freq="d",
+            )
+            if df.empty:
+                logger.warning(" - %s investor history returned empty", market)
+                continue
+
+            df = df.reset_index()
+            if "날짜" in df.columns:
+                df.rename(columns={"날짜": "date"}, inplace=True)
+            else:
+                df.rename(columns={df.columns[0]: "date"}, inplace=True)
+            df["date"] = pd.to_datetime(df["date"]).dt.strftime("%Y-%m-%d")
+            output_path = os.path.join(BASE_DIR, f"market_trading_value_{file_key}_20y.csv")
+            df.to_csv(output_path, index=False, encoding="utf-8-sig")
+            logger.info(" - %s investor history collected: %s rows", market, len(df))
+            time.sleep(0.5)
+        except Exception as e:
+            logger.error(" - %s investor history failed: %s", market, e)
+
+
 def fetch_short_selling(date_str):
     logger.info("[%s] collecting KOSPI short selling", date_str)
     try:
@@ -76,6 +112,77 @@ def read_naver_table(url):
     df = dfs[0]
     df.dropna(how="all", inplace=True)
     return df
+
+
+def normalize_naver_columns(df):
+    df = df.copy()
+    df.columns = [
+        col[-1] if isinstance(col, tuple) and col[-1] else str(col)
+        for col in df.columns.values
+    ]
+    return df
+
+
+def parse_naver_short_date(value):
+    yy, mm, dd = [int(part) for part in str(value).split(".")]
+    current_yy = datetime.datetime.today().year % 100
+    year = 2000 + yy if yy <= current_yy else 1900 + yy
+    return datetime.datetime(year, mm, dd)
+
+
+def fetch_naver_investor_trend_history(years=20):
+    logger.info("[MONEY FLOW] collecting %sy Naver investor trend history", years)
+    end = datetime.datetime.today()
+    start = end - datetime.timedelta(days=365 * years + 10)
+    bizdate = end.strftime("%Y%m%d")
+    markets = {
+        "kospi": "01",
+        "kosdaq": "02",
+    }
+
+    for file_key, sosok in markets.items():
+        rows = []
+        page = 1
+        while True:
+            url = f"https://finance.naver.com/sise/investorDealTrendDay.naver?bizdate={bizdate}&sosok={sosok}&page={page}"
+            try:
+                df = read_naver_table(url)
+            except Exception as e:
+                logger.error(" - Naver %s investor history page %s failed: %s", file_key, page, e)
+                break
+
+            if df is None or df.empty:
+                break
+
+            df = normalize_naver_columns(df)
+            df = df[df["날짜"].notna()].copy()
+            if df.empty:
+                break
+
+            df["date"] = df["날짜"].apply(parse_naver_short_date)
+            rows.append(df)
+
+            oldest = df["date"].min()
+            if oldest < start:
+                break
+            page += 1
+
+        if not rows:
+            logger.warning(" - Naver %s investor history returned empty", file_key)
+            continue
+
+        out = pd.concat(rows, ignore_index=True)
+        out = out[out["date"] >= start].copy()
+        out.sort_values("date", inplace=True)
+        out["date"] = out["date"].dt.strftime("%Y-%m-%d")
+        out["외국인합계"] = out.get("외국인")
+        out["기관합계"] = out.get("기관계")
+        out.to_csv(
+            os.path.join(BASE_DIR, f"market_trading_value_{file_key}_20y.csv"),
+            index=False,
+            encoding="utf-8-sig",
+        )
+        logger.info(" - Naver %s investor history collected: %s rows", file_key.upper(), len(out))
 
 
 def fetch_naver_investor_derivatives():
@@ -144,6 +251,8 @@ def run():
     logger.info("business day: %s", latest_date)
 
     fetch_investor_net_purchases(latest_date)
+    fetch_market_trading_value_history()
+    fetch_naver_investor_trend_history()
     fetch_short_selling(latest_date)
     fetch_bitcoin()
     fetch_naver_investor_derivatives()

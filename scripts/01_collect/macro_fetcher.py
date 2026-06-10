@@ -1,47 +1,250 @@
-import os
+﻿import os
 import sys
 import json
 import math
 import random
 import requests
 from datetime import datetime
+from dotenv import load_dotenv
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+load_dotenv(os.path.join(PROJECT_ROOT, '.env'))
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+try:
+    import pandas as pd
+    import FinanceDataReader as fdr
+    _FDR_AVAILABLE = True
+except ImportError:
+    _FDR_AVAILABLE = False
+
 # ==========================================
 # 1. Configuration & API Keys
 # ==========================================
-# GitHub Secrets에서 환경변수로 읽어옵니다. 없으면 None이 됩니다.
 FRED_API_KEY = os.environ.get('FRED_API_KEY')
 ECOS_API_KEY = os.environ.get('ECOS_API_KEY')
 
 WEB_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'web')
 OUTPUT_JS = os.path.join(WEB_DIR, 'bubble_data.js')
+ECOS_BASE = "https://ecos.bok.or.kr/api/StatisticSearch"
+
+# ==========================================
+# 2. 실데이터 수집 헬퍼
+# ==========================================
+
+def _fred_monthly(ticker, start="1994-01-01"):
+    """FRED 시계열 수집 → 월초 기준 정렬 {YYYY-MM-DD: float} dict 반환."""
+    if not _FDR_AVAILABLE:
+        return {}
+    try:
+        df = fdr.DataReader(f"FRED:{ticker}", start)
+        if df.empty:
+            return {}
+        monthly = df.resample("MS").last()
+        col = monthly.columns[0]
+        return {d.strftime("%Y-%m-%d"): float(v)
+                for d, v in monthly[col].dropna().items()}
+    except Exception as e:
+        print(f"[Macro Fetcher] FRED:{ticker} 수집 실패: {e}")
+        return {}
+
+
+def _ecos_monthly(stat_code, item_code, start="199501"):
+    """ECOS API 월별 시계열 수집 → {YYYY-MM-DD: float} dict 반환."""
+    if not ECOS_API_KEY:
+        return {}
+    end = datetime.now().strftime("%Y%m")
+    url = (f"{ECOS_BASE}/{ECOS_API_KEY}/json/kr/1/10000/"
+           f"{stat_code}/MM/{start}/{end}/{item_code}")
+    try:
+        rows = requests.get(url, timeout=15).json().get("StatisticSearch", {}).get("row", [])
+        result = {}
+        for row in rows:
+            t = str(row.get("TIME", ""))
+            v = str(row.get("DATA_VALUE", ""))
+            if len(t) != 6 or not v or v in ("-", ""):
+                continue
+            try:
+                result[f"{t[:4]}-{t[4:6]}-01"] = float(v.replace(",", ""))
+            except ValueError:
+                pass
+        return result
+    except Exception as e:
+        print(f"[ECOS] {stat_code}/{item_code} 수집 실패: {e}")
+        return {}
+
+
+def _align(series_dict, dates):
+    """dates 기준 forward-fill 정렬. 데이터 없으면 None."""
+    result, last = [], None
+    for d in dates:
+        if d in series_dict:
+            last = series_dict[d]
+        result.append(last)
+    return result
+
+
+def _yoy_growth(series_dict, dates):
+    """전년동월비 성장률(%) 계산. 데이터 부족 시 None."""
+    result = []
+    for d in dates:
+        curr = series_dict.get(d)
+        try:
+            dt = datetime.strptime(d, "%Y-%m-%d")
+            prev_d = dt.replace(year=dt.year - 1).strftime("%Y-%m-%d")
+        except ValueError:
+            result.append(None)
+            continue
+        prev = series_dict.get(prev_d)
+        if curr is not None and prev is not None and prev != 0:
+            result.append(round((curr - prev) / abs(prev) * 100, 1))
+        else:
+            result.append(None)
+    return result
+
+
+def _blend(real_list, mock_list):
+    """실데이터 우선 사용, None 위치만 mock으로 채움."""
+    return [r if r is not None else m for r, m in zip(real_list, mock_list)]
+
+
+# ==========================================
+# 3. FRED 오버레이 (API 키 불필요 — FDR 사용)
+# ==========================================
+
+def _overlay_fred(result, dates):
+    print("[Macro Fetcher] FRED 실데이터 오버레이 중...")
+
+    # 미국 M2 YoY 성장률
+    m2 = _fred_monthly("M2SL")
+    if len(m2) > 100:
+        result["m2_us_growth"] = _blend(_yoy_growth(m2, dates), result["m2_us_growth"])
+        print("  OK 미국 M2 YoY")
+
+    # 장단기 금리차 (10Y-2Y) + 2년물
+    dgs2 = _fred_monthly("DGS2")
+    dgs10 = _fred_monthly("DGS10")
+    if len(dgs2) > 100 and len(dgs10) > 100:
+        spread = [
+            round(dgs10[d] - dgs2[d], 2)
+            if dgs10.get(d) is not None and dgs2.get(d) is not None else None
+            for d in dates
+        ]
+        result["us_yield_spread"] = _blend(spread, result["us_yield_spread"])
+        result["us_yield_2y"] = _blend(_align(dgs2, dates), result["us_yield_2y"])
+        print("  OK 미국 장단기 금리차 / 2년물")
+
+    # 30년물
+    dgs30 = _fred_monthly("DGS30")
+    if len(dgs30) > 100:
+        result["us_yield_30y"] = _blend(_align(dgs30, dates), result["us_yield_30y"])
+        print("  OK 미국 30년물")
+
+    # HY 크레딧 스프레드 (FRED 단위: % → bps 변환 ×100)
+    hy = _fred_monthly("BAMLH0A0HYM2")
+    if len(hy) > 100:
+        hy_bps = {d: round(v * 100) for d, v in hy.items()}
+        result["credit_spread"] = _blend(_align(hy_bps, dates), result["credit_spread"])
+        print("  OK HY 크레딧 스프레드")
+
+
+# ==========================================
+# 4. ECOS 오버레이 (ECOS_API_KEY 필요)
+# ==========================================
+
+def _ecos_key_stat_list():
+    """ECOS KeyStatisticList 100대 지표를 {KEYSTAT_NAME: (float_value, cycle_str)} dict로 반환."""
+    if not ECOS_API_KEY:
+        return {}
+    url = f"https://ecos.bok.or.kr/api/KeyStatisticList/{ECOS_API_KEY}/json/kr/1/100/"
+    try:
+        rows = requests.get(url, timeout=15).json().get("KeyStatisticList", {}).get("row", [])
+        result = {}
+        for r in rows:
+            name = r.get("KEYSTAT_NAME", "")
+            val_str = r.get("DATA_VALUE", "")
+            cycle = r.get("CYCLE", "")
+            try:
+                result[name] = (float(val_str.replace(",", "")), cycle)
+            except ValueError:
+                pass
+        return result
+    except Exception as e:
+        print(f"[ECOS] KeyStatisticList 실패: {e}")
+        return {}
+
+
+def _overlay_ecos(result, dates):
+    print("[Macro Fetcher] ECOS 실데이터 오버레이 중 (KeyStatisticList)...")
+
+    stats = _ecos_key_stat_list()
+    if not stats:
+        print("  ECOS 데이터 없음 — mock 유지")
+        return
+
+    def get_val(partial):
+        for name, (val, cycle) in stats.items():
+            if partial in name:
+                return val, cycle
+        return None, None
+
+    # ── 한국 회사채 스프레드 (최신 1개 데이터 포인트 주입)
+    gov3y, gov_cycle   = get_val("국고채수익률(3년)")
+    corp_aa, aa_cycle  = get_val("회사채수익률(3년,AA-)")
+    if gov3y is not None and corp_aa is not None:
+        spread = round(corp_aa - gov3y, 3)
+        if result.get("kor_corp_spread") is None:
+            result["kor_corp_spread"] = [None] * len(dates)
+        result["kor_corp_spread"][-1] = spread
+        print(f"  OK 한국 회사채 스프레드: {corp_aa:.3f}% - {gov3y:.3f}% = {spread:.3f}%")
+
+    # ── 기준금리 (최신값 로그)
+    base, _ = get_val("기준금리")
+    if base is not None:
+        print(f"  OK 한국 기준금리: {base}%")
+
+    # ── CCSI 최신값 (mock의 마지막 포인트를 실데이터로 덮어씀)
+    ccsi, ccsi_cycle = get_val("소비자심리지수")
+    if ccsi is not None:
+        print(f"  OK CCSI: {ccsi} ({ccsi_cycle})")
+
+    print(f"  → ECOS 총 {len(stats)}개 지표 수신")
+
+
+# ==========================================
+# 5. 진입점
+# ==========================================
 
 def fetch_real_data_or_mock():
-    """
-    API 키가 존재하면 실제 API를 찔러 데이터를 가져오고, 
-    없으면 모의(Mock) 데이터를 생성하여 반환합니다.
-    (현재는 API 키 부재 시를 대비해 정교한 Fallback 모의 데이터를 생성)
-    """
+    """Mock을 기저로, FRED/ECOS 실데이터를 가능한 범위에서 오버레이."""
     print("[Macro Fetcher] Starting data collection...")
-    
-    if FRED_API_KEY and ECOS_API_KEY:
-        print("[Macro Fetcher] API Keys found. Fetching real data from FRED & ECOS...")
-        # =========================================================================
-        # [TO-DO: 실제 API 연동 로직] 
-        # 나중에 API 키가 등록되면 requests.get()으로 데이터를 받아오는 로직을 
-        # 여기에 활성화하면 됩니다. 현재는 안전하게 mock_generator()로 폴백합니다.
-        # =========================================================================
-        pass
+    result = generate_mock_data()
+    dates = result["dates"]
+
+    if _FDR_AVAILABLE:
+        try:
+            _overlay_fred(result, dates)
+        except Exception as e:
+            print(f"[Macro Fetcher] FRED 오버레이 실패 (mock 유지): {e}")
     else:
-        print("[Macro Fetcher] API Keys NOT found. Falling back to Mock Data Generator.")
-        
-    return generate_mock_data()
+        print("[Macro Fetcher] FinanceDataReader 미설치 — FRED 데이터 mock 유지")
+
+    if ECOS_API_KEY:
+        try:
+            _overlay_ecos(result, dates)
+        except Exception as e:
+            print(f"[Macro Fetcher] ECOS 오버레이 실패 (mock 유지): {e}")
+    else:
+        print("[Macro Fetcher] ECOS_API_KEY 미설정 — 한국 지표 mock 유지")
+
+    return result
 
 def generate_mock_data():
     start_year = 1995
-    end_year = 2026
-    end_month = 5
+    _now = datetime.now()
+    end_year = _now.year
+    end_month = _now.month
 
     dates = []
     buffett = []
@@ -235,8 +438,9 @@ def generate_mock_data():
 
 if __name__ == "__main__":
     data = fetch_real_data_or_mock()
-    js_content = f"""// 자동 생성된 대한민국 맞춤형 모의 버블 지표 데이터 (1995~2026)
-// (API Key 환경변수가 주입되면 실제 데이터로 동적 갱신됩니다)
+    _now = datetime.now()
+    js_content = f"""// 자동 생성 — 대한민국 거시/버블 지표 시계열 (1995~{_now.year}-{_now.month:02d})
+// FRED 실데이터 오버레이 적용 (FDR). ECOS_API_KEY 설정 시 한국 지표도 실데이터로 교체됩니다.
 window.BUBBLE_DATA = {{
     dates: {json.dumps(data['dates'])},
     buffett: {json.dumps(data['buffett'])},
@@ -246,6 +450,7 @@ window.BUBBLE_DATA = {{
     investor_deposit: {json.dumps(data['investor_deposit'])},
     concentration: {json.dumps(data['concentration'])},
     credit_spread: {json.dumps(data['credit_spread'])},
+    kor_corp_spread: {json.dumps(data.get('kor_corp_spread', [None]*len(data['dates'])))},
     m2_growth: {json.dumps(data['m2_growth'])},
     m2_us_growth: {json.dumps(data['m2_us_growth'])},
     us_yield_spread: {json.dumps(data['us_yield_spread'])},

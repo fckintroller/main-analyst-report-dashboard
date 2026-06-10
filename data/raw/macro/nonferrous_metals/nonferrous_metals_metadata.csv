@@ -1,0 +1,16 @@
+﻿dataset,metal,source,rows,start_date,end_date,unit,source_url,downloaded_at,status,note
+worldbank_monthly,aluminum,World Bank Pink Sheet,797,1960-01-01,2026-05-01,($/mt),https://thedocs.worldbank.org/en/doc/74e8be41ceb20fa0da750cda2f6b9e4e-0050012026/related/CMO-Historical-Data-Monthly.xlsx,2026-06-04T19:08:06+09:00,success,"Updated on June 02, 2026"
+worldbank_monthly,copper,World Bank Pink Sheet,797,1960-01-01,2026-05-01,($/mt),https://thedocs.worldbank.org/en/doc/74e8be41ceb20fa0da750cda2f6b9e4e-0050012026/related/CMO-Historical-Data-Monthly.xlsx,2026-06-04T19:08:06+09:00,success,"Updated on June 02, 2026"
+worldbank_monthly,lead,World Bank Pink Sheet,797,1960-01-01,2026-05-01,($/mt),https://thedocs.worldbank.org/en/doc/74e8be41ceb20fa0da750cda2f6b9e4e-0050012026/related/CMO-Historical-Data-Monthly.xlsx,2026-06-04T19:08:06+09:00,success,"Updated on June 02, 2026"
+worldbank_monthly,nickel,World Bank Pink Sheet,797,1960-01-01,2026-05-01,($/mt),https://thedocs.worldbank.org/en/doc/74e8be41ceb20fa0da750cda2f6b9e4e-0050012026/related/CMO-Historical-Data-Monthly.xlsx,2026-06-04T19:08:06+09:00,success,"Updated on June 02, 2026"
+worldbank_monthly,tin,World Bank Pink Sheet,797,1960-01-01,2026-05-01,($/mt),https://thedocs.worldbank.org/en/doc/74e8be41ceb20fa0da750cda2f6b9e4e-0050012026/related/CMO-Historical-Data-Monthly.xlsx,2026-06-04T19:08:06+09:00,success,"Updated on June 02, 2026"
+worldbank_monthly,zinc,World Bank Pink Sheet,797,1960-01-01,2026-05-01,($/mt),https://thedocs.worldbank.org/en/doc/74e8be41ceb20fa0da750cda2f6b9e4e-0050012026/related/CMO-Historical-Data-Monthly.xlsx,2026-06-04T19:08:06+09:00,success,"Updated on June 02, 2026"
+stooq_latest,copper,Stooq,1,12:08,12:08,quote table unit as displayed by Stooq/Barchart,https://stooq.com/t/?i=554,2026-06-04T19:08:06+09:00,success,HIGH GRADE COPPER
+stooq_latest,zinc,Stooq,1,Jun 3,Jun 3,quote table unit as displayed by Stooq/Barchart,https://stooq.com/t/?i=554,2026-06-04T19:08:06+09:00,success,ZINC HIGH GRADE
+stooq_latest,nickel,Stooq,1,Jun 3,Jun 3,quote table unit as displayed by Stooq/Barchart,https://stooq.com/t/?i=554,2026-06-04T19:08:06+09:00,success,NICKEL
+stooq_latest,aluminum,Stooq,1,Jun 3,Jun 3,quote table unit as displayed by Stooq/Barchart,https://stooq.com/t/?i=554,2026-06-04T19:08:06+09:00,success,ALUMINIUM HIGH GRADE
+stooq_latest,lead,Stooq,1,Jun 3,Jun 3,quote table unit as displayed by Stooq/Barchart,https://stooq.com/t/?i=554,2026-06-04T19:08:06+09:00,success,LEAD PIG
+stooq_latest,tin,Stooq,1,Jun 3,Jun 3,quote table unit as displayed by Stooq/Barchart,https://stooq.com/t/?i=554,2026-06-04T19:08:06+09:00,success,TIN REFINED
+stooq_latest,cobalt,Stooq,1,Jun 3,Jun 3,quote table unit as displayed by Stooq/Barchart,https://stooq.com/t/?i=554,2026-06-04T19:08:06+09:00,success,COBALT
+yahoo_daily,copper,Yahoo Finance via yfinance,4130,2010-01-04,2026-06-04,exchange-traded futures price; see Yahoo instrument,https://finance.yahoo.com/quote/HG%3DF/,2026-06-04T19:08:06+09:00,success,
+yahoo_daily,aluminum,Yahoo Finance via yfinance,3002,2014-05-06,2026-06-04,exchange-traded futures price; see Yahoo instrument,https://finance.yahoo.com/quote/ALI%3DF/,2026-06-04T19:08:06+09:00,success,

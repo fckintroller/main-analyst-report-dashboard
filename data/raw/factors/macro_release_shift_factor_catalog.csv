@@ -1,0 +1,4 @@
+﻿factor_family,question,factor_name,source_column,interpretation,preferred_use
+macro_release_shift,"이번 발표치가 직전 발표 대비 얼마나, 어느 방향으로 변했는가?",value_change / value_change_pct,FRED 발표 실제치(actual),"직전 관측치 대비 절대/비율 변화 (양수=지표 상승, 음수=하락 — 지표 성격에 따라 호재/악재 해석은 달라짐)",필터
+macro_release_shift,이번 변화가 이 지표의 평소 변화 패턴 대비 이례적으로 큰가?,release_shift_zscore / release_shift_bucket,발표치 변화량,자기 과거 24개 관측치의 변화량 분포 대비 z-score. 주의: 이는 '컨센서스(forecast) 대비 서프라이즈'가 아니라 '발표치 자체의 추세 대비 이탈도'이다 — 무료 데이터로는 forecast 시계열을 구할 수 없어 서프라이즈의 1차 근사(proxy)로만 사용할 것,핵심
+macro_release_shift,이 발표가 economic_calendar.json의 어떤 일정과 매칭되는가?,calendar_match / indicator_name_kr,지표 매핑,economic_calendar.json에 등장하는 지표명과의 매칭 라벨 (캘린더 일정 + 발표치 이력을 함께 참고할 때 사용),참고

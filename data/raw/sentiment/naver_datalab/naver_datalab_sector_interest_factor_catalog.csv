@@ -1,0 +1,10 @@
+﻿factor_family,question,factor_name,source_column,interpretation,preferred_use
+same_sector_recent_strength,같은 섹터 안에서 관심도가 최근 강해졌는가?,ratio_momentum_1m,ratio,전월 대비 같은 섹터 원본 상대 관심도 변화,보조
+same_sector_recent_strength,같은 섹터 안에서 관심도가 최근 강해졌는가?,ratio_momentum_3m,ratio,3개월 전 대비 같은 섹터 원본 상대 관심도 변화,핵심
+same_sector_recent_strength,같은 섹터 안에서 관심도가 최근 강해졌는가?,ratio_zscore_12m,ratio,최근 12개월 대비 같은 섹터 관심도 위치,핵심
+market_relative_strength,시장 전체 검색 관심도 대비 특정 섹터가 강한가?,anchor_relative_ratio_winsorized,anchor_relative_ratio,market_anchor 대비 섹터 상대 관심도(이상치 완화),핵심
+market_relative_strength,시장 전체 검색 관심도 대비 특정 섹터가 강한가?,anchor_relative_momentum_3m,anchor_relative_ratio_winsorized,시장 anchor 대비 상대 관심도의 3개월 변화,핵심
+market_relative_strength,시장 전체 검색 관심도 대비 특정 섹터가 강한가?,anchor_relative_zscore_12m,anchor_relative_ratio_winsorized,시장 anchor 대비 상대 관심도의 12개월 z-score,핵심
+cross_sector_current_rank,전체 섹터 중 현재 관심도 순위가 높은가?,relative_rank_pct,anchor_relative_ratio_winsorized,동일 월 전체 섹터 중 anchor 보정 관심도 백분위 순위,핵심
+cross_sector_current_rank,전체 섹터 중 현재 관심도 순위가 높은가?,relative_zscore_cross_sectional,anchor_relative_ratio_winsorized,동일 월 전체 섹터 분포 내 표준화 위치,보조
+cross_sector_current_rank,전체 섹터 중 현재 관심도 순위가 높은가?,top_20pct_flag,relative_rank_pct,동일 월 관심도 상위 20% 섹터 여부,해석

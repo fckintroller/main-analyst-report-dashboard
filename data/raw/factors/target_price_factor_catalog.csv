@@ -1,0 +1,5 @@
+﻿factor_family,question,factor_name,source_column,interpretation,preferred_use
+target_price,현재 주가가 애널리스트 목표주가 대비 얼마나 싼가?,tp_divergence,target_price / close_price - 1,"양수 높을수록 상승여력 큼. 0.3+=deep_value, 0.15~0.3=cheap",밸류에이션 팩터와 함께 1차 스크리닝 필터
+target_price,애널리스트들의 투자의견이 우호적인가?,opinion_score,"Naver 투자의견 평균 점수 (1=매도, 5=강매수)","4.0 이상 = 매수 우세, 3.0 이하 = 중립~매도 우세",강한 매수 컨센서스 필터
+target_price,섹터 내에서 상승여력이 높은 편인가?,tp_divergence_sector_pct,tp_divergence,"0=섹터 내 가장 낮은 상승여력, 1=가장 높음",섹터 로테이션 및 종목 선별
+target_price,목표주가 + 투자의견 종합 점수는?,target_price_score,tp_divergence_sector_pct × 0.65 + opinion_score_norm × 0.35,"0~1, 높을수록 애널리스트 관점 저평가·매력",전체 팩터 결합 시 밸류에이션 보조 신호

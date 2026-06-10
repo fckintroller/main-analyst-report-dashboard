@@ -1,0 +1,334 @@
+{
+  "downloaded_at": "2026-06-05T21:39:22+09:00",
+  "database": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\database\\quant_data.sqlite",
+  "backup": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\database\\quant_data.sqlite.backup_quant_macro_20260605_213922",
+  "raw_dir": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\quant_macro_indicators",
+  "verification": [
+    {
+      "table": "macro_quant_market_indicators_daily",
+      "rows": 12310,
+      "date_range": [
+        "2010-01-04",
+        "2026-06-05"
+      ]
+    },
+    {
+      "table": "macro_quant_indicators_long",
+      "rows": 40672,
+      "date_range": [
+        "1980-01-01",
+        "2026-06-05"
+      ]
+    },
+    {
+      "table": "macro_quant_factors_daily",
+      "rows": 51807,
+      "date_range": [
+        "1980-01-02",
+        "2026-06-05"
+      ]
+    },
+    {
+      "table": "macro_quant_factors_monthly",
+      "rows": 2446,
+      "date_range": [
+        "1981-01-31",
+        "2026-06-30"
+      ]
+    },
+    {
+      "table": "macro_quant_metadata",
+      "rows": 22,
+      "date_range": null
+    }
+  ],
+  "metadata_status": [
+    {
+      "series_id": "^VIX",
+      "indicator": "vix",
+      "status": "success",
+      "rows": 4132,
+      "start_date": "2010-01-04",
+      "end_date": "2026-06-05",
+      "message": ""
+    },
+    {
+      "series_id": "^MOVE",
+      "indicator": "move",
+      "status": "success",
+      "rows": 4046,
+      "start_date": "2010-01-04",
+      "end_date": "2026-06-03",
+      "message": ""
+    },
+    {
+      "series_id": "DX-Y.NYB",
+      "indicator": "dxy",
+      "status": "success",
+      "rows": 4132,
+      "start_date": "2010-01-04",
+      "end_date": "2026-06-05",
+      "message": ""
+    },
+    {
+      "series_id": "T10Y3M",
+      "indicator": "us_10y_3m_spread",
+      "status": "failed",
+      "rows": 0,
+      "start_date": null,
+      "end_date": null,
+      "message": "HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)"
+    },
+    {
+      "series_id": "NFCI",
+      "indicator": "chicago_fed_nfci",
+      "status": "failed",
+      "rows": 0,
+      "start_date": null,
+      "end_date": null,
+      "message": "HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)"
+    },
+    {
+      "series_id": "ANFCI",
+      "indicator": "chicago_fed_anfci",
+      "status": "failed",
+      "rows": 0,
+      "start_date": null,
+      "end_date": null,
+      "message": "HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)"
+    },
+    {
+      "series_id": "DFII10",
+      "indicator": "us_10y_real_rate",
+      "status": "failed",
+      "rows": 0,
+      "start_date": null,
+      "end_date": null,
+      "message": "HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)"
+    },
+    {
+      "series_id": "T10YIE",
+      "indicator": "us_10y_breakeven_inflation",
+      "status": "failed",
+      "rows": 0,
+      "start_date": null,
+      "end_date": null,
+      "message": "HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)"
+    },
+    {
+      "series_id": "BAMLC0A0CM",
+      "indicator": "us_ig_oas",
+      "status": "failed",
+      "rows": 0,
+      "start_date": null,
+      "end_date": null,
+      "message": "HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)"
+    },
+    {
+      "series_id": "KORLOLITOAASTSAM",
+      "indicator": "korea_oecd_cli",
+      "status": "failed",
+      "rows": 0,
+      "start_date": null,
+      "end_date": null,
+      "message": "HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)"
+    },
+    {
+      "series_id": "USALOLITOAASTSAM",
+      "indicator": "us_oecd_cli",
+      "status": "failed",
+      "rows": 0,
+      "start_date": null,
+      "end_date": null,
+      "message": "HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)"
+    },
+    {
+      "series_id": "CHNLOLITOAASTSAM",
+      "indicator": "china_oecd_cli",
+      "status": "failed",
+      "rows": 0,
+      "start_date": null,
+      "end_date": null,
+      "message": "HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)"
+    },
+    {
+      "series_id": "JPNLOLITOAASTSAM",
+      "indicator": "japan_oecd_cli",
+      "status": "failed",
+      "rows": 0,
+      "start_date": null,
+      "end_date": null,
+      "message": "HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)"
+    },
+    {
+      "series_id": "XTIMVA01KRM667S",
+      "indicator": "korea_imports",
+      "status": "failed",
+      "rows": 0,
+      "start_date": null,
+      "end_date": null,
+      "message": "HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=12)"
+    },
+    {
+      "series_id": "macro_macro_indices_dgs10",
+      "indicator": "us_10y_yield",
+      "status": "success",
+      "rows": 12108,
+      "start_date": "1980-01-02",
+      "end_date": "2026-05-29",
+      "message": ""
+    },
+    {
+      "series_id": "macro_macro_indices_dgs2",
+      "indicator": "us_2y_yield",
+      "status": "success",
+      "rows": 12108,
+      "start_date": "1980-01-02",
+      "end_date": "2026-05-29",
+      "message": ""
+    },
+    {
+      "series_id": "macro_macro_indices_bamlh0a0hym2",
+      "indicator": "us_high_yield_oas",
+      "status": "success",
+      "rows": 795,
+      "start_date": "2023-06-05",
+      "end_date": "2026-06-03",
+      "message": ""
+    },
+    {
+      "series_id": "macro_macro_indices_cpiaucsl",
+      "indicator": "us_cpi",
+      "status": "success",
+      "rows": 556,
+      "start_date": "1980-01-01",
+      "end_date": "2026-04-01",
+      "message": ""
+    },
+    {
+      "series_id": "macro_macro_indices_unrate",
+      "indicator": "us_unemployment_rate",
+      "status": "success",
+      "rows": 556,
+      "start_date": "1980-01-01",
+      "end_date": "2026-04-01",
+      "message": ""
+    },
+    {
+      "series_id": "macro_macro_indices_m2sl",
+      "indicator": "us_m2",
+      "status": "success",
+      "rows": 556,
+      "start_date": "1980-01-01",
+      "end_date": "2026-04-01",
+      "message": ""
+    },
+    {
+      "series_id": "macro_macro_indices_walcl",
+      "indicator": "fed_total_assets",
+      "status": "success",
+      "rows": 1225,
+      "start_date": "2002-12-18",
+      "end_date": "2026-06-03",
+      "message": ""
+    },
+    {
+      "series_id": "macro_macro_indices_kor_exports",
+      "indicator": "korea_exports",
+      "status": "success",
+      "rows": 555,
+      "start_date": "1980-01-01",
+      "end_date": "2026-03-01",
+      "message": ""
+    }
+  ],
+  "latest_daily_factors": [
+    [
+      "dxy_ret_60d_pct",
+      "2026-06-05",
+      -0.4613
+    ],
+    [
+      "dxy_zscore_252d",
+      "2026-06-05",
+      0.823
+    ],
+    [
+      "korea_kosdaq_ret_60d_pct",
+      "2026-06-05",
+      -11.9346
+    ],
+    [
+      "korea_kospi_ret_60d_pct",
+      "2026-06-05",
+      47.0416
+    ],
+    [
+      "move_ret_60d_pct",
+      "2026-06-03",
+      -22.7912
+    ],
+    [
+      "move_zscore_252d",
+      "2026-06-03",
+      -0.1452
+    ],
+    [
+      "risk_off_composite_z",
+      "2026-06-05",
+      0.0682
+    ],
+    [
+      "us_10y_2y_spread",
+      "2026-05-29",
+      0.47
+    ],
+    [
+      "us_high_yield_oas_zscore_252d",
+      "2026-06-03",
+      -1.0591
+    ],
+    [
+      "us_sp500_ret_60d_pct",
+      "2026-06-03",
+      13.2041
+    ],
+    [
+      "vix_ret_60d_pct",
+      "2026-06-05",
+      -33.0072
+    ],
+    [
+      "vix_zscore_252d",
+      "2026-06-05",
+      -0.6866
+    ]
+  ],
+  "latest_monthly_factors": [
+    [
+      "fed_total_assets_yoy_pct",
+      "2026-06-30",
+      0.7399
+    ],
+    [
+      "korea_exports_yoy_pct",
+      "2026-03-31",
+      47.8676
+    ],
+    [
+      "us_cpi_yoy_pct",
+      "2026-04-30",
+      3.7792
+    ],
+    [
+      "us_m2_yoy_pct",
+      "2026-04-30",
+      4.7245
+    ],
+    [
+      "us_unemployment_rate_chg_12m",
+      "2026-04-30",
+      0.1
+    ]
+  ]
+}

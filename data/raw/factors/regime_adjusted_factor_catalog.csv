@@ -1,0 +1,10 @@
+﻿factor_family,question,factor_name,source_column,interpretation,preferred_use
+market_macro_regime,지금 시장이 risk-on/risk-off/달러압박/중립 중 어디인가?,market_regime,market_regime,시장 국면 라벨,필터
+market_macro_regime,위험회피 강도가 높은가?,risk_off_score,risk_off_score,위험회피 종합 점수,핵심
+market_macro_regime,성장주/테마주에 우호적인가?,growth_on_flag,growth_on_flag,KOSDAQ 상대 모멘텀 기반 성장주 환경,필터
+market_macro_regime,외수/제조업에 우호적인가?,export_recovery_flag,export_recovery_flag,한국 수출 증가율 양수 여부,필터
+regime_adjusted_interest,관심도 신호를 시장 regime으로 조정하면 강한가?,base_interest_score,base_interest_score,관심도 레벨/모멘텀/z-score/rank 조합,기초
+regime_adjusted_interest,regime 조정 후 관심도 신호가 강한가?,regime_adjusted_interest_score,regime_adjusted_interest_score,"risk-off 할인, risk-on/growth/export 가중 후 점수",핵심
+regime_adjusted_interest,조정 신호의 해석 bucket은?,regime_adjusted_bucket,regime_adjusted_bucket,very_strong/strong/moderate/neutral/weak,해석
+regime_adjusted_interest,risk-off/달러압박 할인이 적용됐는가?,risk_discount_applied,risk_discount_applied,위험 국면 할인 여부,품질/해석
+regime_adjusted_interest,외수/제조업 가중이 적용됐는가?,export_boost_applied,export_boost_applied,수출 회복 + 외수 제조업 섹터 가중,해석

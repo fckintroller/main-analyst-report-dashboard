@@ -1,0 +1,9 @@
+﻿commodity,ticker,status,rows,start_date,end_date,message
+corn,ZC=F,success,4127,2010-01-04,2026-06-04,
+hard_red_winter_wheat,KE=F,success,4129,2010-01-04,2026-06-04,
+wheat_cbot,ZW=F,success,4129,2010-01-04,2026-06-04,
+soybean,ZS=F,success,4129,2010-01-04,2026-06-04,
+soybean_oil,ZL=F,success,4129,2010-01-04,2026-06-04,
+soybean_meal,ZM=F,success,4129,2010-01-04,2026-06-04,
+rough_rice,ZR=F,success,4128,2010-01-04,2026-06-03,
+oats,ZO=F,success,4129,2010-01-04,2026-06-04,

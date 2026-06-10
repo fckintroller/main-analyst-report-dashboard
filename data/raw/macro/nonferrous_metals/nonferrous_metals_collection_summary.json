@@ -1,0 +1,87 @@
+{
+  "downloaded_at": "2026-06-04T19:08:06+09:00",
+  "database": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\database\\quant_data.sqlite",
+  "backup": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\database\\quant_data.sqlite.backup_20260604_190806",
+  "raw_dir": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\nonferrous_metals",
+  "worldbank_xlsx": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\nonferrous_metals\\worldbank_CMO_Historical_Data_Monthly_20260604_190806.xlsx",
+  "worldbank_long_csv": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\nonferrous_metals\\worldbank_nonferrous_metals_monthly_long.csv",
+  "stooq_latest_csv": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\nonferrous_metals\\stooq_nonferrous_metals_latest.csv",
+  "metadata_csv": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\nonferrous_metals\\nonferrous_metals_metadata.csv",
+  "yahoo_metadata_csv": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\nonferrous_metals\\yahoo_nonferrous_metals_metadata.csv",
+  "worldbank_update_text": "Updated on June 02, 2026",
+  "missing_worldbank_metals": [],
+  "verification": [
+    {
+      "table": "macro_nonferrous_metals_worldbank_monthly",
+      "rows": 4782
+    },
+    {
+      "table": "macro_nonferrous_metals_stooq_latest",
+      "rows": 7
+    },
+    {
+      "table": "macro_nonferrous_metals_metadata",
+      "rows": 15
+    },
+    {
+      "table": "macro_nonferrous_metals_copper_daily_yahoo",
+      "rows": 4130
+    },
+    {
+      "table": "macro_nonferrous_metals_aluminum_daily_yahoo",
+      "rows": 3002
+    }
+  ],
+  "worldbank_latest_by_metal": [
+    [
+      "aluminum",
+      "2026-05-01",
+      797
+    ],
+    [
+      "copper",
+      "2026-05-01",
+      797
+    ],
+    [
+      "lead",
+      "2026-05-01",
+      797
+    ],
+    [
+      "nickel",
+      "2026-05-01",
+      797
+    ],
+    [
+      "tin",
+      "2026-05-01",
+      797
+    ],
+    [
+      "zinc",
+      "2026-05-01",
+      797
+    ]
+  ],
+  "yahoo_downloads": [
+    {
+      "metal": "copper",
+      "ticker": "HG=F",
+      "status": "success",
+      "rows": 4130,
+      "start_date": "2010-01-04",
+      "end_date": "2026-06-04",
+      "message": ""
+    },
+    {
+      "metal": "aluminum",
+      "ticker": "ALI=F",
+      "status": "success",
+      "rows": 3002,
+      "start_date": "2014-05-06",
+      "end_date": "2026-06-04",
+      "message": ""
+    }
+  ]
+}

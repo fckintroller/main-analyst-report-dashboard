@@ -4,9 +4,13 @@ import datetime
 # from pykrx import stock
 import FinanceDataReader as fdr
 import OpenDartReader
+from dotenv import load_dotenv
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+load_dotenv(os.path.join(PROJECT_ROOT, '.env'))
 
 logger = logging.getLogger(__name__)
-BASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'data', 'raw', 'valuation')
+BASE_DIR = os.path.join(PROJECT_ROOT, 'data', 'raw', 'valuation')
 
 def ensure_dir(path):
     if not os.path.exists(path):
@@ -45,19 +49,25 @@ def fetch_dart_filings():
 
         df.to_csv(os.path.join(BASE_DIR, 'dart_all_filings.csv'), index=False, encoding='utf-8-sig')
 
-        # 1. ?먭린二쇱떇(?먯궗二? 痍⑤뱷/泥섎텇 ?꾪꽣留?        df_buyback = df[df['report_nm'].str.contains('?먭린二쇱떇', na=False)]
+        # 1. 자기주식(자사주) 취득/처분 필터
+        df_buyback = df[df['report_nm'].str.contains('자기주식|자사주', na=False, regex=True)]
         if not df_buyback.empty:
             df_buyback.to_csv(os.path.join(BASE_DIR, 'dart_buybacks.csv'), index=False, encoding='utf-8-sig')
 
-        # 2. 諛곕떦 寃곗젙 ?꾪꽣留?        df_dividend = df[df['report_nm'].str.contains('諛곕떦', na=False)]
+        # 2. 배당 결정 필터
+        df_dividend = df[df['report_nm'].str.contains('배당', na=False)]
         if not df_dividend.empty:
             df_dividend.to_csv(os.path.join(BASE_DIR, 'dart_dividends.csv'), index=False, encoding='utf-8-sig')
 
-        # 3. ?꾩썝/理쒕?二쇱＜ 吏遺?蹂???꾪꽣留?        df_insider = df[df['report_nm'].str.contains('?뚯쑀?곹솴蹂닿퀬??, na=False)]
+        # 3. 임원/최대주주/주식소유 변동 필터
+        df_insider = df[df['report_nm'].str.contains('소유상황보고|임원ㆍ주요주주|최대주주|주식등의대량보유', na=False, regex=True)]
         if not df_insider.empty:
             df_insider.to_csv(os.path.join(BASE_DIR, 'dart_insiders.csv'), index=False, encoding='utf-8-sig')
 
-        logger.info(f" - DART 二쇱슂 ?대깽???꾪꽣留??꾨즺 (?먯궗二? {len(df_buyback)}嫄? 諛곕떦: {len(df_dividend)}嫄? 吏遺꾨??? {len(df_insider)}嫄?")
+        logger.info(
+            " - DART 주요 이벤트 필터링 완료 (자사주: %d건, 배당: %d건, 지분변동: %d건)",
+            len(df_buyback), len(df_dividend), len(df_insider)
+        )
 
     except Exception as e:
         logger.error(f" - DART 怨듭떆 ?섏쭛 ?ㅽ뙣: {e}")
@@ -122,6 +132,88 @@ def fetch_all_eps_consensus():
     except Exception as e:
         logger.error(f" - ?ㅼ쟻 而⑥꽱?쒖뒪 ?섏쭛 ?ㅽ뙣: {e}")
 
+def fetch_kospi_pbr():
+    """pykrx로 KOSPI 전체 PBR/PER/배당수익률 이력 수집 및 분위수 계산 (증분 업데이트)."""
+    logger.info("[VALUATION] KOSPI 펀더멘털 이력 수집 중 (pykrx)...")
+    hist_path = os.path.join(BASE_DIR, "kospi_fundamental_history.csv")
+    pct_path  = os.path.join(BASE_DIR, "kospi_pbr_percentile.csv")
+
+    try:
+        from pykrx import stock
+
+        # 증분 업데이트: 기존 파일 마지막 날짜 다음부터만 수집
+        if os.path.exists(hist_path):
+            existing = pd.read_csv(hist_path, index_col=0, parse_dates=True)
+            start = (existing.index[-1] + datetime.timedelta(days=1)).strftime("%Y%m%d")
+        else:
+            existing = pd.DataFrame()
+            start = "20100101"
+
+        today_str = datetime.datetime.today().strftime("%Y%m%d")
+
+        if start > today_str:
+            logger.info(" - KOSPI 펀더멘털 이미 최신 상태")
+            hist = existing
+        else:
+            new_df = stock.get_index_fundamental_by_date(start, today_str, "1001")
+            if new_df is not None and not new_df.empty:
+                hist = pd.concat([existing, new_df]) if not existing.empty else new_df
+                hist = hist[~hist.index.duplicated(keep="last")].sort_index()
+                hist.to_csv(hist_path)
+                logger.info(" - KOSPI 펀더멘털 저장 완료: 총 %d rows (신규 %d)", len(hist), len(new_df))
+            else:
+                logger.warning(" - pykrx 반환 데이터 없음 (기존 파일 유지)")
+                hist = existing
+
+        if hist.empty:
+            return
+
+        # PBR 분위수 계산
+        pbr_col = next((c for c in hist.columns if "PBR" in c.upper()), None)
+        per_col = next((c for c in hist.columns if "PER" in c.upper()), None)
+        div_col = next((c for c in hist.columns
+                        if "배당" in c or "DIV" in c.upper() or "YIELD" in c.upper()), None)
+
+        if pbr_col is None:
+            logger.warning(" - PBR 컬럼을 찾을 수 없음 (컬럼: %s)", list(hist.columns))
+            return
+
+        pbr     = hist[pbr_col].replace(0, float("nan")).dropna()
+        current = float(pbr.iloc[-1])
+        pct_rank = round(float((pbr < current).mean() * 100), 1)
+
+        row = {
+            "date":        str(pbr.index[-1])[:10],
+            "current_pbr": round(current, 3),
+            "percentile":  pct_rank,
+            "min_10y":     round(pbr.min(), 3),
+            "max_10y":     round(pbr.max(), 3),
+            "median_10y":  round(pbr.median(), 3),
+            "mean_10y":    round(pbr.mean(), 3),
+        }
+
+        if per_col:
+            per = hist[per_col].replace(0, float("nan")).dropna()
+            if not per.empty:
+                row["current_per"]     = round(float(per.iloc[-1]), 2)
+                row["per_percentile"]  = round(float((per < row["current_per"]).mean() * 100), 1)
+        if div_col:
+            div = hist[div_col].replace(0, float("nan")).dropna()
+            if not div.empty:
+                row["current_div_yield"] = round(float(div.iloc[-1]), 3)
+
+        pd.DataFrame([row]).to_csv(pct_path, index=False)
+        logger.info(
+            " - KOSPI PBR: %.2f배 → 10년 기준 %.1f%%ile (중앙값 %.2f배 / 최저 %.2f배 / 최고 %.2f배)",
+            current, pct_rank, row["median_10y"], row["min_10y"], row["max_10y"]
+        )
+
+    except ImportError:
+        logger.warning(" - pykrx 미설치 — KOSPI PBR 수집 건너뜀")
+    except Exception as e:
+        logger.error(" - KOSPI PBR 수집 실패: %s", e)
+
+
 def run():
     logger.info("=== 04. 媛移?諛?湲곗뾽 (Valuation) ?곗씠???섏쭛 ?쒖옉 ===")
     ensure_dir(BASE_DIR)
@@ -131,6 +223,7 @@ def run():
     fetch_adrs()
     fetch_dart_filings()
     fetch_all_eps_consensus()
+    fetch_kospi_pbr()
 
     logger.info("=== 04. 媛移?諛?湲곗뾽 (Valuation) ?곗씠???섏쭛 ?꾨즺 ===")
 

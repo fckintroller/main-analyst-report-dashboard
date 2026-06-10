@@ -1,0 +1,247 @@
+{
+  "downloaded_at": "2026-06-04T20:11:11+09:00",
+  "database": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\database\\quant_data.sqlite",
+  "backup": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\database\\quant_data.sqlite.backup_global_indices_20260604_201111",
+  "raw_dir": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\global_indices",
+  "long_csv": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\global_indices\\global_indices_daily_long.csv",
+  "metadata_csv": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\global_indices\\global_indices_metadata.csv",
+  "target_count": 28,
+  "success_count": 28,
+  "failed": [],
+  "verification": [
+    {
+      "table": "macro_global_indices_daily",
+      "rows": 110223
+    },
+    {
+      "table": "macro_global_indices_metadata",
+      "rows": 28
+    }
+  ],
+  "latest_by_index": [
+    [
+      "china_shanghai_composite",
+      "China",
+      "Shanghai Composite",
+      "000001.SS",
+      "2026-06-04",
+      3981
+    ],
+    [
+      "china_shenzhen_component",
+      "China",
+      "Shenzhen Component",
+      "399001.SZ",
+      "2026-06-04",
+      3981
+    ],
+    [
+      "hongkong_hang_seng",
+      "Hong Kong",
+      "Hang Seng Index",
+      "^HSI",
+      "2026-06-04",
+      4040
+    ],
+    [
+      "india_sensex",
+      "India",
+      "BSE SENSEX",
+      "^BSESN",
+      "2026-06-04",
+      4036
+    ],
+    [
+      "india_nifty_50",
+      "India",
+      "NIFTY 50",
+      "^NSEI",
+      "2026-06-04",
+      4031
+    ],
+    [
+      "indonesia_jakarta_composite",
+      "Indonesia",
+      "Jakarta Composite",
+      "^JKSE",
+      "2026-06-04",
+      3980
+    ],
+    [
+      "japan_nikkei_225",
+      "Japan",
+      "Nikkei 225",
+      "^N225",
+      "2026-06-04",
+      4014
+    ],
+    [
+      "japan_topix",
+      "Japan",
+      "TOPIX",
+      "1306.T",
+      "2026-06-04",
+      4033
+    ],
+    [
+      "singapore_sti",
+      "Singapore",
+      "Straits Times Index",
+      "^STI",
+      "2026-06-04",
+      4105
+    ],
+    [
+      "korea_kosdaq",
+      "South Korea",
+      "KOSDAQ",
+      "^KQ11",
+      "2026-06-04",
+      4036
+    ],
+    [
+      "korea_kospi",
+      "South Korea",
+      "KOSPI",
+      "^KS11",
+      "2026-06-04",
+      4036
+    ],
+    [
+      "taiwan_weighted",
+      "Taiwan",
+      "Taiwan Weighted Index",
+      "^TWII",
+      "2026-06-04",
+      4007
+    ],
+    [
+      "thailand_set",
+      "Thailand",
+      "SET Index",
+      "^SET.BK",
+      "2026-06-04",
+      3985
+    ],
+    [
+      "vietnam_vn_index",
+      "Vietnam",
+      "VN Index",
+      "^VNINDEX.VN",
+      "2026-06-04",
+      1
+    ],
+    [
+      "eurozone_euro_stoxx_50",
+      "Eurozone",
+      "EURO STOXX 50",
+      "^STOXX50E",
+      "2026-06-04",
+      4116
+    ],
+    [
+      "france_cac_40",
+      "France",
+      "CAC 40",
+      "^FCHI",
+      "2026-06-04",
+      4198
+    ],
+    [
+      "germany_dax",
+      "Germany",
+      "DAX Performance Index",
+      "^GDAXI",
+      "2026-06-04",
+      4166
+    ],
+    [
+      "italy_ftse_mib",
+      "Italy",
+      "FTSE MIB",
+      "FTSEMIB.MI",
+      "2026-06-04",
+      4169
+    ],
+    [
+      "spain_ibex_35",
+      "Spain",
+      "IBEX 35",
+      "^IBEX",
+      "2026-06-04",
+      4198
+    ],
+    [
+      "uk_ftse_100",
+      "United Kingdom",
+      "FTSE 100",
+      "^FTSE",
+      "2026-06-04",
+      4145
+    ],
+    [
+      "canada_tsx_composite",
+      "Canada",
+      "S&P/TSX Composite",
+      "^GSPTSE",
+      "2026-06-03",
+      4120
+    ],
+    [
+      "mexico_ipc",
+      "Mexico",
+      "S&P/BMV IPC",
+      "^MXX",
+      "2026-06-03",
+      4116
+    ],
+    [
+      "us_dow_jones",
+      "United States",
+      "Dow Jones Industrial Average",
+      "^DJI",
+      "2026-06-03",
+      4129
+    ],
+    [
+      "us_nasdaq_composite",
+      "United States",
+      "NASDAQ Composite",
+      "^IXIC",
+      "2026-06-03",
+      4129
+    ],
+    [
+      "us_russell_2000",
+      "United States",
+      "Russell 2000",
+      "^RUT",
+      "2026-06-03",
+      4129
+    ],
+    [
+      "us_sp500",
+      "United States",
+      "S&P 500",
+      "^GSPC",
+      "2026-06-03",
+      4129
+    ],
+    [
+      "australia_asx_200",
+      "Australia",
+      "S&P/ASX 200",
+      "^AXJO",
+      "2026-06-04",
+      4144
+    ],
+    [
+      "brazil_bovespa",
+      "Brazil",
+      "Bovespa Index",
+      "^BVSP",
+      "2026-06-03",
+      4069
+    ]
+  ]
+}
