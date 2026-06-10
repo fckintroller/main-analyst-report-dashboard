@@ -1065,15 +1065,12 @@ function renderScorecard() {
   if (!container) return;
 
   const macro = window.QUANT_DATA?.macro || {};
-  const fearGreed = window.QUANT_DATA?.sentiment?.fear_greed || null;
-  const fearValRaw = fearGreed?.value ?? null;
-  const fearVal = fearValRaw === null ? null : Number(fearValRaw);
-  const fearDesc = fearGreed?.description ? ` (${fearGreed.description})` : "";
   const dxy = latestValue(macro.DXY, "Close");
   const tnx = latestValue(macro.TNX, "Close");
   const dgs10 = latestValue(macro.DGS10, "DGS10");
   const dgs2 = latestValue(macro.DGS2, "DGS2");
   const hy = latestValue(macro.BAMLH0A0HYM2, "BAMLH0A0HYM2");
+  const ig = latestValue(macro.BAMLC0A0CM, "BAMLC0A0CM");
   const unrate = latestValue(macro.UNRATE, "UNRATE");
   const usdKrw = latestValue(macro.USD_KRW, "Close");
 
@@ -1090,9 +1087,9 @@ function renderScorecard() {
   const exportsYoy = calcYoy(macro.KOR_EXPORTS, "XTEXVA01KRM667S");
 
   const vix        = latestValue(macro.VIX, "Close");
-  const nfci       = latestValue(macro.NFCI, "NFCI");
+  const stlfsi     = latestValue(macro.STLFSI4, "STLFSI4");
   const korCli     = latestValue(macro.KOR_CLI, "KORLOLITONOSTSAM");
-  const aaiiSpread = latestValue(macro.aaii_bull_bear, "value");
+  const umSent     = latestValue(macro.UMCSENT, "UMCSENT");
 
   const yieldSpread = dgs10 !== null && dgs2 !== null ? dgs10 - dgs2 : null;
   const signal = {
@@ -1100,34 +1097,34 @@ function renderScorecard() {
     tnx:     tnx === null ? null : tnx < 4.2 ? 1 : tnx < 4.5 ? 0 : -1,
     spread:  yieldSpread === null ? null : yieldSpread > 0.5 ? 1 : yieldSpread > 0 ? 0 : -1,
     hy:      hy === null ? null : hy < 3.5 ? 1 : hy < 4.5 ? 0 : -1,
-    fear:    fearVal === null || Number.isNaN(fearVal) ? null : fearVal > 70 ? 1 : fearVal > 30 ? 0 : -1,
+    ig:      ig === null ? null : ig < 1.2 ? 1 : ig < 1.8 ? 0 : -1,
     unrate:  unrate === null ? null : unrate < 4 ? 1 : unrate < 5 ? 0 : -1,
     m2:      m2Yoy === null ? null : m2Yoy > 3 ? 1 : m2Yoy > -1 ? 0 : -1,
     cpi:     cpiYoy === null ? null : cpiYoy < 2 ? 1 : cpiYoy < 3.5 ? 0 : -1,
     usdKrw:  usdKrw === null ? null : usdKrw < 1350 ? 1 : usdKrw < 1500 ? 0 : -1,
     exports: exportsYoy === null ? null : exportsYoy > 5 ? 1 : exportsYoy > -5 ? 0 : -1,
     vix:     vix === null ? null : vix < 20 ? 1 : vix < 30 ? 0 : -1,
-    nfci:    nfci === null ? null : nfci < -0.1 ? 1 : nfci < 0.5 ? 0 : -1,
+    stlfsi:  stlfsi === null ? null : stlfsi < 0 ? 1 : stlfsi < 1 ? 0 : -1,
     korCli:  korCli === null ? null : korCli > 100.2 ? 1 : korCli > 99.5 ? 0 : -1,
-    aaii:    aaiiSpread === null ? null : aaiiSpread < -15 ? 1 : aaiiSpread < 15 ? 0 : -1,
+    umSent:  umSent === null ? null : umSent > 80 ? 1 : umSent > 60 ? 0 : -1,
   };
 
   const pct = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
   const indicators = [
-    { name: "달러 인덱스",      value: dxy,         fmt: (v) => v.toFixed(2),                         sig: signal.dxy,     criterion: "↑ <99  →  99~102  ↓ >102" },
-    { name: "미국 10년물 금리",  value: tnx,         fmt: (v) => `${v.toFixed(2)}%`,                   sig: signal.tnx,     criterion: "↑ <4.2%  →  4.2~4.5%  ↓ >4.5%" },
-    { name: "장단기 금리차",    value: yieldSpread, fmt: (v) => `${v.toFixed(2)}%`,                   sig: signal.spread,  criterion: "↑ >+0.5%  →  0~0.5%  ↓ 역전(<0)" },
-    { name: "하이일드 스프레드", value: hy,          fmt: (v) => `${v.toFixed(2)}%`,                   sig: signal.hy,      criterion: "↑ <3.5%  →  3.5~4.5%  ↓ >4.5%" },
-    { name: "미국 CPI YoY",    value: cpiYoy,      fmt: pct,                                          sig: signal.cpi,     criterion: "↑ <2%  →  2~3.5%  ↓ >3.5%" },
-    { name: "Fear & Greed",    value: fearVal,     fmt: (v) => `${v.toFixed(0)}${fearDesc}`,          sig: signal.fear,    criterion: "↑ >70(Greed)  →  30~70  ↓ <30(Fear)" },
-    { name: "미국 실업률",      value: unrate,      fmt: (v) => `${v.toFixed(1)}%`,                   sig: signal.unrate,  criterion: "↑ <4%  →  4~5%  ↓ >5%" },
-    { name: "M2 YoY",          value: m2Yoy,       fmt: pct,                                          sig: signal.m2,      criterion: "↑ >+3%  →  -1~+3%  ↓ <-1%" },
-    { name: "원달러 환율",      value: usdKrw,      fmt: (v) => `₩${Math.round(v).toLocaleString()}`,  sig: signal.usdKrw,  criterion: "↑ <1,350  →  1,350~1,500  ↓ >1,500" },
-    { name: "한국 수출 YoY",    value: exportsYoy,  fmt: pct,                                          sig: signal.exports, criterion: "↑ >+5%  →  ±5%  ↓ <-5%" },
-    { name: "VIX 공포지수",      value: vix,          fmt: (v) => v.toFixed(2),                                sig: signal.vix,     criterion: "↑ <20(안정)  →  20~30  ↓ >30(공포)" },
-    { name: "NFCI 금융환경",     value: nfci,         fmt: (v) => v.toFixed(3),                                sig: signal.nfci,    criterion: "↑ <-0.1(완화)  →  -0.1~0.5  ↓ >0.5(긴축)" },
-    { name: "한국 CLI",          value: korCli,       fmt: (v) => v.toFixed(2),                                sig: signal.korCli,  criterion: "↑ >100.2  →  99.5~100.2  ↓ <99.5" },
-    { name: "AAII 강세-약세",    value: aaiiSpread,   fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%p`,   sig: signal.aaii,    criterion: "↑ <-15%(극도 비관=역발상 매수)  →  ↓ >+15%(과열=역발상 매도)" },
+    { name: "달러 인덱스",            value: dxy,         fmt: (v) => v.toFixed(2),                         sig: signal.dxy,     criterion: "↑ <99  →  99~102  ↓ >102" },
+    { name: "미국 10년물 금리",        value: tnx,         fmt: (v) => `${v.toFixed(2)}%`,                   sig: signal.tnx,     criterion: "↑ <4.2%  →  4.2~4.5%  ↓ >4.5%" },
+    { name: "미국 장단기 금리차",      value: yieldSpread, fmt: (v) => `${v.toFixed(2)}%p`,                  sig: signal.spread,  criterion: "↑ >+0.5%p  →  0~0.5%p  ↓ 역전(<0)" },
+    { name: "미국 하이일드 스프레드",  value: hy,          fmt: (v) => `${v.toFixed(2)}%p`,                  sig: signal.hy,      criterion: "↑ <3.5%p  →  3.5~4.5%p  ↓ >4.5%p" },
+    { name: "미국 IG 회사채 스프레드", value: ig,          fmt: (v) => `${v.toFixed(2)}%p`,                  sig: signal.ig,      criterion: "↑ <1.2%p  →  1.2~1.8%p  ↓ >1.8%p" },
+    { name: "미국 CPI YoY",           value: cpiYoy,      fmt: pct,                                          sig: signal.cpi,     criterion: "↑ <2%  →  2~3.5%  ↓ >3.5%" },
+    { name: "미국 소비자심리지수",     value: umSent,      fmt: (v) => v.toFixed(1),                         sig: signal.umSent,  criterion: "↑ >80  →  60~80  ↓ <60" },
+    { name: "미국 실업률",            value: unrate,      fmt: (v) => `${v.toFixed(1)}%`,                   sig: signal.unrate,  criterion: "↑ <4%  →  4~5%  ↓ >5%" },
+    { name: "미국 M2 YoY",            value: m2Yoy,       fmt: pct,                                          sig: signal.m2,      criterion: "↑ >+3%  →  -1~+3%  ↓ <-1%" },
+    { name: "원달러 환율",            value: usdKrw,      fmt: (v) => `₩${Math.round(v).toLocaleString()}`,  sig: signal.usdKrw,  criterion: "↑ <1,350  →  1,350~1,500  ↓ >1,500" },
+    { name: "한국 수출 YoY",          value: exportsYoy,  fmt: pct,                                          sig: signal.exports, criterion: "↑ >+5%  →  -5~+5%  ↓ <-5%" },
+    { name: "VIX 공포지수",           value: vix,         fmt: (v) => v.toFixed(2),                         sig: signal.vix,     criterion: "↑ <20(안정)  →  20~30  ↓ >30(공포)" },
+    { name: "STLFSI 금융스트레스",    value: stlfsi,      fmt: (v) => v.toFixed(3),                         sig: signal.stlfsi,  criterion: "↑ <0(완화)  →  0~1  ↓ >1(스트레스)" },
+    { name: "한국 CLI",               value: korCli,      fmt: (v) => v.toFixed(2),                         sig: signal.korCli,  criterion: "↑ >100.2  →  99.5~100.2  ↓ <99.5" },
   ];
 
   const valid = indicators.map((i) => i.sig).filter((s) => s !== null);

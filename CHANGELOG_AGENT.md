@@ -4,6 +4,42 @@
 
 ---
 
+## 2026-06-10 20:13 - Hermes
+- Task: `web/quant_data.js`에 누락된 `sentiment` 데이터를 선별 포함하도록 웹 export 수정 및 대시보드 렌더링 재검증
+- Changed:
+  - `scripts/03_analyze/export_web_data.py` — 웹 UI가 쓰는 macro 키만 allowlist로 export, NAVER DataLab/pytrends/시장폭/레짐 조정 sentiment 포함, 대용량 `stock_detail`은 기본 제외(`include_stock_detail=False`)로 유지
+  - `web/quant_data.js` — 재생성 완료. top-level keys: `macro`, `money_flow`, `sentiment`, `valuation`; sentiment 40 keys 포함
+- Created (local, gitignored):
+  - `scratch/verify_dashboard_tabs_20260610.js` — Puppeteer 렌더링 검증 스크립트
+- Verification:
+  - `python scripts/03_analyze/export_web_data.py` → 완료, `web/quant_data.js` 34,208,120 bytes 생성
+  - JS 데이터 probe: sectorRows 2,310 / themeRows 396 / regimeRows 2,310 / pytrends_AI_daily 93 / pytrends_주식_monthly 262
+  - `python -m py_compile scripts/03_analyze/export_web_data.py` → 통과
+  - `node scratch/verify_dashboard_tabs_20260610.js` → `quant-sector-momentum` canvas 4/4 visible, `macro-industry` canvas 10/10 visible, macro/quant 주요 서브탭 렌더링 확인
+- Caveats:
+  - 브라우저 콘솔 404 1건은 `/favicon.ico`로 기능 영향 없음
+  - export 중 pandas `FutureWarning` 및 빈 `fred_barley_sorghum_monthly.csv` warning은 기존 데이터/타입 경고이며 이번 렌더링 차단 요인은 아님
+
+## 2026-06-10 (2) - Claude
+- Task: 신규 팩터 3종 구축 — ㉑사이즈(시가총액) ㉒배당수익률 ㉓유동성/거래회전율 (모두 기존 raw 데이터 재활용, 신규 수집 없음)
+- Created:
+  - `scripts/03_analyze/build_size_factors.py` — `stock_detail_{ticker}_market_cap` 기반 월말 시가총액 → log_market_cap, 횡단면 백분위, 3개월 시총 변화율 → small_cap_score
+  - `scripts/03_analyze/build_dividend_yield_factors.py` — `stock_market_snapshot_{kospi,kosdaq}_fundamental_by_ticker_20260605`(DIV/DPS) → 배당지급 종목 대상 백분위 점수 + 섹터 내 백분위 + 버킷
+  - `scripts/03_analyze/build_liquidity_turnover_factors.py` — `stock_detail_{ticker}_market_cap` 기반 월평균 거래대금/시총(회전율 proxy) + 자기 12개월 z-score → 횡단면 백분위 평균 → liquidity_score
+  - `tests/test_size_factors.py` — 8 passed
+  - `tests/test_dividend_yield_factors.py` — 9 passed
+  - `tests/test_liquidity_turnover_factors.py` — 8 passed
+- DB 신규 테이블 (백업: `data/database/quant_data_20260610_193119_before_3newfactors.sqlite`):
+  - `factor_size_month` (14,171행, 395종목, 2023-06~2026-06) / `factor_size_catalog` (6행) — 최신월(2026-06) 버킷: small 119 / mid 118 / micro 78 / large 60 / mega 20
+  - `factor_dividend_yield_snapshot` (2,721행, snapshot_date=2026-06-05, 배당지급 1,337종목) / `factor_dividend_yield_catalog` (7행) — 버킷: no_dividend 1384 / low 269 / very_high 268 / high 267 / very_low 267 / mid 266
+  - `factor_liquidity_turnover_month` (14,171행, 395종목, 2023-06~2026-06) / `factor_liquidity_turnover_catalog` (6행) — 최신월(2026-06) 버킷: neutral 119 / low 105 / high 88 / very_high 47 / very_low 36
+- 검증: `pytest tests/ -q` → **170 passed** (신규 25개 포함, pykrx deprecation warning 1건은 기존 이슈로 무관)
+- 주의사항:
+  1. `stock_detail_*_market_cap` 테이블은 396개 존재하나 60행 미만 1종목 제외 → 395종목만 ㉑㉓에 포함 (다른 OHLCV 기반 팩터의 종목 수 432와 차이 있음)
+  2. **㉒ 배당수익률은 단일 시점 펀더멘털 스냅샷**(2026-06-05) → 시계열 백테스트 불가, 횡단면 스크리닝 전용. 배당 미지급(DIV=0) 종목은 `dividend_bucket="no_dividend"`로 분리, 백분위 계산에서 제외(스큐 방지)
+  3. 콘솔 출력 한글 깨짐은 cp949/utf-8 터미널 인코딩 차이일 뿐 DB 저장값에는 영향 없음 (기존 스크립트와 동일한 현상)
+- Updated: `00_context/index_factor.md` (㉑㉒㉓ 요약표/상세섹션 추가, 팩터 결합 가이드·데이터 소스 요약 갱신, "20개"→"23개 팩터 패밀리"), `00_context/index.md` (신규 스크립트/테스트/DB 테이블/백업파일 등록)
+
 ## 2026-06-10 (1) - Claude
 - Task: 신규 팩터 4종 구축 — ⑰기술적 평균회귀(RSI/볼린저밴드/이격도) ⑱갭 트레이딩 신호 ⑲실적 모멘텀(어닝 가속도) ⑳섹터 ETF 자금흐름 (모두 기존 raw 데이터 재활용, 신규 수집 없음)
 - Created:

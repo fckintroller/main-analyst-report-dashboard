@@ -26,7 +26,7 @@ def _load_krx_names():
         return {}
 
 
-def _compute_derived_macro(quant_data, raw_data_dir):
+def _compute_derived_macro(quant_data, raw_data_dir, include_stock_detail=False):
     """수집된 CSV에서 파생 거시지표를 계산해 quant_data['macro']에 추가."""
     indices_dir = Path(raw_data_dir) / "macro" / "macro_indices"
     commod_dir  = Path(raw_data_dir) / "macro" / "commodities"
@@ -207,9 +207,11 @@ def _compute_derived_macro(quant_data, raw_data_dir):
             quant_data["macro"]["us_indpro_yoy"] = _records(res)
             logger.info(" - 파생: 미국 산업생산 YoY (%d rows)", len(res))
 
-    # ── 11. KOSPI 시총가중 PBR (개별 종목 fundamental에서 계산) ───────────
+    # ── 11. KOSPI 시총가중 PBR (개별 종목 fundamental에서 계산)
     # pykrx KRX 인증 없이 사용 가능한 폴백: stock_detail 수집 데이터 활용
-    _compute_kospi_pbr_from_stocks(quant_data, raw_data_dir)
+    # 기본 웹 export는 stock_detail 대용량 로드를 피하고 raw 파일 부작용도 만들지 않는다.
+    if include_stock_detail:
+        _compute_kospi_pbr_from_stocks(quant_data, raw_data_dir)
 
 
 def _compute_kospi_pbr_from_stocks(quant_data, raw_data_dir):
@@ -295,7 +297,7 @@ def _compute_kospi_pbr_from_stocks(quant_data, raw_data_dir):
         logger.warning(" - KOSPI PBR 계산 실패 (건너뜀): %s", e)
 
 
-def collect_quant_data(raw_data_dir, krx_dict=None):
+def collect_quant_data(raw_data_dir, krx_dict=None, include_stock_detail=False):
     raw_data_dir = Path(raw_data_dir)
     krx_dict = krx_dict if krx_dict is not None else _load_krx_names()
 
@@ -304,13 +306,42 @@ def collect_quant_data(raw_data_dir, krx_dict=None):
         "money_flow": {},
         "sentiment": {},
         "valuation": {},
-        "stock_detail": {"tickers": {}, "snapshots": {}},
     }
+    if include_stock_detail:
+        quant_data["stock_detail"] = {"tickers": {}, "snapshots": {}}
 
     # 1. Macro Data 추출
-    for file in glob.glob(str(raw_data_dir / "macro" / "**" / "*.csv"), recursive=True):
+    # 같은 stem이 여러 하위 폴더에 있으면 대시보드 지표용 원시 시계열(macro_indices)을
+    # canonical source로 유지한다. 예: CPIAUCSL/UNRATE는 release_history에도 같은 파일명이
+    # 있지만, 스코어카드는 장기 원시 시계열을 사용해야 YoY/최신값 계산이 정상 동작한다.
+    macro_files = sorted(
+        (raw_data_dir / "macro").glob("**/*.csv"),
+        key=lambda p: (0 if p.parent.name == "macro_indices" else 1, str(p)),
+    )
+    macro_allowlist = {
+        # UI에서 직접 사용하는 매크로/금리/원자재/스코어카드 키
+        "BAMLC0A0CM", "BAMLH0A0HYM2", "BRA_CLI", "CHN_CLI", "CPIAUCSL",
+        "DEU_CLI", "DGS10", "DGS2", "DXY", "FRA_CLI", "GBR_CLI", "Gold",
+        "IND_CLI", "JPN_CLI", "KOR_BASE_RATE", "KOR_CALL_RATE", "KOR_CD91",
+        "KOR_CLI", "KOR_CORP_AA", "KOR_EXPORTS", "KOR_GOV10Y", "KOR_GOV3Y",
+        "KOR_GOV5Y", "M2SL", "NFCI", "STLFSI4", "TNX", "UMCSENT",
+        "UNRATE", "USA_CLI", "USD_KRW", "VIX", "WALCL", "WTI",
+        # 파생지표 계산용 소스
+        "Copper", "WTREGEN", "RRPONTSYD", "AAIIBULL", "AAIIBEAR", "EEM", "SOXX",
+        "US_TOTLL", "US_GDP", "KOR_CORP_BBB", "Brent", "US_INDPRO",
+    }
+    for file in macro_files:
         name = Path(file).stem
+        if name not in macro_allowlist:
+            continue
         try:
+            if name in quant_data["macro"]:
+                logger.warning(
+                    "Duplicate macro key %s skipped: keeping existing source, ignored %s",
+                    name,
+                    file,
+                )
+                continue
             quant_data["macro"][name] = _records_from_csv(file)
         except Exception as e:
             logger.warning("Error reading %s: %s", file, e)
@@ -377,11 +408,16 @@ def collect_quant_data(raw_data_dir, krx_dict=None):
             except Exception as e:
                 logger.warning("Error reading %s: %s", f, e)
 
-    # 퀀트 팩터 (data/raw/factors/) — regime, regime_adjusted 등
+    # 퀀트 팩터 (data/raw/factors/) — 웹 대시보드가 직접 참조하는 관심도/레짐 파일만 선별 로드
     factors_dir = raw_data_dir / "factors"
     if factors_dir.exists():
         quant_data["sentiment"]["factors"] = {}
-        for f in sorted(factors_dir.glob("*.csv")):
+        factor_allowlist = {
+            "market_macro_regime_month.csv",
+            "regime_adjusted_sector_interest_month.csv",
+            "regime_adjusted_factor_catalog.csv",
+        }
+        for f in sorted(p for p in factors_dir.glob("*.csv") if p.name in factor_allowlist):
             try:
                 df = pd.read_csv(f)
                 df.fillna("", inplace=True)
@@ -391,28 +427,29 @@ def collect_quant_data(raw_data_dir, krx_dict=None):
                 logger.warning("Error reading %s: %s", f, e)
 
     # KRX 전종목 스냅샷 (stock_market_snapshot/) — 최신 날짜 파일만 로드
-    snap_dir = raw_data_dir / "stock_market_snapshot"
-    if snap_dir.exists():
-        snap_files = sorted(snap_dir.glob("*.csv"))
-        # 날짜별로 그룹화해서 최신 날짜만 사용
-        from collections import defaultdict
-        date_groups: dict = defaultdict(list)
-        import re as _re
-        for f in snap_files:
-            m = _re.search(r"(\d{8})\.csv$", f.name)
-            if m:
-                date_groups[m.group(1)].append(f)
-        if date_groups:
-            latest_date = max(date_groups)
-            for f in date_groups[latest_date]:
-                key = _re.sub(r"_\d{8}$", "", f.stem)  # 날짜 제거
-                try:
-                    df = pd.read_csv(f, dtype=str)
-                    df.fillna("", inplace=True)
-                    quant_data["stock_detail"]["snapshots"][key] = df.to_dict(orient="records")
-                    logger.info(" - stock_market_snapshot/%s: %d rows", key, len(df))
-                except Exception as e:
-                    logger.warning("Error reading %s: %s", f, e)
+    if include_stock_detail:
+        snap_dir = raw_data_dir / "stock_market_snapshot"
+        if snap_dir.exists():
+            snap_files = sorted(snap_dir.glob("*.csv"))
+            # 날짜별로 그룹화해서 최신 날짜만 사용
+            from collections import defaultdict
+            date_groups: dict = defaultdict(list)
+            import re as _re
+            for f in snap_files:
+                m = _re.search(r"(\d{8})\.csv$", f.name)
+                if m:
+                    date_groups[m.group(1)].append(f)
+            if date_groups:
+                latest_date = max(date_groups)
+                for f in date_groups[latest_date]:
+                    key = _re.sub(r"_\d{8}$", "", f.stem)  # 날짜 제거
+                    try:
+                        df = pd.read_csv(f, dtype=str)
+                        df.fillna("", inplace=True)
+                        quant_data["stock_detail"]["snapshots"][key] = df.to_dict(orient="records")
+                        logger.info(" - stock_market_snapshot/%s: %d rows", key, len(df))
+                    except Exception as e:
+                        logger.warning("Error reading %s: %s", f, e)
 
     # 4. Valuation Data 추출
     for file in glob.glob(str(raw_data_dir / "valuation" / "*.csv")):
@@ -429,34 +466,35 @@ def collect_quant_data(raw_data_dir, krx_dict=None):
             logger.warning("Error reading %s: %s", file, e)
 
     # 5. Stock Detail Data 추출
-    stock_detail_dir = raw_data_dir / "stock_detail"
-    if stock_detail_dir.exists():
-        for file in sorted(stock_detail_dir.glob("*.csv")):
-            key = file.stem
-            try:
-                quant_data["stock_detail"]["snapshots"][key] = _records_from_csv(file, dtype={"ticker": str, "Code": str})
-            except Exception as e:
-                logger.warning("Error reading %s: %s", file, e)
-
-        for ticker_dir in sorted(p for p in stock_detail_dir.iterdir() if p.is_dir()):
-            ticker = ticker_dir.name
-            ticker_payload = {"name": krx_dict.get(ticker, ticker)}
-            for file in sorted(ticker_dir.glob("*.csv")):
+    if include_stock_detail:
+        stock_detail_dir = raw_data_dir / "stock_detail"
+        if stock_detail_dir.exists():
+            for file in sorted(stock_detail_dir.glob("*.csv")):
                 key = file.stem
                 try:
-                    ticker_payload[key] = _records_from_csv(file)
+                    quant_data["stock_detail"]["snapshots"][key] = _records_from_csv(file, dtype={"ticker": str, "Code": str})
                 except Exception as e:
                     logger.warning("Error reading %s: %s", file, e)
-            if len(ticker_payload) > 1:
-                quant_data["stock_detail"]["tickers"][ticker] = ticker_payload
+
+            for ticker_dir in sorted(p for p in stock_detail_dir.iterdir() if p.is_dir()):
+                ticker = ticker_dir.name
+                ticker_payload = {"name": krx_dict.get(ticker, ticker)}
+                for file in sorted(ticker_dir.glob("*.csv")):
+                    key = file.stem
+                    try:
+                        ticker_payload[key] = _records_from_csv(file)
+                    except Exception as e:
+                        logger.warning("Error reading %s: %s", file, e)
+                if len(ticker_payload) > 1:
+                    quant_data["stock_detail"]["tickers"][ticker] = ticker_payload
 
     # 6. 파생 거시지표 계산 (원본 CSV에서 직접 계산)
-    _compute_derived_macro(quant_data, raw_data_dir)
+    _compute_derived_macro(quant_data, raw_data_dir, include_stock_detail=include_stock_detail)
 
     return quant_data
 
 
-def export_to_web(raw_data_dir=None, web_dir=None, krx_dict=None):
+def export_to_web(raw_data_dir=None, web_dir=None, krx_dict=None, include_stock_detail=False):
     logger.info("=== 웹 대시보드 연동 JSON/JS 파일 생성 시작 ===")
 
     base_dir = Path(__file__).resolve().parent
@@ -464,7 +502,7 @@ def export_to_web(raw_data_dir=None, web_dir=None, krx_dict=None):
     web_dir = Path(web_dir) if web_dir is not None else (base_dir / ".." / ".." / "web").resolve()
     web_dir.mkdir(parents=True, exist_ok=True)
 
-    quant_data = collect_quant_data(raw_data_dir, krx_dict=krx_dict)
+    quant_data = collect_quant_data(raw_data_dir, krx_dict=krx_dict, include_stock_detail=include_stock_detail)
     js_content = "window.QUANT_DATA = " + json.dumps(quant_data, ensure_ascii=False) + ";"
 
     output_path = web_dir / "quant_data.js"
