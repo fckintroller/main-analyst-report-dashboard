@@ -575,6 +575,8 @@
                   <option value="score_momentum_flow">모멘텀+수급</option>
                   <option value="score_value_quality">가치+퀄리티</option>
                   <option value="score_base_5factor">기본 5팩터</option>
+                  <option value="score_reversal_value_flow">저평가 반등</option>
+                  <option value="score_short_squeeze_addon">숏커버 보조</option>
                   <option value="market_cap">시가총액</option>
                   <option value="this_year_op_growth_pct">올해 영익 성장률</option>
                   <option value="next_year_op_growth_pct">내년 영익 성장률</option>
@@ -592,9 +594,10 @@
           </div>
 
           <div class="data-card" style="margin-bottom:16px;">
-            <h3 style="color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-sliders"></i> 회귀분석 시나리오</h3>
+            <h3 style="color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-sliders"></i> 팩터 시나리오 · TopN 백테스트</h3>
             <div id="regression-scenario-toggles" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px,1fr)); gap:10px;"></div>
             <div id="regression-scenario-detail" style="margin-top:12px; padding:12px; border:1px solid var(--card-border); border-radius:8px; color:var(--text-sub); font-size:0.86rem; background:var(--btn-bg);"></div>
+            <div id="scenario-backtest-summary" style="margin-top:12px; padding:12px; border:1px solid var(--card-border); border-radius:8px; background:rgba(4, 120, 87, 0.04);"></div>
           </div>
 
           <div class="table-responsive" style="max-height:620px; overflow:auto;">

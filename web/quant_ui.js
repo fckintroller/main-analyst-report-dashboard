@@ -803,11 +803,14 @@ const STOCK_SCENARIOS = {
     factors: ["저PBR", "ROE", "장기 모멘텀"]
   }
 };
+const STOCK_BACKTEST_SUMMARY = [{"scoreKey":"score_momentum_flow","scenario":"momentum_flow","label":"모멘텀+수급","topn":20,"horizon_m":1,"periods":12,"avg_forward_return":0.076694,"avg_benchmark_return":0.044439,"avg_excess_return":0.032255,"hit_rate_vs_benchmark":0.583333,"max_drawdown_chain":-0.053629},{"scoreKey":"score_base_5factor","scenario":"base_5factor","label":"기본 5팩터","topn":20,"horizon_m":1,"periods":35,"avg_forward_return":0.046846,"avg_benchmark_return":0.024174,"avg_excess_return":0.022672,"hit_rate_vs_benchmark":0.485714,"max_drawdown_chain":-0.173072},{"scoreKey":"score_momentum_flow","scenario":"momentum_flow","label":"모멘텀+수급","topn":30,"horizon_m":1,"periods":12,"avg_forward_return":0.060948,"avg_benchmark_return":0.044439,"avg_excess_return":0.016508,"hit_rate_vs_benchmark":0.666667,"max_drawdown_chain":-0.105099},{"scoreKey":"score_base_5factor","scenario":"base_5factor","label":"기본 5팩터","topn":30,"horizon_m":1,"periods":35,"avg_forward_return":0.038326,"avg_benchmark_return":0.024174,"avg_excess_return":0.014152,"hit_rate_vs_benchmark":0.514286,"max_drawdown_chain":-0.16701},{"scoreKey":"score_reversal_value_flow","scenario":"reversal_value_flow","label":"저평가 반등","topn":20,"horizon_m":1,"periods":12,"avg_forward_return":0.04992,"avg_benchmark_return":0.044439,"avg_excess_return":0.005481,"hit_rate_vs_benchmark":0.583333,"max_drawdown_chain":-0.109645},{"scoreKey":"market_attractiveness_score","scenario":"composite_attractiveness","label":"종합 매력도","topn":20,"horizon_m":1,"periods":35,"avg_forward_return":0.02893,"avg_benchmark_return":0.024174,"avg_excess_return":0.004756,"hit_rate_vs_benchmark":0.4,"max_drawdown_chain":-0.199582},{"scoreKey":"score_value_quality","scenario":"value_quality","label":"가치+퀄리티","topn":20,"horizon_m":1,"periods":33,"avg_forward_return":0.02921,"avg_benchmark_return":0.027027,"avg_excess_return":0.002183,"hit_rate_vs_benchmark":0.454545,"max_drawdown_chain":-0.171149},{"scoreKey":"market_attractiveness_score","scenario":"composite_attractiveness","label":"종합 매력도","topn":30,"horizon_m":1,"periods":35,"avg_forward_return":0.024763,"avg_benchmark_return":0.024174,"avg_excess_return":0.000589,"hit_rate_vs_benchmark":0.428571,"max_drawdown_chain":-0.188473},{"scoreKey":"score_value_quality","scenario":"value_quality","label":"가치+퀄리티","topn":30,"horizon_m":1,"periods":33,"avg_forward_return":0.027248,"avg_benchmark_return":0.027027,"avg_excess_return":0.000221,"hit_rate_vs_benchmark":0.484848,"max_drawdown_chain":-0.16335},{"scoreKey":"score_reversal_value_flow","scenario":"reversal_value_flow","label":"저평가 반등","topn":30,"horizon_m":1,"periods":12,"avg_forward_return":0.038316,"avg_benchmark_return":0.044439,"avg_excess_return":-0.006123,"hit_rate_vs_benchmark":0.5,"max_drawdown_chain":-0.125426},{"scoreKey":"score_momentum_flow","scenario":"momentum_flow","label":"모멘텀+수급","topn":20,"horizon_m":3,"periods":10,"avg_forward_return":0.223871,"avg_benchmark_return":0.152107,"avg_excess_return":0.071764,"hit_rate_vs_benchmark":0.7,"max_drawdown_chain":0.0},{"scoreKey":"score_momentum_flow","scenario":"momentum_flow","label":"모멘텀+수급","topn":30,"horizon_m":3,"periods":10,"avg_forward_return":0.206249,"avg_benchmark_return":0.152107,"avg_excess_return":0.054142,"hit_rate_vs_benchmark":0.7,"max_drawdown_chain":0.0},{"scoreKey":"score_base_5factor","scenario":"base_5factor","label":"기본 5팩터","topn":20,"horizon_m":3,"periods":33,"avg_forward_return":0.133166,"avg_benchmark_return":0.079048,"avg_excess_return":0.054118,"hit_rate_vs_benchmark":0.666667,"max_drawdown_chain":-0.184317},{"scoreKey":"score_base_5factor","scenario":"base_5factor","label":"기본 5팩터","topn":30,"horizon_m":3,"periods":33,"avg_forward_return":0.119177,"avg_benchmark_return":0.079048,"avg_excess_return":0.040129,"hit_rate_vs_benchmark":0.636364,"max_drawdown_chain":-0.214582},{"scoreKey":"market_attractiveness_score","scenario":"composite_attractiveness","label":"종합 매력도","topn":30,"horizon_m":3,"periods":33,"avg_forward_return":0.09231,"avg_benchmark_return":0.079048,"avg_excess_return":0.013262,"hit_rate_vs_benchmark":0.454545,"max_drawdown_chain":-0.347494},{"scoreKey":"market_attractiveness_score","scenario":"composite_attractiveness","label":"종합 매력도","topn":20,"horizon_m":3,"periods":33,"avg_forward_return":0.090575,"avg_benchmark_return":0.079048,"avg_excess_return":0.011527,"hit_rate_vs_benchmark":0.454545,"max_drawdown_chain":-0.330506},{"scoreKey":"score_value_quality","scenario":"value_quality","label":"가치+퀄리티","topn":30,"horizon_m":3,"periods":31,"avg_forward_return":0.097089,"avg_benchmark_return":0.088703,"avg_excess_return":0.008386,"hit_rate_vs_benchmark":0.483871,"max_drawdown_chain":-0.288919},{"scoreKey":"score_value_quality","scenario":"value_quality","label":"가치+퀄리티","topn":20,"horizon_m":3,"periods":31,"avg_forward_return":0.095503,"avg_benchmark_return":0.088703,"avg_excess_return":0.0068,"hit_rate_vs_benchmark":0.516129,"max_drawdown_chain":-0.289683},{"scoreKey":"score_reversal_value_flow","scenario":"reversal_value_flow","label":"저평가 반등","topn":20,"horizon_m":3,"periods":10,"avg_forward_return":0.153806,"avg_benchmark_return":0.152107,"avg_excess_return":0.001699,"hit_rate_vs_benchmark":0.6,"max_drawdown_chain":0.0},{"scoreKey":"score_reversal_value_flow","scenario":"reversal_value_flow","label":"저평가 반등","topn":30,"horizon_m":3,"periods":10,"avg_forward_return":0.131828,"avg_benchmark_return":0.152107,"avg_excess_return":-0.020279,"hit_rate_vs_benchmark":0.5,"max_drawdown_chain":0.0},{"scoreKey":"score_base_5factor","scenario":"base_5factor","label":"기본 5팩터","topn":20,"horizon_m":6,"periods":30,"avg_forward_return":0.264517,"avg_benchmark_return":0.177009,"avg_excess_return":0.087508,"hit_rate_vs_benchmark":0.666667,"max_drawdown_chain":-0.192694},{"scoreKey":"score_base_5factor","scenario":"base_5factor","label":"기본 5팩터","topn":30,"horizon_m":6,"periods":30,"avg_forward_return":0.250908,"avg_benchmark_return":0.177009,"avg_excess_return":0.073899,"hit_rate_vs_benchmark":0.7,"max_drawdown_chain":-0.202618},{"scoreKey":"score_momentum_flow","scenario":"momentum_flow","label":"모멘텀+수급","topn":20,"horizon_m":6,"periods":7,"avg_forward_return":0.419391,"avg_benchmark_return":0.360002,"avg_excess_return":0.059389,"hit_rate_vs_benchmark":0.714286,"max_drawdown_chain":0.0},{"scoreKey":"score_momentum_flow","scenario":"momentum_flow","label":"모멘텀+수급","topn":30,"horizon_m":6,"periods":7,"avg_forward_return":0.393795,"avg_benchmark_return":0.360002,"avg_excess_return":0.033793,"hit_rate_vs_benchmark":0.571429,"max_drawdown_chain":0.0},{"scoreKey":"market_attractiveness_score","scenario":"composite_attractiveness","label":"종합 매력도","topn":20,"horizon_m":6,"periods":30,"avg_forward_return":0.199176,"avg_benchmark_return":0.177009,"avg_excess_return":0.022167,"hit_rate_vs_benchmark":0.466667,"max_drawdown_chain":-0.442576},{"scoreKey":"market_attractiveness_score","scenario":"composite_attractiveness","label":"종합 매력도","topn":30,"horizon_m":6,"periods":30,"avg_forward_return":0.199068,"avg_benchmark_return":0.177009,"avg_excess_return":0.022059,"hit_rate_vs_benchmark":0.533333,"max_drawdown_chain":-0.368338},{"scoreKey":"score_value_quality","scenario":"value_quality","label":"가치+퀄리티","topn":30,"horizon_m":6,"periods":28,"avg_forward_return":0.191079,"avg_benchmark_return":0.189451,"avg_excess_return":0.001629,"hit_rate_vs_benchmark":0.285714,"max_drawdown_chain":-0.416693},{"scoreKey":"score_value_quality","scenario":"value_quality","label":"가치+퀄리티","topn":20,"horizon_m":6,"periods":28,"avg_forward_return":0.188207,"avg_benchmark_return":0.189451,"avg_excess_return":-0.001244,"hit_rate_vs_benchmark":0.357143,"max_drawdown_chain":-0.475373},{"scoreKey":"score_reversal_value_flow","scenario":"reversal_value_flow","label":"저평가 반등","topn":20,"horizon_m":6,"periods":7,"avg_forward_return":0.311828,"avg_benchmark_return":0.360002,"avg_excess_return":-0.048174,"hit_rate_vs_benchmark":0.428571,"max_drawdown_chain":0.0},{"scoreKey":"score_reversal_value_flow","scenario":"reversal_value_flow","label":"저평가 반등","topn":30,"horizon_m":6,"periods":7,"avg_forward_return":0.307367,"avg_benchmark_return":0.360002,"avg_excess_return":-0.052634,"hit_rate_vs_benchmark":0.428571,"max_drawdown_chain":0.0}];
+
 window.activeStockQuickFilters = window.activeStockQuickFilters || new Set();
 window.activeStockScenario = window.activeStockScenario || "market_attractiveness_score";
 
 function stockNum(value) {
-  const n = Number(String(value ?? "").replace(/,/g, ""));
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(String(value).replace(/,/g, ""));
   return Number.isFinite(n) ? n : null;
 }
 
@@ -837,6 +840,63 @@ function scenarioScore(row) {
   const key = window.activeStockScenario || "market_attractiveness_score";
   if (key.startsWith("horizon_")) return row.market_attractiveness_score;
   return row[key] ?? row.market_attractiveness_score;
+}
+
+function fmtBacktestPct(value, digits = 1) {
+  const n = stockNum(value);
+  if (n === null) return "-";
+  const sign = n > 0 ? "+" : "";
+  return `${sign}${(n * 100).toFixed(digits)}%`;
+}
+
+function selectedScenarioKey() {
+  const key = window.activeStockScenario || "market_attractiveness_score";
+  return key.startsWith("horizon_") ? "market_attractiveness_score" : key;
+}
+
+function buildScenarioRanks(rows, scoreKey) {
+  const ranked = rows
+    .map(row => ({ row, score: stockNum(row[scoreKey]) }))
+    .filter(item => item.score !== null)
+    .sort((a, b) => b.score - a.score);
+  const ranks = new Map();
+  ranked.forEach((item, idx) => ranks.set(item.row.ticker, idx + 1));
+  return { ranks, validCount: ranked.length };
+}
+
+function renderScenarioBacktestSummary(scoreKey, validCount, totalCount) {
+  const el = document.getElementById("scenario-backtest-summary");
+  if (!el) return;
+  const metrics = STOCK_BACKTEST_SUMMARY
+    .filter(r => r.scoreKey === scoreKey)
+    .sort((a, b) => a.horizon_m - b.horizon_m || a.topn - b.topn);
+  if (!metrics.length) {
+    el.innerHTML = `
+      <div style="color:var(--text-sub); font-size:0.84rem;">현재 선택 시나리오는 별도 TopN 백테스트 요약이 없습니다.</div>
+      <div style="color:var(--text-sub); font-size:0.78rem; margin-top:6px;">점수 산정 가능 종목 ${validCount.toLocaleString("ko-KR")}개 / 전체 ${totalCount.toLocaleString("ko-KR")}개</div>
+    `;
+    return;
+  }
+  const best = metrics.reduce((acc, r) => (!acc || r.avg_excess_return > acc.avg_excess_return ? r : acc), null);
+  el.innerHTML = `
+    <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
+      <div>
+        <div style="font-weight:900; color:var(--text-heading);">TopN 백테스트 요약 · 전체 종목 시나리오 순위 적용</div>
+        <div style="color:var(--text-sub); font-size:0.78rem; margin-top:3px;">점수 산정 가능 종목 ${validCount.toLocaleString("ko-KR")}개 / 전체 ${totalCount.toLocaleString("ko-KR")}개 · 결측은 임의 보정하지 않음</div>
+      </div>
+      <div style="color:#10b981; font-weight:900;">최고 초과수익 ${fmtBacktestPct(best?.avg_excess_return)}</div>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:8px;">
+      ${metrics.map(r => `
+        <div style="border:1px solid var(--card-border); border-radius:8px; padding:10px; background:var(--btn-bg);">
+          <div style="font-weight:800; color:var(--text-heading);">Top${r.topn} · ${r.horizon_m}개월</div>
+          <div style="font-size:0.78rem; color:var(--text-sub); margin-top:5px;">평균 ${fmtBacktestPct(r.avg_forward_return)} / 벤치 ${fmtBacktestPct(r.avg_benchmark_return)}</div>
+          <div style="font-size:0.78rem; color:${r.avg_excess_return >= 0 ? "#10b981" : "#ef4444"}; font-weight:800;">초과 ${fmtBacktestPct(r.avg_excess_return)} · 승률 ${fmtBacktestPct(r.hit_rate_vs_benchmark, 0)}</div>
+          <div style="font-size:0.72rem; color:var(--text-sub);">표본 ${r.periods}개월 · MDD ${fmtBacktestPct(r.max_drawdown_chain)}</div>
+        </div>
+      `).join("")}
+    </div>
+  `;
 }
 
 function renderScenarioToggles() {
@@ -920,6 +980,9 @@ function renderStockAttractiveness() {
   if (!window.activeStockScenario || (!window.activeStockScenario.startsWith("horizon_") && window.activeStockScenario !== sortKey)) {
     window.activeStockScenario = sortKey;
   }
+  const scoreKey = selectedScenarioKey();
+  const { ranks: scenarioRanks, validCount: scenarioValidCount } = buildScenarioRanks(rows, scoreKey);
+  renderScenarioBacktestSummary(scoreKey, scenarioValidCount, rows.length);
 
   let filtered = rows.filter(row => {
     if (term && !(`${row.name || ""} ${row.ticker || ""}`.toLowerCase().includes(term))) return false;
@@ -936,6 +999,7 @@ function renderStockAttractiveness() {
 
   tbody.innerHTML = display.map(row => {
     const score = scenarioScore(row);
+    const rank = scenarioRanks.get(row.ticker);
     const scorePct = score == null ? "-" : `${(score * 100).toFixed(1)}점`;
     const scoreColor = score == null ? "var(--text-sub)" : score >= 0.65 ? "#10b981" : score >= 0.5 ? "#f59e0b" : "#ef4444";
     const growthThis = fmtPctValue(row.this_year_op_growth_pct);
@@ -967,6 +1031,7 @@ function renderStockAttractiveness() {
         <td>
           <div style="font-weight:900; color:${scoreColor};">${scorePct}</div>
           <div style="font-size:0.75rem; color:var(--text-sub); margin-top:3px;">${html(scenario.label)}</div>
+          <div style="font-size:0.72rem; color:var(--text-sub); margin-top:3px;">전체순위 ${rank ? `#${rank.toLocaleString("ko-KR")}/${scenarioValidCount.toLocaleString("ko-KR")}` : "산정불가"}</div>
           <div style="font-size:0.72rem; color:var(--text-sub); margin-top:3px;">종합 ${row.market_attractiveness_score == null ? "-" : (row.market_attractiveness_score * 100).toFixed(1)}</div>
         </td>
       </tr>
@@ -974,7 +1039,7 @@ function renderStockAttractiveness() {
   }).join("") || '<tr><td colspan="7" style="text-align:center; padding:22px; color:var(--text-sub);">조건에 맞는 종목이 없습니다.</td></tr>';
 
   const count = document.getElementById("stock-attractiveness-count");
-  if (count) count.textContent = `검색 결과 ${filtered.length.toLocaleString("ko-KR")}개 / 화면 표시 ${display.length.toLocaleString("ko-KR")}개`;
+  if (count) count.textContent = `검색 결과 ${filtered.length.toLocaleString("ko-KR")}개 / 화면 표시 ${display.length.toLocaleString("ko-KR")}개 · ${scenario.label} 산정 가능 ${scenarioValidCount.toLocaleString("ko-KR")}개`;
 }
 window.renderStockAttractiveness = renderStockAttractiveness;
 
