@@ -26,6 +26,275 @@ def _load_krx_names():
         return {}
 
 
+
+def _safe_number(value):
+    try:
+        if value is None or value == "":
+            return None
+        num = float(str(value).replace(",", ""))
+        if pd.isna(num):
+            return None
+        return num
+    except Exception:
+        return None
+
+
+def _latest_table_rows(conn, table_name, ticker_col="ticker", date_col="period"):
+    """테이블별 최신 행을 ticker 기준 1건으로 축약."""
+    try:
+        df = pd.read_sql_query(f'SELECT * FROM "{table_name}"', conn)
+    except Exception:
+        return pd.DataFrame()
+    if df.empty or ticker_col not in df.columns:
+        return pd.DataFrame()
+    if date_col in df.columns:
+        df = df.sort_values([ticker_col, date_col])
+    return df.groupby(ticker_col, as_index=False).tail(1)
+
+
+def _parse_earnings_consensus_record(item):
+    """네이버 컨센서스 raw JSON에서 최근/올해/내년 영업이익과 가치지표 추출."""
+    try:
+        raw = json.loads(item.get("consensus_raw") or "{}")
+        cols = list(raw.keys())
+        label_col = next((c for c in cols if "주요재무정보" in c), None)
+        if not label_col:
+            return {}
+
+        def find_row(names):
+            return next(
+                (k for k in raw[label_col].keys()
+                 if any(name in str(raw[label_col][k]) for name in names)),
+                None,
+            )
+
+        op_row = find_row(["영업이익"])
+        eps_row = find_row(["EPS"])
+        per_row = find_row(["PER"])
+        bps_row = find_row(["BPS"])
+        pbr_row = find_row(["PBR"])
+        if op_row is None:
+            return {}
+
+        year_cols = sorted([c for c in cols if "연간" in c])
+        if len(year_cols) < 3:
+            return {}
+        last_year_col, this_year_col, next_year_col = year_cols[-3:]
+
+        last_op = _safe_number(raw[last_year_col].get(op_row))
+        this_op = _safe_number(raw[this_year_col].get(op_row))
+        next_op = _safe_number(raw[next_year_col].get(op_row))
+
+        def pct(curr, prev):
+            if curr is None or prev in (None, 0):
+                return None
+            return round((curr - prev) / abs(prev) * 100, 2)
+
+        return {
+            "recent_op_profit": last_op,
+            "this_year_op_profit_est": this_op,
+            "next_year_op_profit_est": next_op,
+            "this_year_op_growth_pct": pct(this_op, last_op),
+            "next_year_op_growth_pct": pct(next_op, this_op),
+            "consensus_last_year_col": last_year_col,
+            "consensus_this_year_col": this_year_col,
+            "consensus_next_year_col": next_year_col,
+            "consensus_per": _safe_number(raw[last_year_col].get(per_row)) if per_row else None,
+            "consensus_pbr": _safe_number(raw[last_year_col].get(pbr_row)) if pbr_row else None,
+            "consensus_eps": _safe_number(raw[last_year_col].get(eps_row)) if eps_row else None,
+            "consensus_bps": _safe_number(raw[last_year_col].get(bps_row)) if bps_row else None,
+        }
+    except Exception:
+        return {}
+
+
+def _build_stock_attractiveness(raw_data_dir, krx_dict):
+    """웹 검색/필터용 종목 시장 매력도 payload 생성.
+
+    CSV 산출물이 아니라 GitHub Pages에서 즉시 검색 가능한 축약 JSON을 만든다.
+    최신 KRX 스냅샷 + 컨센서스 + 주요 팩터 최신값을 ticker 단위로 결합한다.
+    """
+    raw_data_dir = Path(raw_data_dir)
+    snap_dir = raw_data_dir / "stock_market_snapshot"
+    if not snap_dir.exists():
+        return {"as_of": "", "rows": []}
+
+    import re
+    dates = []
+    for f in snap_dir.glob("*_market_cap_by_ticker_*.csv"):
+        m = re.search(r"_(\d{8})\.csv$", f.name)
+        if m:
+            dates.append(m.group(1))
+    if not dates:
+        return {"as_of": "", "rows": []}
+    latest_date = max(dates)
+    as_of = f"{latest_date[:4]}-{latest_date[4:6]}-{latest_date[6:]}"
+
+    names = {}
+    names_path = snap_dir / f"ticker_names_{latest_date}.csv"
+    if names_path.exists():
+        try:
+            names_df = pd.read_csv(names_path, dtype={"ticker": str})
+            names = dict(zip(names_df["ticker"].str.zfill(6), names_df["name"]))
+        except Exception:
+            names = {}
+    if krx_dict:
+        names.update({str(k).zfill(6): v for k, v in krx_dict.items()})
+
+    frames = []
+    for market in ["kospi", "kosdaq"]:
+        cap_path = snap_dir / f"{market}_market_cap_by_ticker_{latest_date}.csv"
+        fund_path = snap_dir / f"{market}_fundamental_by_ticker_{latest_date}.csv"
+        if not cap_path.exists():
+            continue
+        cap = pd.read_csv(cap_path, dtype={"티커": str})
+        cap["ticker"] = cap["티커"].astype(str).str.zfill(6)
+        cap["market"] = market.upper()
+        for col in ["종가", "시가총액", "거래량", "거래대금", "상장주식수"]:
+            if col in cap.columns:
+                cap[col] = pd.to_numeric(cap[col], errors="coerce")
+        if fund_path.exists():
+            fund = pd.read_csv(fund_path, dtype={"티커": str})
+            fund["ticker"] = fund["티커"].astype(str).str.zfill(6)
+            for col in ["BPS", "PER", "PBR", "EPS", "DIV", "DPS"]:
+                if col in fund.columns:
+                    fund[col] = pd.to_numeric(fund[col], errors="coerce")
+            cap = cap.merge(fund.drop(columns=["티커"], errors="ignore"), on="ticker", how="left")
+        frames.append(cap)
+    if not frames:
+        return {"as_of": as_of, "rows": []}
+
+    base = pd.concat(frames, ignore_index=True)
+    base["name"] = base["ticker"].map(names).fillna(base["ticker"])
+    base = base.sort_values("시가총액", ascending=False)
+    base["market_cap_rank_all"] = range(1, len(base) + 1)
+    base["market_cap_rank_market"] = base.groupby("market")["시가총액"].rank(method="first", ascending=False)
+    base["kospi200_proxy"] = (base["market"].eq("KOSPI") & (base["market_cap_rank_market"] <= 200)).astype(int)
+
+    def size_bucket(row):
+        cap = row.get("시가총액")
+        rank = row.get("market_cap_rank_market")
+        if pd.isna(cap) or pd.isna(rank):
+            return "unknown"
+        if cap >= 10_000_000_000_000 or rank <= 100:
+            return "large"
+        if cap >= 1_000_000_000_000 or rank <= 300:
+            return "mid"
+        return "small"
+    base["size_bucket"] = base.apply(size_bucket, axis=1)
+
+    consensus_path = raw_data_dir / "valuation" / "earnings_consensus.csv"
+    consensus_map = {}
+    if consensus_path.exists():
+        try:
+            cdf = pd.read_csv(consensus_path, dtype={"ticker": str})
+            for rec in cdf.fillna("").to_dict(orient="records"):
+                t = str(rec.get("ticker", "")).zfill(6)
+                consensus_map[t] = _parse_earnings_consensus_record(rec)
+        except Exception as e:
+            logger.warning("stock_attractiveness 컨센서스 파싱 실패: %s", e)
+
+    db_path = raw_data_dir.parent / "database" / "quant_data.sqlite"
+    factor_frames = []
+    if db_path.exists():
+        try:
+            import sqlite3
+            conn = sqlite3.connect(db_path)
+            table_specs = [
+                ("factor_valuation_per_pbr_month", "period", ["sector", "valuation_score", "per_percentile_sector", "pbr_percentile_sector", "pbr_zscore_own_24m"]),
+                ("factor_stock_price_momentum_month", "period", ["close", "ret_1m", "ret_3m", "ret_6m", "momentum_score", "turnover_spike_flag"]),
+                ("factor_size_month", "period", ["market_cap", "size_percentile_cross", "small_cap_score"]),
+                ("factor_liquidity_turnover_month", "period", ["turnover_value_avg", "turnover_ratio", "liquidity_score"]),
+                ("factor_roe_trend_month", "period", ["roe", "roe_sector_pct_ts"]),
+                ("factor_investor_flow_momentum_month", "period", ["flow_score", "foreign_net_ratio", "inst_net_ratio", "foreign_net_ratio_change", "inst_net_ratio_change"]),
+                ("factor_shorting_month", "period", ["shorting_pressure_score", "short_squeeze_flag", "balance_ratio", "balance_ratio_1m_chg"]),
+                ("factor_technical_meanrev_snapshot", "snapshot_date", ["meanrev_score", "rsi_14", "bb_percent_b", "disparity_20"]),
+                ("factor_value_composite_snapshot", "snapshot_date", ["value_composite_score", "forward_valuation_score", "peg_composite_score", "forward_per", "peg_ratio"]),
+                ("factor_forward_per_snapshot", "snapshot_date", ["eps_growth_expected"]),
+                ("factor_earnings_momentum_snapshot", "snapshot_date", ["earnings_momentum_score", "op_profit_yoy", "latest_quarter"]),
+                ("factor_piotroski_snapshot", "bsns_year", ["f_score", "f_score_norm"]),
+            ]
+            for table, date_col, cols in table_specs:
+                df = _latest_table_rows(conn, table, date_col=date_col)
+                if df.empty:
+                    continue
+                keep = ["ticker"] + [c for c in cols if c in df.columns]
+                renamed = df[keep].copy()
+                prefix = table.replace("factor_", "").replace("_month", "").replace("_snapshot", "")
+                for c in keep:
+                    if c != "ticker":
+                        renamed.rename(columns={c: f"{prefix}__{c}"}, inplace=True)
+                factor_frames.append(renamed)
+            conn.close()
+        except Exception as e:
+            logger.warning("stock_attractiveness factor load 실패: %s", e)
+
+    out = base.copy()
+    for ff in factor_frames:
+        out = out.merge(ff, on="ticker", how="left")
+
+    score_cols = {
+        "score_base_5factor": ["valuation_per_pbr__valuation_score", "stock_price_momentum__momentum_score", "size__size_percentile_cross", "liquidity_turnover__liquidity_score", "roe_trend__roe_sector_pct_ts"],
+        "score_value_quality": ["valuation_per_pbr__valuation_score", "roe_trend__roe_sector_pct_ts", "value_composite__value_composite_score", "piotroski__f_score_norm", "earnings_momentum__earnings_momentum_score"],
+        "score_momentum_flow": ["stock_price_momentum__momentum_score", "investor_flow_momentum__flow_score", "liquidity_turnover__liquidity_score"],
+        "score_reversal_value_flow": ["valuation_per_pbr__valuation_score", "technical_meanrev__meanrev_score", "investor_flow_momentum__flow_score"],
+        "score_short_squeeze_addon": ["stock_price_momentum__momentum_score", "investor_flow_momentum__flow_score", "shorting__shorting_pressure_score"],
+    }
+
+    rows = []
+    for _, r in out.iterrows():
+        t = str(r.get("ticker", "")).zfill(6)
+        rec = {
+            "ticker": t,
+            "name": r.get("name") or t,
+            "market": r.get("market"),
+            "sector": r.get("valuation_per_pbr__sector") or "",
+            "price": _safe_number(r.get("종가")),
+            "market_cap": _safe_number(r.get("시가총액")),
+            "trading_value": _safe_number(r.get("거래대금")),
+            "market_cap_rank": int(r.get("market_cap_rank_market")) if not pd.isna(r.get("market_cap_rank_market")) else None,
+            "market_cap_rank_all": int(r.get("market_cap_rank_all")) if not pd.isna(r.get("market_cap_rank_all")) else None,
+            "size_bucket": r.get("size_bucket"),
+            "kospi200_proxy": int(r.get("kospi200_proxy") or 0),
+            "per": _safe_number(r.get("PER")),
+            "pbr": _safe_number(r.get("PBR")),
+            "eps": _safe_number(r.get("EPS")),
+            "bps": _safe_number(r.get("BPS")),
+            "div_yield": _safe_number(r.get("DIV")),
+            "valuation_score": _safe_number(r.get("valuation_per_pbr__valuation_score")),
+            "momentum_score": _safe_number(r.get("stock_price_momentum__momentum_score")),
+            "liquidity_score": _safe_number(r.get("liquidity_turnover__liquidity_score")),
+            "roe": _safe_number(r.get("roe_trend__roe")),
+            "roe_score": _safe_number(r.get("roe_trend__roe_sector_pct_ts")),
+            "flow_score": _safe_number(r.get("investor_flow_momentum__flow_score")),
+            "meanrev_score": _safe_number(r.get("technical_meanrev__meanrev_score")),
+            "shorting_pressure_score": _safe_number(r.get("shorting__shorting_pressure_score")),
+            "short_squeeze_flag": int(_safe_number(r.get("shorting__short_squeeze_flag")) or 0),
+            "value_composite_score": _safe_number(r.get("value_composite__value_composite_score")),
+            "forward_valuation_score": _safe_number(r.get("value_composite__forward_valuation_score")),
+            "forward_per": _safe_number(r.get("value_composite__forward_per")),
+            "eps_growth_expected": _safe_number(r.get("forward_per__eps_growth_expected")),
+            "earnings_momentum_score": _safe_number(r.get("earnings_momentum__earnings_momentum_score")),
+            "op_profit_yoy": _safe_number(r.get("earnings_momentum__op_profit_yoy")),
+            "f_score_norm": _safe_number(r.get("piotroski__f_score_norm")),
+        }
+        rec.update(consensus_map.get(t, {}))
+        for score_name, cols in score_cols.items():
+            vals = [_safe_number(r.get(c)) for c in cols]
+            vals = [v for v in vals if v is not None]
+            rec[score_name] = round(sum(vals) / len(vals), 4) if vals else None
+        score_vals = [rec.get(k) for k in score_cols if rec.get(k) is not None]
+        rec["market_attractiveness_score"] = round(sum(score_vals) / len(score_vals), 4) if score_vals else None
+        rows.append(rec)
+
+    rows.sort(key=lambda x: (x.get("market_attractiveness_score") is None, -(x.get("market_attractiveness_score") or 0)))
+    return {
+        "as_of": as_of,
+        "method": "latest KRX snapshot + earnings consensus + latest factor tables; KOSPI200 is approximated by KOSPI market-cap top 200 when official constituent file is unavailable",
+        "rows": rows,
+    }
+
+
 def _compute_derived_macro(quant_data, raw_data_dir, include_stock_detail=False):
     """수집된 CSV에서 파생 거시지표를 계산해 quant_data['macro']에 추가."""
     indices_dir = Path(raw_data_dir) / "macro" / "macro_indices"
@@ -306,7 +575,9 @@ def collect_quant_data(raw_data_dir, krx_dict=None, include_stock_detail=False):
         "money_flow": {},
         "sentiment": {},
         "valuation": {},
+        "stock_attractiveness": {},
     }
+
     if include_stock_detail:
         quant_data["stock_detail"] = {"tickers": {}, "snapshots": {}}
 
@@ -488,7 +759,14 @@ def collect_quant_data(raw_data_dir, krx_dict=None, include_stock_detail=False):
                 if len(ticker_payload) > 1:
                     quant_data["stock_detail"]["tickers"][ticker] = ticker_payload
 
-    # 6. 파생 거시지표 계산 (원본 CSV에서 직접 계산)
+    # 6. 웹 검색/필터용 종목 시장 매력도 payload
+    quant_data["stock_attractiveness"] = _build_stock_attractiveness(raw_data_dir, krx_dict)
+    logger.info(
+        " - stock_attractiveness: %d rows loaded",
+        len(quant_data["stock_attractiveness"].get("rows", [])),
+    )
+
+    # 7. 파생 거시지표 계산 (원본 CSV에서 직접 계산)
     _compute_derived_macro(quant_data, raw_data_dir, include_stock_detail=include_stock_detail)
 
     return quant_data

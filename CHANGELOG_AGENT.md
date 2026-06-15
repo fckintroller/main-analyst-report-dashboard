@@ -1,8 +1,103 @@
-# Agent Change Log — Anal_reports
+﻿# Agent Change Log — Anal_reports
 
 목적: Claude/Hermes/기타 AI agent가 `Anal_reports`에서 수행한 파일 변경, 생성, 검증 결과를 공유합니다.
 
 ---
+
+## 2026-06-15 - Hermes
+- Task: 웹 대시보드 `종목분석` 탭을 검색 가능한 `종목 시장 매력도` 화면으로 개편.
+- Changed:
+  - `scripts/03_analyze/export_web_data.py` — `stock_attractiveness` payload 생성 추가. 최신 KRX market snapshot, `earnings_consensus`, 최신 팩터 테이블을 ticker 단위로 결합하고 KOSPI 시총 상위 200 proxy 플래그/시가총액 구간/주요 팩터 조합 점수를 export.
+  - `web/index.html` — `종목분석` 하위탭 `종목 시장 매력도` 추가, 종목명/코드 검색, 시장/KOSPI200 proxy/시가총액/업종/정렬/퀵필터 UI 및 회귀분석 시나리오 토글 영역 추가.
+  - `web/quant_ui.js` — `renderStockAttractiveness()` 신규 구현. 종목명·최근가치지표·최근 영익·올해예상·내년예상·시총/거래·선택 시나리오 점수 테이블 렌더링, 퀵필터 및 시나리오 설명 토글 지원.
+  - `web/quant_data.js` — `python scripts/03_analyze/export_web_data.py`로 재생성. `stock_attractiveness.rows` 2,770개, 기준일 2026-06-05, KOSPI200 proxy 200개 포함.
+- Verification:
+  - `python -m py_compile scripts/03_analyze/export_web_data.py` → 통과
+  - `node --check web/quant_ui.js` / `node --check web/quant_data.js` → 통과
+  - `python scripts/03_analyze/export_web_data.py` → 완료, `stock_attractiveness: 2770 rows loaded`
+  - Node DOM mock 렌더링 검증: 삼성전자 검색 + KOSPI200 proxy 필터 결과 2개 렌더링, 시나리오 토글 HTML 생성 확인.
+- Caveats:
+  - 실제 KOSPI200 공식 구성종목 파일이 아니라 현재 프로젝트 제약에 맞춰 KOSPI 시가총액 상위 200 proxy를 사용.
+  - Browser automation은 로컬 Chrome DevToolsActivePort 오류로 직접 콘솔 검증 불가. 대신 `node --check`와 DOM mock 렌더링으로 대체 검증.
+  - export 중 pandas `FutureWarning`은 기존 fillna dtype 경고로, 파일 생성/렌더링 검증에는 영향 없음.
+
+## 2026-06-11 (2) - Claude
+- Task: 신규 퀀트 팩터 2종 구축 — ㉚한미 무역수지/수출입, ㉜원/달러 환율 모멘텀 (둘 다 기존 raw 데이터 재활용, 신규 수집 없음)
+- Created:
+  - `scripts/03_analyze/build_trade_balance_kr_us_factors.py` — `macro_trade_us_korea_monthly`(long format, series_id별 월별값 1957-01~2026-04) → series_id(XTEXVA01KRM667S/XTIMVA01KRM667S/EXPKR/IMPKR) pivot, korea_trade_balance/us_korea_trade_balance, korea_exports_yoy(+12M z-score) + export_momentum_score/export_cycle_regime(2x2 분면)
+  - `tests/test_trade_balance_kr_us_factors.py` — 10 passed
+  - `scripts/03_analyze/build_fx_usdkrw_factors.py` — `macro_exchange_rates_usd_krw`(yfinance, 일별 2009-12-31~2026-06, 4,288행) → 월말 리샘플, usd_krw_ret_1m/3m + 6M z-score + 3년 롤링 백분위 + won_strength_score/fx_regime/rapid_depreciation_flag
+  - `tests/test_fx_usdkrw_factors.py` — 12 passed
+- DB 신규 테이블 (백업: `data/database/backups/quant_data_20260611_before_fx_trade.sqlite`):
+  - `factor_trade_balance_kr_us_month` (832개월, 1957-01~2026-04) / `factor_trade_balance_kr_us_catalog` (12행) — 2026-03(최신 확정월) 기준 korea_exports_yoy≈+47.9%, export_cycle_regime=expansion, export_momentum_score≈0.88
+  - `factor_fx_usdkrw_month` (199개월, 2009-12~2026-06) / `factor_fx_usdkrw_catalog` (8행) — 2026-06 기준 usd_krw_close=1537.98, usd_krw_zscore_6m=1.31, won_strength_score≈0.28, fx_regime=won_very_weak, rapid_depreciation_flag=1 (원화 약세 가속)
+- Verification: `pytest tests/ -q` → **246개 중 245 passed, 1 failed (기존 이슈, 본 작업과 무관 — `test_stock_detail_pipeline.py::test_export_to_web_includes_stock_detail_ticker_series_and_snapshots`, Hermes export_web_data.py `include_stock_detail=False` 변경에 의함)**
+- 주의사항:
+  1. `factor_trade_balance_kr_us_month` 마지막 행(2026-04)은 `korea_exports`/`korea_imports`(XTEXVA/XTIMVA, FRED 갱신 지연)가 아직 미수신이라 NaN — `korea_exports_yoy`/`export_cycle_regime`도 연쇄 NaN/unknown. 임의 보간 없음.
+  2. `korea_exports_yoy_z12m`은 12M 롤링(min_periods=6) — 1957-01~1957-06 구간은 NaN.
+  3. `factor_fx_usdkrw_month`의 `usd_krw_pctile_3y`/`fx_regime`은 36개월 롤링(min_periods=12) 기준 — 2009-12~2011-11 구간은 NaN/unknown. `usd_krw_close` 절대 레벨은 장기 우상향 추세이므로 레벨 자체를 risk-on/off로 단순 해석 금지, 반드시 3년 롤링 상대 평가(`fx_regime`) 사용.
+  4. 빌드 스크립트 실행 순서상 `build_fx_usdkrw_factors.py`를 DB 백업 전에 1회 실행했으나 `to_sql(if_exists="replace")` 멱등 연산이라 데이터 손실 없음(이후 백업 정상 생성, 트레이드밸런스 적재는 백업 이후 수행).
+- Updated: `00_context/index_factor.md` (요약표 ㉚㉜ 추가, ㉚㉜ 상세 섹션 신설, 팩터 결합 가이드/레짐 필터링/데이터소스 요약에 ㉚㉜ 반영, 종합 팩터 스코어 레짐 오버레이에 ㉚㉜ 추가), `00_context/index.md` (신규 스크립트/테스트/DB 테이블 항목 추가, index_factor.md 설명 "32개 팩터 패밀리"로 갱신)
+- 다음 후보: 현재 식별된 우선순위 후보 모두 소진 (㉚㉛㉜ 완료) — 추가 팩터 발굴은 신규 데이터 수집 또는 기존 raw 테이블 재조사 필요
+
+## 2026-06-11 - Claude
+- Task: 신규 퀀트 팩터 1종 구축 — ㉛한국 신용스프레드 (회사채 AA-/BBB- vs 국고3y, 기존 raw 데이터 재활용, 신규 수집 없음)
+- Created:
+  - `scripts/03_analyze/build_credit_spread_kr_factors.py` — `macro_macro_indices_kor_corp_aa/bbb/kor_gov3y`(ECOS, 일별 2010-01-04~2026-06-05, 4,058행/시리즈) → 월말 리샘플, aa_spread/bbb_spread/bbb_aa_spread + 6M z-score + 3년 롤링 백분위 + credit_score/credit_regime/spread_widening_flag
+  - `tests/test_credit_spread_kr_factors.py` — 11 passed
+- DB 신규 테이블 (백업: `data/database/backups/quant_data_20260611_before_creditspread.sqlite`):
+  - `factor_credit_spread_kr_month` (198개월, 2010-01~2026-06) / `factor_credit_spread_kr_catalog` (14행) — 2026-06 기준 bbb_aa_spread=5.806%p, credit_regime=tight, credit_score≈0.52 (국내 신용 환경 비교적 안정)
+- Verification: `pytest tests/ -q` → **224개 중 223 passed, 1 failed (기존 이슈, 본 작업과 무관 — `test_stock_detail_pipeline.py::test_export_to_web_includes_stock_detail_ticker_series_and_snapshots`, Hermes export_web_data.py `include_stock_detail=False` 변경에 의함)**
+- 주의사항:
+  1. AA-/BBB- 모두 "3년물" 고시금리 기준 — 실제 발행사 스프레드와 괴리 가능 (ECOS 고시금리 특성)
+  2. `bbb_aa_spread_pctile_3y`는 36개월 롤링 — 2010-01~2012-12 구간은 min_periods=12 미만이라 NaN
+  3. ⑭(macro_spread, 미국 HY 기반)와 역할 분담: ⑭=글로벌 신용 사이클, ㉛=국내 신용 사이클. 두 지표 동반 risk-off 전환 시 신호 강도 ↑
+- Updated: `00_context/index_factor.md` (요약표 ㉛ 추가, ㉛ 상세 섹션 신설, 팩터 결합 가이드/레짐 필터링/데이터소스 요약에 ㉛ 반영, 종합 팩터 스코어 레짐 오버레이에 ㉛ 추가, 기준일 2026-06-11), `00_context/index.md` (신규 스크립트/테스트/DB 테이블 항목 추가)
+- 다음 후보 (이번에 함께 발견, 미작업): ㉚한미 무역수지(`macro_trade_us_korea_monthly`, 3,478행, 1957~2026 — Hermes 2026-06-10 수집, 미가공), ㉜원/달러 환율 모멘텀(`macro_exchange_rates_usd_krw`, 4,288행, 2009~2026 일별, 미가공)
+
+## 2026-06-10 21:41 - Hermes
+- Task: `trade_stats` 미국/한국 무역 통계 FRED 수집·SQLite 적재
+- Changed:
+  - `scripts/01_collect/collect_us_korea_trade_once.py` — FRED graph CSV timeout 대응: 프로젝트 `.env`의 `FRED_API_KEY`를 읽어 FRED observations API를 우선 사용하고, 실패 시 graph CSV fallback을 시도하도록 보강(키 값 미노출)
+  - `data/database/quant_data.sqlite` — `macro_trade_*` 테이블 12개 적재/갱신
+  - `data.md`, `00_context/index.md`, `00_context/work_state.md` — 수집 결과/테이블/lock 기록 갱신
+- Created:
+  - `data/raw/macro/trade_stats/fred_{BOPTEXP,BOPTIMP,EXPGS,IMPGS,EXPKR,IMPKR,XTEXVA01KRM667S,XTIMVA01KRM667S}.csv`
+  - `data/raw/macro/trade_stats/us_korea_trade_fred_long.csv` — 4,112 rows
+  - `data/raw/macro/trade_stats/us_korea_trade_fred_monthly.csv` — 3,478 rows
+  - `data/raw/macro/trade_stats/us_trade_fred_quarterly_nipa.csv` — 634 rows
+  - `data/raw/macro/trade_stats/us_korea_trade_fred_metadata.csv` — 8 rows, all success
+  - `data/raw/macro/trade_stats/us_korea_trade_collection_summary.json`
+  - DB backups: `data/database/quant_data.sqlite.backup_trade_stats_20260610_212826`, `data/database/quant_data.sqlite.backup_trade_stats_20260610_214100`
+- Verification:
+  - `python -m py_compile scripts/01_collect/collect_us_korea_trade_once.py` → 통과
+  - `python scripts/01_collect/collect_us_korea_trade_once.py` → success_count=8, failed=[]
+  - SQLite 검증: `macro_trade_us_korea_fred` 4,112 rows(1947-01-01~2026-04-01), `macro_trade_us_korea_monthly` 3,478 rows(1957-01-01~2026-04-01), `macro_trade_us_quarterly_nipa` 634 rows(1947-01-01~2026-01-01), `macro_trade_us_korea_metadata` 8 rows
+- Caveats:
+  - 1차 실행은 FRED graph CSV endpoint read timeout으로 600초 timeout 종료. DB 적재 전 중단되어 raw/DB trade 테이블은 생성되지 않았고, 백업 파일만 남음.
+  - 월간 BoP/양자 통계와 분기 NIPA 통계는 단위·빈도·계절조정이 다르므로 metadata 기준으로 분리 사용 필요.
+
+## 2026-06-10 (4) - Claude
+- Task: 신규 팩터 3종 구축 — ㉗시장 수급 동향(투자자별 순매수) ㉘시장 밸류에이션 레벨(KOSPI PBR percentile) ㉙거시 검색 트렌드 심리(Google Trends) (모두 기존 raw 데이터 재활용, 신규 수집 없음)
+- Created:
+  - `scripts/03_analyze/build_market_money_flow_factors.py` — `money_flow_market_trading_value_{kospi,kosdaq}_20y` 일별(2006-06~2026-06) → 월간 집계, 외국인/기관계/연기금 순매수 백분위 → flow_score/flow_regime
+  - `scripts/03_analyze/build_market_valuation_level_factors.py` — `valuation_kospi_fundamental_history`(일별 PBR, 2023-06~2026-06) 월간 집계 + `valuation_kospi_pbr_percentile`(스냅샷 10년 percentile) → pbr_pctile_3y/10y, valuation_regime
+  - `scripts/03_analyze/build_macro_search_sentiment_factors.py` — `sentiment_pytrends_*`(15개 키워드, 주간 2021-05~2026-05) → 키워드별 자체-기간 백분위, 거시불안/리테일관심/테마 점수 산출
+  - `tests/test_market_money_flow_factors.py` — 7 passed
+  - `tests/test_market_valuation_level_factors.py` — 7 passed
+  - `tests/test_macro_search_sentiment_factors.py` — 6 passed
+- DB 신규 테이블 (백업: `data/database/quant_data_20260610_211807_before_3newfactors3.sqlite`):
+  - `factor_market_money_flow_month` (482행, KOSPI 241+KOSDAQ 241, 2006-06~2026-06) / `factor_market_money_flow_catalog` (9행) — 최근월(2026-06) flow_regime: KOSPI=neutral, KOSDAQ=strong_inflow
+  - `factor_market_valuation_level_month` (37개월, 2023-06~2026-06) / `factor_market_valuation_level_catalog` (5행) — 2026-06 pbr_pctile_10y=0.936(10년래 93.6%ile) → valuation_regime=very_expensive
+  - `factor_macro_search_sentiment_month` (61개월, 2021-05~2026-05) / `factor_macro_search_sentiment_catalog` (9행) — 최근월(2026-05) anxiety_level=high, interest_level=very_high
+- 검증: `pytest tests/ -q` → **213개 중 212 passed, 1 failed (기존 이슈, 본 작업과 무관)**
+- 주의사항:
+  1. **㉗ 백분위(foreign_net_pctile 등)는 전체 기간(2006-06~2026-06, 약 240개월) 기준** — 과거 시점 분석 시 look-ahead 주의, 최근 추세 판단 위주로 사용 권장
+  2. **㉘ pbr_pctile_3y는 표본 37개월(2023-06~)로 짧음** — 상대 추세 참고용. `pbr_pctile_10y`는 `valuation_kospi_pbr_percentile` 단일 스냅샷(2026-06-05)에서만 제공되는 절대 레벨 보조치로 시계열이 아니며, 해당 월(2026-06) 외에는 NaN
+  3. **㉙ pytrends `trend_score`는 키워드별 검색 배치 정규화 기준이 달라 키워드 간 절대값 비교 불가** — 반드시 "키워드 자체 기간 내 백분위"로만 사용. 백분위는 전체 샘플(2021-05~2026-05, 약 60개월) 기준으로 look-ahead 주의
+  4. **테스트 1건 실패(`test_stock_detail_pipeline.py::test_export_to_web_includes_stock_detail_ticker_series_and_snapshots`)는 Hermes의 `export_web_data.py`(`include_stock_detail=False`) 변경으로 인한 기존 이슈이며 본 작업의 변경사항과 무관** (이전 (3) 항목과 동일 이슈, 누적 미해결)
+  5. 콘솔 출력 한글 깨짐은 cp949/utf-8 터미널 인코딩 차이일 뿐 DB 저장값에는 영향 없음 (기존 스크립트와 동일한 현상)
+- Updated: `00_context/index_factor.md` (㉗㉘㉙ 요약표/상세섹션 추가, 팩터 결합 가이드·섹터 로테이션·데이터 소스 요약 갱신, "26개"→"29개 팩터 패밀리"), `00_context/index.md` (신규 스크립트/테스트/DB 테이블/백업파일 등록)
 
 ## 2026-06-10 20:13 - Hermes
 - Task: `web/quant_data.js`에 누락된 `sentiment` 데이터를 선별 포함하도록 웹 export 수정 및 대시보드 렌더링 재검증
@@ -19,6 +114,28 @@
 - Caveats:
   - 브라우저 콘솔 404 1건은 `/favicon.ico`로 기능 영향 없음
   - export 중 pandas `FutureWarning` 및 빈 `fred_barley_sorghum_monthly.csv` warning은 기존 데이터/타입 경고이며 이번 렌더링 차단 요인은 아님
+
+## 2026-06-10 (3) - Claude
+- Task: 신규 팩터 3종 구축 — ㉔외국인 보유비중/한도소진율 ㉕시장 폭(ADL/TRIN) ㉖ADR 오버나잇 갭 시그널 (모두 기존 raw 데이터 재활용, 신규 수집 없음)
+- Created:
+  - `scripts/03_analyze/build_foreign_exhaustion_factors.py` — `stock_market_snapshot_{kospi,kosdaq}_foreign_exhaustion_by_ticker_20260605` 기반 외국인 지분율/한도소진율 횡단면 백분위 + foreign_room_score(매수여력)
+  - `scripts/03_analyze/build_market_breadth_factors.py` — `sentiment_kr_adl`/`sentiment_kr_trin` 일별→월간 집계, ADL 추세 백분위 + TRIN 백분위 → breadth_score/breadth_regime
+  - `scripts/03_analyze/build_adr_gap_signal_factors.py` — `valuation_adrs_*`(8개 대형주 ADR) 일별 등락률 → gap_bucket, `stock_detail_{ticker}_ohlcv`와 조인해 realized_gap_pct(실현 갭) 산출
+  - `tests/test_foreign_exhaustion_factors.py` — 8 passed
+  - `tests/test_market_breadth_factors.py` — 7 passed
+  - `tests/test_adr_gap_signal_factors.py` — 8 passed
+- DB 신규 테이블 (백업: `data/database/quant_data_20260610_202303_before_3newfactors2.sqlite`):
+  - `factor_foreign_exhaustion_snapshot` (2,770행, snapshot_date=2026-06-05) / `factor_foreign_exhaustion_catalog` (7행) — room_bucket: very_high 2515 / high 184 / mid 48 / low 17 / very_low 6
+  - `factor_market_breadth_month` (25행, 2024-06~2026-06) / `factor_market_breadth_catalog` (9행) — 최근월(2026-06) breadth_score=0.76(bullish)
+  - `factor_adr_gap_signal_daily` (33,048행, 8종목, 2009-12~2026-06) / `factor_adr_gap_signal_catalog` (7행)
+- 검증: `pytest tests/ -q` → **193개 중 192 passed, 1 failed (기존 이슈, 본 작업과 무관)**
+- 주의사항:
+  1. **㉔ 외국인 보유비중/한도소진율은 단일 시점 스냅샷**(2026-06-05) → 시계열 백테스트 불가, 횡단면 스크리닝 전용. 대부분 종목은 외국인 한도가 100%(=상장주식수)라 `foreign_room_score`가 매우 높게 나옴(very_high 2,515종목) — 규제업종(KEPCO·통신·금융 등) 일부만 한도 제약 존재
+  2. **㉕ 시장 폭은 표본 25개월(2024-06~)로 짧음** — 백분위는 전체 샘플 기준 상대 추세 참고용, 절대 임계값으로 과신 금지
+  3. **㉖ ADR 갭 시그널은 8종목 한정**(KB금융·신한지주·우리금융지주·POSCO홀딩스·KT·SK텔레콤·한국전력·LG디스플레이, 쿠팡은 국내 동일종목 없어 제외) → 종합 팩터 스코어에는 미포함, 해당 종목 단타 시 보조지표로만 사용. `adr_ret_1d_pct`↔`realized_gap_pct` 상관계수 약 +0.25(n=4,480)로 방향성 참고는 가능하나 단독 신호로는 약함
+  4. **테스트 1건 실패(`test_stock_detail_pipeline.py::test_export_to_web_includes_stock_detail_ticker_series_and_snapshots`)는 Hermes의 `export_web_data.py`(`include_stock_detail=False`) 변경으로 인한 기존 이슈이며 본 작업의 변경사항과 무관**
+  5. 콘솔 출력 한글 깨짐은 cp949/utf-8 터미널 인코딩 차이일 뿐 DB 저장값에는 영향 없음 (기존 스크립트와 동일한 현상)
+- Updated: `00_context/index_factor.md` (㉔㉕㉖ 요약표/상세섹션 추가, 팩터 결합 가이드·섹터 로테이션·데이터 소스 요약 갱신, "23개"→"26개 팩터 패밀리"), `00_context/index.md` (신규 스크립트/테스트/DB 테이블/백업파일 등록)
 
 ## 2026-06-10 (2) - Claude
 - Task: 신규 팩터 3종 구축 — ㉑사이즈(시가총액) ㉒배당수익률 ㉓유동성/거래회전율 (모두 기존 raw 데이터 재활용, 신규 수집 없음)

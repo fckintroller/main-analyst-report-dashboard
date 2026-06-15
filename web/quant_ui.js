@@ -7,6 +7,7 @@
     renderBreadthCharts();
     renderDartTable();
     renderEpsTable();
+    renderStockAttractiveness();
     renderSectorMap();
     renderRegimeCard();
     renderScorecard();
@@ -72,6 +73,7 @@ function switchSubTab(targetId, btn) {
   if (targetId === "macro-leading") { setTimeout(renderLeadingIndicatorCharts, 50); }
   if (targetId === "macro-industry") { setTimeout(renderIndustryCharts, 50); }
   if (targetId === "quant-sector-momentum") { setTimeout(renderSectorMomentumCharts, 50); }
+  if (targetId === "analysis-market-attractiveness") { setTimeout(renderStockAttractiveness, 50); }
 
   if (targetId === "macro-rates") {
     setTimeout(() => {
@@ -743,6 +745,238 @@ function renderEpsTable() {
 
   tbody.innerHTML = rows.join("") || '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-sub);">실적 컨센서스 데이터가 없습니다.</td></tr>';
 }
+
+
+const STOCK_SCENARIOS = {
+  market_attractiveness_score: {
+    label: "종합 매력도",
+    horizon: "공통 스크리닝",
+    desc: "기본 5팩터·가치퀄리티·모멘텀수급·저평가반등·숏커버 보조 점수의 평균입니다. 한 종목을 처음 볼 때 가장 보편적인 1차 정렬 기준으로 사용합니다.",
+    factors: ["가치", "모멘텀", "시총", "유동성", "ROE", "수급", "공매도"]
+  },
+  score_base_5factor: {
+    label: "기본 5팩터",
+    horizon: "1~6개월",
+    desc: "valuation_score, momentum_score, size_percentile_cross, liquidity_score, roe_score를 같은 비중으로 결합합니다. 표본 수가 가장 안정적인 기본 모델입니다.",
+    factors: ["밸류", "가격 모멘텀", "시가총액", "유동성", "ROE"]
+  },
+  score_value_quality: {
+    label: "가치+퀄리티",
+    horizon: "6개월~1년",
+    desc: "싸면서 ROE/재무점수/실적모멘텀이 괜찮은 종목을 찾습니다. 단순 저PER·저PBR 함정 가치주를 줄이는 목적입니다.",
+    factors: ["밸류", "ROE", "Piotroski", "실적 모멘텀", "Forward 밸류"]
+  },
+  score_momentum_flow: {
+    label: "모멘텀+수급",
+    horizon: "1~6개월",
+    desc: "가격 모멘텀, 외국인/기관 수급, 거래대금 유동성을 결합합니다. 앞선 회귀 진단에서 KOSPI200 3개월 horizon에서 상대적으로 유효했습니다.",
+    factors: ["가격 모멘텀", "수급", "거래대금"]
+  },
+  score_reversal_value_flow: {
+    label: "저평가 반등",
+    horizon: "1~6개월",
+    desc: "저평가, 과매도/평균회귀, 수급 개선을 함께 봅니다. 급락 후 반등 후보를 찾는 보조 시나리오입니다.",
+    factors: ["저평가", "과매도", "수급 개선"]
+  },
+  score_short_squeeze_addon: {
+    label: "숏커버 보조",
+    horizon: "1~3개월",
+    desc: "모멘텀·수급에 공매도 압력/숏스퀴즈 플래그를 더합니다. 단독 모델보다 이벤트성 보조 필터로 해석합니다.",
+    factors: ["모멘텀", "수급", "공매도"]
+  },
+  horizon_6m: {
+    label: "6개월 관점",
+    horizon: "중기",
+    desc: "현재 데이터 길이상 6개월은 충분히 분석 가능합니다. 모멘텀+ROE+밸류+유동성 조합을 우선 봅니다.",
+    factors: ["기본 5팩터", "모멘텀", "ROE", "밸류"]
+  },
+  horizon_1y: {
+    label: "1년 관점",
+    horizon: "중장기",
+    desc: "1년은 가능하지만 최근 구간 검증력이 줄어듭니다. 가치+퀄리티, ROE, PBR 리레이팅을 중심으로 봅니다.",
+    factors: ["가치+퀄리티", "ROE", "PBR 리레이팅"]
+  },
+  horizon_2y: {
+    label: "2년 관점",
+    horizon: "참고용",
+    desc: "2년은 표본이 작아 회귀보다 분위별 성과/상위하위 비교가 적합합니다. 장기 방향성 참고용으로만 사용합니다.",
+    factors: ["저PBR", "ROE", "장기 모멘텀"]
+  }
+};
+window.activeStockQuickFilters = window.activeStockQuickFilters || new Set();
+window.activeStockScenario = window.activeStockScenario || "market_attractiveness_score";
+
+function stockNum(value) {
+  const n = Number(String(value ?? "").replace(/,/g, ""));
+  return Number.isFinite(n) ? n : null;
+}
+
+function fmtCompact(value, unit = "") {
+  const n = stockNum(value);
+  if (n === null) return "-";
+  if (Math.abs(n) >= 1_0000_0000_0000) return `${(n / 1_0000_0000_0000).toFixed(1)}조${unit}`;
+  if (Math.abs(n) >= 1_0000_0000) return `${(n / 1_0000_0000).toFixed(1)}억${unit}`;
+  return `${Math.round(n).toLocaleString("ko-KR")}${unit}`;
+}
+
+function fmtNum(value, digits = 1) {
+  const n = stockNum(value);
+  if (n === null) return "-";
+  return n.toLocaleString("ko-KR", { maximumFractionDigits: digits });
+}
+
+function fmtPctValue(value, digits = 1) {
+  const n = stockNum(value);
+  if (n === null) return "";
+  const color = n >= 0 ? "#10b981" : "#ef4444";
+  const sign = n >= 0 ? "+" : "";
+  return `<div style="font-size:0.75rem; color:${color}; font-weight:700; margin-top:2px;">${sign}${n.toFixed(digits)}%</div>`;
+}
+
+function scenarioScore(row) {
+  const key = window.activeStockScenario || "market_attractiveness_score";
+  if (key.startsWith("horizon_")) return row.market_attractiveness_score;
+  return row[key] ?? row.market_attractiveness_score;
+}
+
+function renderScenarioToggles() {
+  const wrap = document.getElementById("regression-scenario-toggles");
+  const detail = document.getElementById("regression-scenario-detail");
+  if (!wrap || !detail) return;
+  wrap.innerHTML = Object.entries(STOCK_SCENARIOS).map(([key, s]) => `
+    <button class="filter-btn ${window.activeStockScenario === key ? "active" : ""}" onclick="setStockScenario('${key}')" style="height:auto; display:flex; flex-direction:column; align-items:flex-start; gap:4px; padding:10px 12px;">
+      <span style="font-weight:800; color:var(--text-heading);">${html(s.label)}</span>
+      <span style="font-size:0.75rem; color:var(--text-sub);">${html(s.horizon)}</span>
+    </button>
+  `).join("");
+  const s = STOCK_SCENARIOS[window.activeStockScenario] || STOCK_SCENARIOS.market_attractiveness_score;
+  detail.innerHTML = `
+    <div style="font-weight:800; color:var(--text-heading); margin-bottom:5px;">${html(s.label)} · ${html(s.horizon)}</div>
+    <div>${html(s.desc)}</div>
+    <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+      ${s.factors.map(f => `<span class="tag">${html(f)}</span>`).join("")}
+    </div>
+  `;
+}
+
+function setStockScenario(key) {
+  window.activeStockScenario = key;
+  const sort = document.getElementById("stock-filter-sort");
+  if (sort && !key.startsWith("horizon_")) sort.value = key;
+  renderStockAttractiveness();
+}
+window.setStockScenario = setStockScenario;
+
+function toggleStockQuickFilter(key, btn) {
+  window.activeStockQuickFilters = window.activeStockQuickFilters || new Set();
+  if (window.activeStockQuickFilters.has(key)) {
+    window.activeStockQuickFilters.delete(key);
+    btn?.classList.remove("active");
+  } else {
+    window.activeStockQuickFilters.add(key);
+    btn?.classList.add("active");
+  }
+  renderStockAttractiveness();
+}
+window.toggleStockQuickFilter = toggleStockQuickFilter;
+
+function passesStockQuickFilters(row) {
+  const filters = window.activeStockQuickFilters || new Set();
+  for (const f of filters) {
+    if (f === "low-pbr" && !(stockNum(row.pbr) > 0 && stockNum(row.pbr) <= 1)) return false;
+    if (f === "low-per" && !(stockNum(row.per) > 0 && stockNum(row.per) <= 12)) return false;
+    if (f === "op-growth" && !(stockNum(row.this_year_op_growth_pct) > 0 || stockNum(row.next_year_op_growth_pct) > 0 || stockNum(row.op_profit_yoy) > 0)) return false;
+    if (f === "high-roe" && !(stockNum(row.roe_score) >= 0.7 || stockNum(row.roe) >= 0.1)) return false;
+    if (f === "high-liquidity" && !(stockNum(row.trading_value) >= 10_000_000_000 || stockNum(row.liquidity_score) >= 0.7)) return false;
+    if (f === "consensus" && row.recent_op_profit == null && row.this_year_op_profit_est == null && row.next_year_op_profit_est == null) return false;
+  }
+  return true;
+}
+
+function populateStockSectorFilter(rows) {
+  const select = document.getElementById("stock-filter-sector");
+  if (!select || select.dataset.ready === "1") return;
+  const sectors = [...new Set(rows.map(r => r.sector).filter(Boolean))].sort();
+  select.innerHTML = '<option value="all">전체</option>' + sectors.map(s => `<option value="${html(s)}">${html(s)}</option>`).join("");
+  select.dataset.ready = "1";
+}
+
+function renderStockAttractiveness() {
+  const payload = window.QUANT_DATA?.stock_attractiveness || {};
+  const rows = Array.isArray(payload.rows) ? payload.rows : [];
+  const tbody = document.querySelector("#stock-attractiveness-table tbody");
+  if (!tbody) return;
+  renderScenarioToggles();
+  populateStockSectorFilter(rows);
+
+  const meta = document.getElementById("stock-attractiveness-meta");
+  if (meta) meta.innerHTML = `기준일 ${html(payload.as_of || "-")}<br>${rows.length.toLocaleString("ko-KR")}개 종목`;
+
+  const term = (document.getElementById("stock-attractiveness-search")?.value || "").trim().toLowerCase();
+  const market = document.getElementById("stock-filter-market")?.value || "all";
+  const size = document.getElementById("stock-filter-size")?.value || "all";
+  const sector = document.getElementById("stock-filter-sector")?.value || "all";
+  const sortKey = document.getElementById("stock-filter-sort")?.value || window.activeStockScenario || "market_attractiveness_score";
+  if (!window.activeStockScenario || (!window.activeStockScenario.startsWith("horizon_") && window.activeStockScenario !== sortKey)) {
+    window.activeStockScenario = sortKey;
+  }
+
+  let filtered = rows.filter(row => {
+    if (term && !(`${row.name || ""} ${row.ticker || ""}`.toLowerCase().includes(term))) return false;
+    if (market === "KOSPI200_PROXY" && !row.kospi200_proxy) return false;
+    if (market !== "all" && market !== "KOSPI200_PROXY" && row.market !== market) return false;
+    if (size !== "all" && row.size_bucket !== size) return false;
+    if (sector !== "all" && row.sector !== sector) return false;
+    return passesStockQuickFilters(row);
+  });
+
+  filtered.sort((a, b) => (stockNum(b[sortKey]) ?? -Infinity) - (stockNum(a[sortKey]) ?? -Infinity));
+  const display = filtered.slice(0, 300);
+  const scenario = STOCK_SCENARIOS[window.activeStockScenario] || STOCK_SCENARIOS.market_attractiveness_score;
+
+  tbody.innerHTML = display.map(row => {
+    const score = scenarioScore(row);
+    const scorePct = score == null ? "-" : `${(score * 100).toFixed(1)}점`;
+    const scoreColor = score == null ? "var(--text-sub)" : score >= 0.65 ? "#10b981" : score >= 0.5 ? "#f59e0b" : "#ef4444";
+    const growthThis = fmtPctValue(row.this_year_op_growth_pct);
+    const growthNext = fmtPctValue(row.next_year_op_growth_pct);
+    const badges = [row.market, row.size_bucket, row.kospi200_proxy ? "KOSPI200근사" : null].filter(Boolean).map(v => `<span class="tag">${html(v)}</span>`).join(" ");
+    return `
+      <tr>
+        <td>
+          <div class="company-name" style="font-size:0.95rem; font-weight:800;">${html(row.name || row.ticker)}</div>
+          <div class="company-code" style="font-size:0.75rem; color:var(--text-sub);">${html(row.ticker)} · ${html(row.sector || "업종 미분류")}</div>
+          <div style="margin-top:5px; display:flex; gap:4px; flex-wrap:wrap;">${badges}</div>
+        </td>
+        <td>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; font-size:0.8rem; color:var(--text-sub);">
+            <div>PER <b style="color:#3b82f6;">${fmtNum(row.per ?? row.consensus_per)}</b></div>
+            <div>PBR <b style="color:#8b5cf6;">${fmtNum(row.pbr ?? row.consensus_pbr)}</b></div>
+            <div>ROE <b style="color:#10b981;">${row.roe == null ? "-" : `${(row.roe * 100).toFixed(1)}%`}</b></div>
+            <div>DIV <b>${fmtNum(row.div_yield)}</b></div>
+          </div>
+        </td>
+        <td>${fmtCompact(row.recent_op_profit, "")}</td>
+        <td><b style="color:#10b981;">${fmtCompact(row.this_year_op_profit_est, "")}</b>${growthThis}</td>
+        <td><b style="color:#3b82f6;">${fmtCompact(row.next_year_op_profit_est, "")}</b>${growthNext}</td>
+        <td>
+          <div>시총 <b>${fmtCompact(row.market_cap)}</b></div>
+          <div style="font-size:0.75rem; color:var(--text-sub);">거래대금 ${fmtCompact(row.trading_value)}</div>
+          <div style="font-size:0.75rem; color:var(--text-sub);">${html(row.market || "")} ${row.market_cap_rank ? `#${row.market_cap_rank}` : ""}</div>
+        </td>
+        <td>
+          <div style="font-weight:900; color:${scoreColor};">${scorePct}</div>
+          <div style="font-size:0.75rem; color:var(--text-sub); margin-top:3px;">${html(scenario.label)}</div>
+          <div style="font-size:0.72rem; color:var(--text-sub); margin-top:3px;">종합 ${row.market_attractiveness_score == null ? "-" : (row.market_attractiveness_score * 100).toFixed(1)}</div>
+        </td>
+      </tr>
+    `;
+  }).join("") || '<tr><td colspan="7" style="text-align:center; padding:22px; color:var(--text-sub);">조건에 맞는 종목이 없습니다.</td></tr>';
+
+  const count = document.getElementById("stock-attractiveness-count");
+  if (count) count.textContent = `검색 결과 ${filtered.length.toLocaleString("ko-KR")}개 / 화면 표시 ${display.length.toLocaleString("ko-KR")}개`;
+}
+window.renderStockAttractiveness = renderStockAttractiveness;
 
 function renderSectorMap() {
   const sectorData = window.QUANT_DATA?.money_flow?.sector_returns;
