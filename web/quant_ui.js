@@ -1,4 +1,4 @@
-﻿document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
   initTabs();
   setTimeout(() => {
     if (!window.QUANT_DATA) return;
@@ -768,9 +768,10 @@ const STOCK_SCENARIOS = {
   scenario_b_value_quality: {
     label: "B 가치+퀄리티",
     horizon: "3~12개월 중기",
-    desc: "기존 밸류, 섹터상대 가치품질(부채비율·FCF 포함), ROE, Piotroski, 실적 모멘텀, 선행 밸류를 결합합니다. PER/PBR이 싸기만 한 value trap보다 수익성·재무체력·현금창출력이 동반된 저평가 후보를 우선합니다.",
-    factors: ["밸류", "섹터상대 가치", "ROE", "부채·FCF", "재무건전성", "실적"]
+    desc: "기존 밸류, 섹터상대 가치품질, ROE, Piotroski, ㊳ Balance Sheet Quality(부채/순부채/이자보상/유동비율/자본잠식), ㊴ Cash Flow Quality(FCF margin/yield·accrual·현금전환), ㊵ Earnings Stability(매출·마진·적자·ROE 안정성), 실적 모멘텀, 선행 밸류를 결합합니다. PER/PBR이 싸기만 한 value trap보다 재무상태표·현금흐름·이익 안정성이 동반된 저평가 후보를 우선합니다.",
+    factors: ["밸류", "섹터상대 가치", "ROE", "㊳ BS품질", "㊴ CF품질", "㊵ 이익안정", "실적"]
   },
+
   scenario_c_reversal: {
     label: "C 저평가 반등",
     horizon: "1~6개월 역발상",
@@ -1179,6 +1180,9 @@ function renderStockAttractiveness() {
             <div>ROE <b style="color:#10b981;">${row.roe == null ? "-" : `${(row.roe * 100).toFixed(1)}%`}</b></div>
             <div>부채 <b>${row.debt_ratio == null ? "-" : `${(row.debt_ratio * 100).toFixed(0)}%`}</b></div>
             <div>FCF/자산 <b style="color:#10b981;">${row.fcf_to_assets == null ? "-" : `${(row.fcf_to_assets * 100).toFixed(1)}%`}</b></div>
+            <div>BS품질 <b>${row.balance_sheet_quality_score == null ? "-" : `${(row.balance_sheet_quality_score * 100).toFixed(0)}점`}</b></div>
+            <div>CF품질 <b>${row.cashflow_quality_score == null ? "-" : `${(row.cashflow_quality_score * 100).toFixed(0)}점`}</b></div>
+            <div>이익안정 <b>${row.earnings_stability_score == null ? "-" : `${(row.earnings_stability_score * 100).toFixed(0)}점`}</b></div>
             <div>DIV <b>${fmtNum(row.div_yield)}</b></div>
           </div>
         </td>

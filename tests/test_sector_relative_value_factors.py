@@ -124,6 +124,92 @@ def test_financial_quality_snapshot_prefers_low_debt_and_positive_fcf():
     assert strong["financial_quality_score"] > weak["financial_quality_score"]
 
 
+def test_balance_sheet_quality_outputs_user_requested_metrics():
+    mod = load_module()
+    raw = pd.DataFrame([
+        {"ticker": "000001", "bsns_year": 2024, "period": "current", "account_id": "total_assets", "amount": 1000},
+        {"ticker": "000001", "bsns_year": 2024, "period": "current", "account_id": "current_assets", "amount": 400},
+        {"ticker": "000001", "bsns_year": 2024, "period": "current", "account_id": "current_liabilities", "amount": 100},
+        {"ticker": "000001", "bsns_year": 2024, "period": "current", "account_id": "noncurrent_liabilities", "amount": 100},
+        {"ticker": "000001", "bsns_year": 2024, "period": "current", "account_id": "total_equity", "amount": 800},
+        {"ticker": "000001", "bsns_year": 2024, "period": "current", "account_id": "capital_stock", "amount": 500},
+        {"ticker": "000001", "bsns_year": 2024, "period": "current", "account_id": "cash", "amount": 120},
+        {"ticker": "000001", "bsns_year": 2024, "period": "current", "account_id": "operating_income", "amount": 100},
+        {"ticker": "000001", "bsns_year": 2024, "period": "current", "account_id": "interest_expense", "amount": 10},
+        {"ticker": "000002", "bsns_year": 2024, "period": "current", "account_id": "total_assets", "amount": 1000},
+        {"ticker": "000002", "bsns_year": 2024, "period": "current", "account_id": "current_assets", "amount": 150},
+        {"ticker": "000002", "bsns_year": 2024, "period": "current", "account_id": "current_liabilities", "amount": 300},
+        {"ticker": "000002", "bsns_year": 2024, "period": "current", "account_id": "noncurrent_liabilities", "amount": 400},
+        {"ticker": "000002", "bsns_year": 2024, "period": "current", "account_id": "total_equity", "amount": 300},
+        {"ticker": "000002", "bsns_year": 2024, "period": "current", "account_id": "capital_stock", "amount": 500},
+        {"ticker": "000002", "bsns_year": 2024, "period": "current", "account_id": "cash", "amount": 50},
+        {"ticker": "000002", "bsns_year": 2024, "period": "current", "account_id": "operating_income", "amount": 20},
+        {"ticker": "000002", "bsns_year": 2024, "period": "current", "account_id": "interest_expense", "amount": 40},
+    ])
+    out = mod.build_dart_financial_quality_snapshot(raw, {"000001": "A", "000002": "A"})
+    strong = out[out["ticker"] == "000001"].iloc[0]
+    weak = out[out["ticker"] == "000002"].iloc[0]
+    assert np.isclose(strong["debt_to_equity"], 0.25)
+    assert np.isclose(strong["net_debt_to_ebitda"], 0.8)
+    assert np.isclose(strong["interest_coverage"], 10.0)
+    assert np.isclose(strong["current_ratio"], 4.0)
+    assert strong["equity_impairment_flag"] == 0
+    assert weak["equity_impairment_flag"] == 1
+    assert strong["balance_sheet_quality_score"] > weak["balance_sheet_quality_score"]
+
+
+def test_cashflow_quality_outputs_user_requested_metrics():
+    mod = load_module()
+    raw = pd.DataFrame([
+        {"ticker": "000001", "bsns_year": 2024, "period": "current", "account_id": "total_assets", "amount": 1000},
+        {"ticker": "000001", "bsns_year": 2024, "period": "current", "account_id": "revenue", "amount": 1000},
+        {"ticker": "000001", "bsns_year": 2024, "period": "current", "account_id": "net_income", "amount": 80},
+        {"ticker": "000001", "bsns_year": 2024, "period": "current", "account_id": "cfo", "amount": 120},
+        {"ticker": "000001", "bsns_year": 2024, "period": "current", "account_id": "capex", "amount": -20},
+        {"ticker": "000002", "bsns_year": 2024, "period": "current", "account_id": "total_assets", "amount": 1000},
+        {"ticker": "000002", "bsns_year": 2024, "period": "current", "account_id": "revenue", "amount": 1000},
+        {"ticker": "000002", "bsns_year": 2024, "period": "current", "account_id": "net_income", "amount": 120},
+        {"ticker": "000002", "bsns_year": 2024, "period": "current", "account_id": "cfo", "amount": 30},
+        {"ticker": "000002", "bsns_year": 2024, "period": "current", "account_id": "capex", "amount": 60},
+    ])
+    out = mod.build_dart_financial_quality_snapshot(raw, {"000001": "A", "000002": "A"}, market_cap_map={"000001": 2000, "000002": 2000})
+    strong = out[out["ticker"] == "000001"].iloc[0]
+    weak = out[out["ticker"] == "000002"].iloc[0]
+    assert strong["operating_cashflow_positive"] == 1
+    assert np.isclose(strong["fcf_margin"], 0.10)
+    assert np.isclose(strong["fcf_yield"], 0.05)
+    assert np.isclose(strong["accrual_ratio"], -0.04)
+    assert np.isclose(strong["cash_conversion"], 1.5)
+    assert weak["operating_cashflow_positive"] == 1
+    assert weak["fcf_margin"] < 0
+    assert strong["cashflow_quality_score"] > weak["cashflow_quality_score"]
+
+
+def test_earnings_stability_prefers_stable_growth_and_profitability():
+    mod = load_module()
+    rows = []
+    for ticker, revenue, op_income, net_income, equity in [
+        ("000001", [1000, 950, 900], [100, 95, 90], [80, 76, 72], [800, 780, 760]),
+        ("000002", [1000, 600, 1200], [120, -50, 200], [90, -40, 150], [500, 520, 480]),
+    ]:
+        for period, rev, op, ni, eq in zip(["current", "prior", "prior2"], revenue, op_income, net_income, equity):
+            rows.extend([
+                {"ticker": ticker, "bsns_year": 2024, "period": period, "account_id": "revenue", "amount": rev},
+                {"ticker": ticker, "bsns_year": 2024, "period": period, "account_id": "operating_income", "amount": op},
+                {"ticker": ticker, "bsns_year": 2024, "period": period, "account_id": "net_income", "amount": ni},
+                {"ticker": ticker, "bsns_year": 2024, "period": period, "account_id": "total_equity", "amount": eq},
+            ])
+    out = mod.build_dart_financial_quality_snapshot(pd.DataFrame(rows), {"000001": "A", "000002": "A"})
+    stable = out[out["ticker"] == "000001"].iloc[0]
+    volatile = out[out["ticker"] == "000002"].iloc[0]
+    assert stable["revenue_yoy_stability"] > volatile["revenue_yoy_stability"]
+    assert stable["op_margin_volatility"] < volatile["op_margin_volatility"]
+    assert stable["net_loss_count"] == 0
+    assert volatile["net_loss_count"] == 1
+    assert stable["roe_volatility"] < volatile["roe_volatility"]
+    assert stable["earnings_stability_score"] > volatile["earnings_stability_score"]
+
+
 def test_value_quality_score_includes_debt_and_fcf_when_available():
     mod = load_module()
     df = sample_panel(months=1)
@@ -142,5 +228,12 @@ def test_value_quality_score_includes_debt_and_fcf_when_available():
 def test_catalog_maps_requested_numbers():
     mod = load_module()
     cat = mod.build_catalog()
-    assert set(cat["requested_no"]) == {"1", "2", "3", "5", "6", "debt_fcf"}
-    assert {"sector_relative_per", "sector_relative_pbr", "value_quality_score", "sector_value_zscore", "debt_ratio", "fcf_to_assets"}.issubset(set(cat["factor_name"]))
+    assert {"1", "2", "3", "5", "6", "debt_fcf", "38", "39", "40"}.issubset(set(cat["requested_no"]))
+    assert {
+        "sector_relative_per", "sector_relative_pbr", "value_quality_score", "sector_value_zscore",
+        "debt_ratio", "fcf_to_assets", "debt_to_equity", "net_debt_to_ebitda",
+        "interest_coverage", "current_ratio", "equity_impairment_flag", "balance_sheet_quality_score",
+        "operating_cashflow_positive", "fcf_margin", "fcf_yield", "accrual_ratio", "cash_conversion",
+        "cashflow_quality_score", "revenue_yoy_stability", "op_margin_volatility", "net_loss_count",
+        "roe_volatility", "earnings_stability_score",
+    }.issubset(set(cat["factor_name"]))

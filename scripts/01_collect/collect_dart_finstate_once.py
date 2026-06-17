@@ -43,6 +43,7 @@ ACCOUNT_MAP: list[tuple[str, str, list[str]]] = [
     # --- 재무상태표 (BS) ---
     ("BS", "total_assets",        ["자산총계"]),
     ("BS", "current_assets",      ["유동자산"]),
+    ("BS", "cash",                ["현금및현금성자산", "현금 및 현금성자산", "현금"]),
     ("BS", "current_liabilities", ["유동부채"]),
     ("BS", "noncurrent_liabilities", ["비유동부채"]),
     ("BS", "total_equity",        ["자본총계", "자본합계"]),
@@ -51,6 +52,7 @@ ACCOUNT_MAP: list[tuple[str, str, list[str]]] = [
     ("IS", "revenue",             ["수익(매출액)", "매출액", "영업수익"]),
     ("IS", "gross_profit",        ["매출총이익", "매출총손익"]),
     ("IS", "operating_income",    ["영업이익", "영업손익"]),
+    ("IS", "interest_expense",    ["이자비용", "금융비용"]),
     ("IS", "net_income",          ["당기순이익", "당기순손익", "분기순이익"]),
     # --- 현금흐름표 (CF) ---
     ("CF", "cfo",                 ["영업활동현금흐름", "영업활동으로인한현금흐름",

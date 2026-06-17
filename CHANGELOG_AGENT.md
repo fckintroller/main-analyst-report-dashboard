@@ -4,6 +4,31 @@
 
 ---
 
+## 2026-06-17 21:46 - Hermes
+- Task: ㊳ Balance Sheet Quality, ㊴ Cash Flow Quality, ㊵ Earnings Stability를 섹터 상대 가치품질 팩터와 B 가치+퀄리티 웹 시나리오에 추가.
+- Modified:
+  - `scripts/01_collect/collect_dart_finstate_once.py` — DART finstate 수집 계정에 현금성자산, 매출, 영업이익, 이자비용, 순이익 variants 추가.
+  - `scripts/03_analyze/build_sector_relative_value_factors.py` — `debt_to_equity`, `net_debt_to_ebitda`, `interest_coverage`, `current_ratio`, `equity_impairment_flag`, `balance_sheet_quality_score`; `operating_cashflow_positive`, `fcf_margin`, `fcf_yield`, `accrual_ratio`, `cash_conversion`, `cashflow_quality_score`; `revenue_yoy_stability`, `op_margin_volatility`, `net_loss_count`, `roe_volatility`, `earnings_stability_score` 생성. 산식별 주석/해석을 코드에 추가하고 `value_quality_score`에 ㊳/㊴/㊵ 반영.
+  - `tests/test_sector_relative_value_factors.py` — ㊳/㊴/㊵ 방향성 및 catalog 매핑 테스트 추가.
+  - `data/raw/valuation/dart_finstate/finstate_all.csv` — 재수집/보강.
+  - `data/raw/factors/sector_relative_value_month.csv`, `data/raw/factors/sector_relative_value_catalog.csv`, `data/database/quant_data.sqlite` — 재생성/재적재; catalog 27행.
+  - `scripts/03_analyze/export_web_data.py` — stock_attractiveness export에 ㊳/㊴/㊵ 세부 필드 및 점수 추가, B 가치+퀄리티 가중치에 반영.
+  - `web/quant_data.js`, `web/quant_ui.js` — B 가치+퀄리티 설명에 ㊳/㊴/㊵ 추가, 종목 표에 `BS품질`/`CF품질`/`이익안정` 표시.
+  - `scratch/verify_quality_3840_stock_scenarios_20260617.js` — Puppeteer payload/UI 검증 추가.
+  - `data.md`, `00_context/index.md`, `00_context/index_factor.md`, `00_context/work_state.md` — 커버리지/검증/락 상태 반영.
+- Verification:
+  - `pytest tests/test_sector_relative_value_factors.py -q` → 11 passed.
+  - `python -m py_compile scripts/01_collect/collect_dart_finstate_once.py scripts/03_analyze/build_sector_relative_value_factors.py scripts/03_analyze/export_web_data.py` → 통과.
+  - `python scripts/03_analyze/build_sector_relative_value_factors.py` → monthly 14,136행/395종목, catalog 27행.
+  - `python scripts/03_analyze/export_web_data.py` → `stock_attractiveness: 2770 rows loaded`, `web/quant_data.js` 생성 완료.
+  - `node --check web/quant_ui.js` / `node --check web/quant_data.js` → 통과.
+  - `pytest tests/test_sector_relative_value_factors.py tests/test_valuation_per_pbr_factors.py tests/test_roe_trend_factors.py tests/test_piotroski_factors.py -q` → 37 passed.
+  - SQLite non-null: `balance_sheet_quality_score` 14,052 / `cashflow_quality_score` 12,910 / `earnings_stability_score` 14,015; 세부 필드 `debt_to_equity` 12,730, `net_debt_to_ebitda` 10,582, `interest_coverage` 8,076, `current_ratio` 13,238, `fcf_yield` 12,420, `cash_conversion` 9,300 등.
+  - `node scratch/verify_quality_3840_stock_scenarios_20260617.js` → rows 2,770, ㊳/㊴/㊵ enriched 353, B 가치+퀄리티 설명/`BS품질`/`CF품질`/`이익안정` UI 표시 확인.
+- Caveats:
+  - DART finstate 수집 전체 재실행은 600초 제한에 걸려 기존 raw에 추가 계정만 resume 수집해 병합했다. 결과 raw/SQLite는 재생성·검증 완료.
+  - ㊳/㊴/㊵은 DART 최신 연간 스냅샷과 월간 ROE 패널을 ticker 기준으로 붙인다. 웹 전체 2,770개 중 세 품질 점수 동시 노출은 353개이며, 결측 종목은 기존 가치/ROE/실적 기반으로 fallback된다.
+
 ## 2026-06-17 19:29 - Hermes
 - Task: B 가치+퀄리티/섹터 상대 가치품질 팩터에 부채비율·FCF를 붙이고 웹 종목 매력도에 노출.
 - Modified:

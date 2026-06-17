@@ -523,19 +523,22 @@ logger                               # 표준 로거 인스턴스 (모든 스크
 ## 19. 2026-06-16 섹터 상대 PER/PBR·ROE 조정 팩터 구축
 
 - 실행 agent: Hermes
-- 목적: 사용자 요청 팩터 1·2·3·5·6 구현 후 2026-06-17에 부채비율·FCF 품질을 추가 반영
+- 목적: 사용자 요청 팩터 1·2·3·5·6 구현 후 2026-06-17에 부채비율·FCF 품질, ㊳ Balance Sheet Quality, ㊴ Cash Flow Quality, ㊵ Earnings Stability를 추가 반영
   1. `sector_relative_per` — 종목 PER / 동일 섹터 PER 중위값
   2. `sector_relative_pbr` — 종목 PBR / 동일 섹터 PBR 중위값
   3. `pbr_to_roe`, `pbr_roe_residual_sector`, `pbr_roe_adjusted_score` — ROE 대비 PBR 조정
-  5. `value_quality_score` — 저PER·저PBR·ROE수준·ROE대비PBR·저부채·FCF 합성
+  5. `value_quality_score` — 저PER·저PBR·ROE수준·ROE대비PBR·저부채·FCF·BS/CF/이익안정성 합성
   6. `sector_value_zscore` — 섹터 PER/PBR 중위값의 자기 과거 대비 위치
   debt/FCF. `debt_ratio`, `fcf_to_assets`, `financial_quality_score` — DART 최신 연간 재무제표 기반 재무건전성·현금창출 품질
+  ㊳ `balance_sheet_quality_score` — debt_to_equity, net_debt_to_ebitda, interest_coverage, current_ratio, equity_impairment_flag 합성
+  ㊴ `cashflow_quality_score` — operating_cashflow_positive, fcf_margin, fcf_yield, accrual_ratio, cash_conversion 합성
+  ㊵ `earnings_stability_score` — 매출 YoY 안정성, 영업이익률 변동성, 적자 횟수, ROE 변동성 합성
 - 원천: 기존 `factor_valuation_per_pbr_month`, `factor_roe_trend_month` + `data/raw/valuation/dart_finstate/finstate_all.csv`(CAPEX 계정 추가 수집)
 - DB 백업:
   - `data/database/backups/quant_data_20260616_1940_before_sector_relative_value.sqlite`
   - `data/database/backups/quant_data_20260617_192517_before_debt_fcf.sqlite`
 - 가공 스크립트: `scripts/03_analyze/build_sector_relative_value_factors.py`
-- 수집 스크립트 보강: `scripts/01_collect/collect_dart_finstate_once.py` — `capex` 계정 및 괄호 음수 파싱 추가
+- 수집 스크립트 보강: `scripts/01_collect/collect_dart_finstate_once.py` — `capex`, 현금성자산, 매출, 영업이익, 이자비용, 순이익 계정 및 괄호 음수 파싱 추가
 - 테스트: `tests/test_sector_relative_value_factors.py`
 - 실행 명령:
   - `python scripts/01_collect/collect_dart_finstate_once.py`
@@ -545,7 +548,7 @@ logger                               # 표준 로거 인스턴스 (모든 스크
   - `data/raw/factors/sector_relative_value_catalog.csv`
 - SQLite 테이블:
   - `factor_sector_relative_value_month` — 14,136 rows, 395 tickers, 2023-06-01~2026-06-01
-  - `factor_sector_relative_value_catalog` — 10 rows
+  - `factor_sector_relative_value_catalog` — 27 rows
 - 검증 요약:
   - non-null `sector_relative_per`: 10,202
   - non-null `sector_relative_pbr`: 13,407
@@ -553,13 +556,17 @@ logger                               # 표준 로거 인스턴스 (모든 스크
   - non-null `debt_ratio`: 12,730
   - non-null `fcf_to_assets`: 11,976
   - non-null `financial_quality_score`: 13,539
+  - non-null `balance_sheet_quality_score`: 14,052
+  - non-null `cashflow_quality_score`: 12,910
+  - non-null `earnings_stability_score`: 14,015
   - non-null `value_quality_score`: 14,124
   - non-null `sector_value_zscore`: 9,586
   - DART finstate raw: 12,830 rows / 379 tickers / `capex` 1,091 rows
   - `python -m py_compile scripts/01_collect/collect_dart_finstate_once.py scripts/03_analyze/build_sector_relative_value_factors.py scripts/03_analyze/export_web_data.py` → 통과
-  - `pytest tests/test_sector_relative_value_factors.py tests/test_valuation_per_pbr_factors.py tests/test_roe_trend_factors.py tests/test_piotroski_factors.py -q` → 34 passed
+  - `pytest tests/test_sector_relative_value_factors.py tests/test_valuation_per_pbr_factors.py tests/test_roe_trend_factors.py tests/test_piotroski_factors.py -q` → 37 passed
   - `node scratch/verify_debt_fcf_stock_scenarios_20260617.js` → stock_attractiveness 2,770 rows, debt/FCF enriched 315 rows, B 가치+퀄리티 UI 부채·FCF 표시 확인
+  - `node scratch/verify_quality_3840_stock_scenarios_20260617.js` → stock_attractiveness 2,770 rows, ㊳/㊴/㊵ enriched 353 rows, B 가치+퀄리티 UI `BS품질`/`CF품질`/`이익안정` 표시 확인
 - Caveats:
   - 섹터 내 표본 5종목 미만이면 섹터 상대/잔차 지표를 NaN 처리합니다.
   - ROE≤0 구간은 PBR/ROE 조정 지표를 NaN 처리합니다.
-  - 부채비율·FCF는 DART 최신 연간 스냅샷을 월간 패널에 ticker 기준으로 붙입니다. 전체 2,770개 웹 종목 중 debt/FCF 동시 노출은 DART 상세 수집·월간 팩터 매칭 가능한 315개로 제한됩니다.
+  - 부채비율·FCF 및 ㊳/㊴/㊵ 품질 점수는 DART 최신 연간 스냅샷을 월간 패널에 ticker 기준으로 붙입니다. 전체 2,770개 웹 종목 중 ㊳/㊴/㊵ 동시 노출은 DART 상세 수집·월간 팩터 매칭 가능한 353개로 제한됩니다.
