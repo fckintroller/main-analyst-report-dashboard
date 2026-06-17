@@ -26,6 +26,8 @@
   - `node --check web/quant_ui.js` / `node --check web/quant_data.js` / `node --check scratch/verify_debt_fcf_stock_scenarios_20260617.js` → 통과.
   - `pytest tests/test_sector_relative_value_factors.py tests/test_valuation_per_pbr_factors.py tests/test_roe_trend_factors.py tests/test_piotroski_factors.py -q` → 34 passed.
   - `node scratch/verify_debt_fcf_stock_scenarios_20260617.js` → rows 2,770, enriched 315, quality_source 존재, B 가치+퀄리티 UI와 부채/FCF 표시 확인.
+  - Git commit/push: `27f2abd` (`Add debt and FCF quality factors`) → GitHub Actions Deploy Web Dashboard run `27682919371` completed success.
+  - Live URL `https://fckintroller.github.io/main-analyst-report-dashboard/` → HTTP 200; `quant_data.js`에 `debt_ratio`, `fcf_to_assets`, `financial_quality_score`, `quality_source`, `scenario_b_value_quality` 마커 존재 확인.
 - Caveats:
   - 부채비율·FCF는 DART 최신 연간 스냅샷을 월간 패널에 ticker 기준으로 붙인 값입니다.
   - 웹 전체 2,770개 종목 중 debt/FCF 동시 노출은 DART 상세 수집·월간 팩터 매칭 가능한 315개입니다. 나머지는 기존 가치/ROE/실적 기반 점수로 fallback됩니다.
