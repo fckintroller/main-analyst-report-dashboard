@@ -25,6 +25,8 @@
   - `pytest tests/test_sector_relative_value_factors.py tests/test_valuation_per_pbr_factors.py tests/test_roe_trend_factors.py tests/test_piotroski_factors.py -q` → 37 passed.
   - SQLite non-null: `balance_sheet_quality_score` 14,052 / `cashflow_quality_score` 12,910 / `earnings_stability_score` 14,015; 세부 필드 `debt_to_equity` 12,730, `net_debt_to_ebitda` 10,582, `interest_coverage` 8,076, `current_ratio` 13,238, `fcf_yield` 12,420, `cash_conversion` 9,300 등.
   - `node scratch/verify_quality_3840_stock_scenarios_20260617.js` → rows 2,770, ㊳/㊴/㊵ enriched 353, B 가치+퀄리티 설명/`BS품질`/`CF품질`/`이익안정` UI 표시 확인.
+  - Git commit/push: `1271a5e` (`Add balance sheet cash flow quality factors`) → GitHub Actions Deploy Web Dashboard run `27690187592` completed success.
+  - Live URL `https://fckintroller.github.io/main-analyst-report-dashboard/` → HTTP 200; `quant_data.js`에 `balance_sheet_quality_score`, `cashflow_quality_score`, `earnings_stability_score`, `debt_to_equity`, `fcf_yield`, `scenario_b_value_quality` 마커 존재 확인.
 - Caveats:
   - DART finstate 수집 전체 재실행은 600초 제한에 걸려 기존 raw에 추가 계정만 resume 수집해 병합했다. 결과 raw/SQLite는 재생성·검증 완료.
   - ㊳/㊴/㊵은 DART 최신 연간 스냅샷과 월간 ROE 패널을 ticker 기준으로 붙인다. 웹 전체 2,770개 중 세 품질 점수 동시 노출은 353개이며, 결측 종목은 기존 가치/ROE/실적 기반으로 fallback된다.
