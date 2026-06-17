@@ -240,13 +240,12 @@
         <button id="btn-tab-quant" class="tab-btn"><i class="fa-solid fa-calculator"></i> 퀀트</button>
         <div id="nav-sub-quant" class="sidebar-sub-nav" style="display:none; flex-direction:column; padding-left: 20px; gap:8px;">
           <button class="sub-tab-btn active" onclick="switchSubTab('quant-sector', this)">업종 순환맵</button>
-          <button class="sub-tab-btn" onclick="switchSubTab('quant-scorecard', this)">매크로 스코어카드</button>
-          <button class="sub-tab-btn" onclick="switchSubTab('quant-sector-momentum', this)">섹터 모멘텀</button>
-          <button class="sub-tab-btn" onclick="switchSubTab('quant-heatmap', this)">섹터 히트맵</button>
+          <button class="sub-tab-btn" onclick="switchSubTab('quant-factor-validation', this)">팩터 심사표</button>
         </div>
 
         <button id="btn-tab-macro" class="tab-btn"><i class="fa-solid fa-globe"></i> 매크로 & 시장</button>
         <div id="nav-sub-macro" class="sidebar-sub-nav" style="display:none; flex-direction:column; padding-left: 20px; gap:8px;">
+          <div style="font-size:0.7rem; font-weight:700; color:var(--text-sub); letter-spacing:0.08em; padding:4px 10px 2px; opacity:0.6;">시장 데이터</div>
           <button class="sub-tab-btn active" onclick="switchSubTab('macro-index', this)">주가 지표</button>
           <button class="sub-tab-btn" onclick="switchSubTab('macro-global', this)">글로벌 현황</button>
           <button class="sub-tab-btn" onclick="switchSubTab('macro-leading', this)">경기 선행 & 심리</button>
@@ -254,6 +253,11 @@
           <button class="sub-tab-btn" onclick="switchSubTab('macro-rates', this)">금리/채권</button>
           <button class="sub-tab-btn" onclick="switchSubTab('macro-commodity', this)">원자재 가격</button>
           <button class="sub-tab-btn" onclick="switchSubTab('macro-industry', this)">산업 분석</button>
+          <div style="height:1px; background:var(--card-border); margin:4px 10px;"></div>
+          <div style="font-size:0.7rem; font-weight:700; color:var(--text-sub); letter-spacing:0.08em; padding:2px 10px; opacity:0.6;">분석 모델</div>
+          <button class="sub-tab-btn" onclick="switchSubTab('macro-scorecard', this)">매크로 스코어카드</button>
+          <button class="sub-tab-btn" onclick="switchSubTab('macro-sector-momentum', this)">섹터 모멘텀</button>
+          <button class="sub-tab-btn" onclick="switchSubTab('macro-regression', this)">회귀 분석 신호</button>
         </div>
 
         <button id="btn-tab-bubble" class="tab-btn"><i class="fa-solid fa-chart-pie" style="color:#ef4444;"></i> 버블 지표</button>
@@ -482,6 +486,66 @@
         </div>
       </div>
 
+      <!-- 매크로 스코어카드 (퀀트 탭에서 이동) -->
+      <div id="sub-macro-scorecard" class="sub-tab-content">
+        <div class="reports-container">
+          <h2 style="font-size:1.4rem; font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; color:var(--primary);">
+            <i class="fa-solid fa-signal"></i> 매크로 팩터 리스크 스코어카드
+          </h2>
+          <p style="color:var(--text-sub); font-size:0.88rem; margin-bottom:24px;">
+            * 주요 거시경제 지표를 기반으로 현재 시장의 Risk On / Off 국면을 종합 진단합니다.
+          </p>
+          <div id="regime-card" style="margin-bottom:20px; padding:16px; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px;"></div>
+          <div id="scorecard-container"></div>
+        </div>
+      </div>
+
+      <!-- 섹터 모멘텀 (퀀트 탭에서 이동) -->
+      <div id="sub-macro-sector-momentum" class="sub-tab-content">
+        <div class="reports-container">
+          <h2 style="font-size:1.4rem; font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; color:var(--primary);">
+            <i class="fa-solid fa-ranking-star"></i> 섹터 관심도 모멘텀 랭킹 (네이버 DataLab)
+          </h2>
+          <p style="color:var(--text-sub); font-size:0.88rem; margin-bottom:16px;">
+            * 시장(market_anchor) 대비 섹터별 상대 검색 관심도. 값이 클수록 해당 섹터가 시장 대비 높은 관심 집중.
+          </p>
+          <div id="quant-sector-momentum-charts" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(420px,1fr)); gap:20px;"></div>
+        </div>
+      </div>
+
+      <!-- 회귀 분석 신호 (종목분석 탭에서 이동) -->
+      <div id="sub-macro-regression" class="sub-tab-content">
+        <div class="reports-container">
+          <h2 style="font-size:1.4rem; font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; color:var(--primary);">
+            <i class="fa-solid fa-chart-line"></i> 회귀 분석 시장 신호
+          </h2>
+          <p style="color:var(--text-sub); font-size:0.88rem; margin-bottom:16px;">
+            * OLS/Ridge 시장 타이밍 · Fama-MacBeth 종목 팩터 IC · 레짐별 유효 팩터를 한눈에 진단합니다.
+          </p>
+          <div id="regression-insight-panel" class="data-card" style="margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+              <h3 style="color:var(--primary); margin:0;"><i class="fa-solid fa-chart-line"></i> 분석 결과</h3>
+              <span id="regression-as-of" style="color:var(--text-sub); font-size:0.78rem;"></span>
+            </div>
+            <div style="display:grid; grid-template-columns:minmax(220px,1fr) 1fr 1fr; gap:16px; flex-wrap:wrap;" id="regression-top-cards"></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:14px;">
+              <div>
+                <div style="font-size:0.78rem; font-weight:700; color:var(--text-sub); margin-bottom:8px;">시장 타이밍 팩터 기여도 (base OLS · HC3)</div>
+                <div id="regression-factor-bars" style="display:flex; flex-direction:column; gap:5px;"></div>
+              </div>
+              <div>
+                <div style="font-size:0.78rem; font-weight:700; color:var(--text-sub); margin-bottom:8px;">종목 팩터 IC (Fama-MacBeth · Newey-West t)</div>
+                <div id="fm-factor-bars" style="display:flex; flex-direction:column; gap:5px;"></div>
+              </div>
+            </div>
+            <div style="margin-top:14px;">
+              <div style="font-size:0.78rem; font-weight:700; color:var(--text-sub); margin-bottom:8px;">레짐별 유효 팩터 IC</div>
+              <div id="regime-factor-table" style="overflow-x:auto;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- 踰꾨툝 吏????-->
@@ -572,11 +636,16 @@
                 정렬 기준
                 <select id="stock-filter-sort" onchange="renderStockAttractiveness()" style="background:var(--btn-bg); border:1px solid var(--card-border); color:var(--text-heading); padding:10px 12px; border-radius:6px;">
                   <option value="market_attractiveness_score">종합 매력도</option>
+                  <option value="scenario_a_momentum">A 단기 모멘텀</option>
+                  <option value="scenario_b_value_quality">B 가치+퀄리티</option>
+                  <option value="scenario_c_reversal">C 저평가 반등</option>
+                  <option value="scenario_d_large_stable">D 대형 안정</option>
                   <option value="score_momentum_flow">모멘텀+수급</option>
                   <option value="score_value_quality">가치+퀄리티</option>
                   <option value="score_base_5factor">기본 5팩터</option>
                   <option value="score_reversal_value_flow">저평가 반등</option>
                   <option value="score_short_squeeze_addon">숏커버 보조</option>
+                  <option value="regime_adj_score">레짐 조정 점수</option>
                   <option value="market_cap">시가총액</option>
                   <option value="this_year_op_growth_pct">올해 영익 성장률</option>
                   <option value="next_year_op_growth_pct">내년 영익 성장률</option>
@@ -610,6 +679,7 @@
                   <th>올해예상</th>
                   <th>내년예상</th>
                   <th>시총/거래</th>
+                  <th>레짐 점수</th>
                   <th>선택 시나리오</th>
                 </tr>
               </thead>
@@ -633,42 +703,86 @@
       </div>
 
       <!-- ?뱁꽣 ?덊듃留?-->
-      <div id="sub-quant-heatmap" class="sub-tab-content">
-        <div class="data-card">
-          <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-table-cells"></i> 섹터별 리포트 히트맵(매수/중립/매도 비중)</h3>
-          <p style="color: var(--text-sub); font-size: 0.85rem; margin-bottom: 15px;">* 애널리스트 리포트를 섹터별로 집계한 트리맵입니다. 면적은 리포트 수, 색상은 매수 비중을 나타냅니다.</p>
-          <div style="position: relative; height: 450px;">
-            <canvas id="chart-heatmap"></canvas>
+      <!-- 팩터 심사표 -->
+      <div id="sub-quant-factor-validation" class="sub-tab-content">
+        <div class="reports-container">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+            <div>
+              <h2 style="font-size:1.4rem; font-weight:700; margin:0 0 8px; display:flex; align-items:center; gap:10px; color:var(--primary);">
+                <i class="fa-solid fa-clipboard-check"></i> 팩터 심사표
+              </h2>
+              <p style="color:var(--text-sub); font-size:0.88rem; margin:0;">
+                * 37개 팩터의 IC, TopN 초과수익, 현재 Top30 종목, 상관관계, 커버리지를 한 화면에서 검토합니다. 거래비용은 미반영입니다.
+              </p>
+            </div>
+            <span id="factor-validation-as-of" style="color:var(--text-sub); font-size:0.8rem;"></span>
+          </div>
+          <!-- 팩터 심사표 앵커 네비게이션 -->
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; padding:10px 14px; background:var(--btn-bg); border:1px solid var(--card-border); border-radius:8px;">
+            <span style="font-size:0.75rem; color:var(--text-sub); font-weight:700; align-self:center;">바로가기:</span>
+            <a href="#fv-summary" style="font-size:0.78rem; color:var(--primary); text-decoration:none; padding:3px 8px; border:1px solid rgba(16,185,129,0.3); border-radius:4px;">우수 팩터 요약</a>
+            <a href="#fv-topn" style="font-size:0.78rem; color:var(--primary); text-decoration:none; padding:3px 8px; border:1px solid rgba(16,185,129,0.3); border-radius:4px;">TopN 초과수익</a>
+            <a href="#fv-current" style="font-size:0.78rem; color:var(--primary); text-decoration:none; padding:3px 8px; border:1px solid rgba(16,185,129,0.3); border-radius:4px;">현재 Top30</a>
+            <a href="#fv-corr" style="font-size:0.78rem; color:var(--primary); text-decoration:none; padding:3px 8px; border:1px solid rgba(16,185,129,0.3); border-radius:4px;">팩터 상관관계</a>
+            <a href="#fv-coverage" style="font-size:0.78rem; color:var(--primary); text-decoration:none; padding:3px 8px; border:1px solid rgba(16,185,129,0.3); border-radius:4px;">커버리지</a>
+          </div>
+
+          <div id="factor-validation-cards" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:12px; margin-bottom:16px;"></div>
+          <div id="fv-summary" class="data-card" style="margin-bottom:16px;">
+            <h3 style="color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-ranking-star"></i> 1개월 Top30 기준 우수 팩터</h3>
+            <div id="factor-validation-summary-table" class="table-responsive"></div>
+          </div>
+          <div id="fv-topn" class="data-card" style="margin-bottom:16px;">
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin-bottom:12px;">
+              <label style="display:flex; flex-direction:column; gap:6px; color:var(--text-sub); font-size:0.78rem; font-weight:700;">수익기간
+                <select id="factor-validation-horizon" onchange="renderFactorValidationTopn()" style="background:var(--btn-bg); border:1px solid var(--card-border); color:var(--text-heading); padding:8px 10px; border-radius:6px;">
+                  <option value="1m">1개월</option><option value="3m">3개월</option><option value="6m">6개월</option>
+                </select>
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px; color:var(--text-sub); font-size:0.78rem; font-weight:700;">TopN
+                <select id="factor-validation-topn" onchange="renderFactorValidationTopn()" style="background:var(--btn-bg); border:1px solid var(--card-border); color:var(--text-heading); padding:8px 10px; border-radius:6px;">
+                  <option value="20">Top20</option><option value="30" selected>Top30</option><option value="50">Top50</option>
+                </select>
+              </label>
+            </div>
+            <div id="factor-validation-topn-table" class="table-responsive"></div>
+          </div>
+          <div id="fv-current" class="data-card" style="margin-bottom:16px;">
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin-bottom:12px;">
+              <label style="display:flex; flex-direction:column; gap:6px; color:var(--text-sub); font-size:0.78rem; font-weight:700;">팩터
+                <select id="factor-validation-factor" onchange="renderFactorValidationCurrent()" style="background:var(--btn-bg); border:1px solid var(--card-border); color:var(--text-heading); padding:8px 10px; border-radius:6px; min-width:220px;"></select>
+              </label>
+              <input id="factor-validation-search" oninput="renderFactorValidationCurrent()" placeholder="🔎 종목명/코드 검색" style="background:var(--btn-bg); border:1px solid var(--card-border); color:var(--text-heading); padding:9px 12px; border-radius:6px; min-width:220px;">
+              <label style="display:flex; flex-direction:column; gap:6px; color:var(--text-sub); font-size:0.78rem; font-weight:700;">정렬기준
+                <select id="factor-validation-current-sort-key" onchange="renderFactorValidationCurrent()" style="background:var(--btn-bg); border:1px solid var(--card-border); color:var(--text-heading); padding:8px 10px; border-radius:6px; min-width:130px;">
+                  <option value="rank">순위</option>
+                  <option value="score">표준점수</option>
+                  <option value="raw_value">기준값</option>
+                </select>
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px; color:var(--text-sub); font-size:0.78rem; font-weight:700;">정렬방향
+                <select id="factor-validation-current-sort-order" onchange="renderFactorValidationCurrent()" style="background:var(--btn-bg); border:1px solid var(--card-border); color:var(--text-heading); padding:8px 10px; border-radius:6px; min-width:130px;">
+                  <option value="asc" selected>오름차순</option>
+                  <option value="desc">내림차순</option>
+                </select>
+              </label>
+            </div>
+            <p style="color:var(--text-sub); font-size:0.78rem; margin:-4px 0 12px 0;">
+              표준점수는 팩터별 유리한 방향을 0~100점으로 통일한 값입니다. 기준값은 팩터별 원 지표를 해석 가능한 단위(모멘텀 점수, 섹터 PER/PBR 대비 배수, z-score 등)로 표시합니다.
+            </p>
+            <div id="factor-validation-current-table" class="table-responsive"></div>
+          </div>
+          <div id="fv-corr" class="data-card" style="margin-bottom:16px;">
+            <h3 style="color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-table-cells"></i> 팩터 상관관계</h3>
+            <div id="factor-validation-corr-table" class="table-responsive" style="max-height:420px; overflow:auto;"></div>
+          </div>
+          <div id="fv-coverage" class="data-card">
+            <h3 style="color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-database"></i> 최근 커버리지</h3>
+            <div id="factor-validation-coverage-table" class="table-responsive"></div>
           </div>
         </div>
       </div>
 
-      <!-- 留ㅽ겕濡??ㅼ퐫?댁뭅??-->
-      <div id="sub-quant-scorecard" class="sub-tab-content">
-        <div class="reports-container">
-          <h2 style="font-size:1.4rem; font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; color:var(--primary);">
-            <i class="fa-solid fa-signal"></i> 매크로 팩터 리스크 스코어카드
-          </h2>
-          <p style="color:var(--text-sub); font-size:0.88rem; margin-bottom:24px;">
-            * 주요 거시경제 지표를 기반으로 현재 시장의 Risk On / Off 국면을 종합 진단합니다.
-          </p>
-          <div id="regime-card" style="margin-bottom:20px; padding:16px; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px;"></div>
-          <div id="scorecard-container"></div>
-        </div>
-      </div>
-
-      <!-- 섹터 모멘텀 (NAVER DataLab 35섹터) -->
-      <div id="sub-quant-sector-momentum" class="sub-tab-content">
-        <div class="reports-container">
-          <h2 style="font-size:1.4rem; font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; color:var(--primary);">
-            <i class="fa-solid fa-ranking-star"></i> 섹터 관심도 모멘텀 랭킹 (네이버 DataLab)
-          </h2>
-          <p style="color:var(--text-sub); font-size:0.88rem; margin-bottom:16px;">
-            * 시장(market_anchor) 대비 섹터별 상대 검색 관심도. 값이 클수록 해당 섹터가 시장 대비 높은 관심 집중.
-          </p>
-          <div id="quant-sector-momentum-charts" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(420px,1fr)); gap:20px;"></div>
-        </div>
-      </div>
 
     </div>
 
@@ -761,6 +875,9 @@
     <button class="bottom-nav-item active" onclick="document.getElementById('btn-tab-reports').click(); document.querySelectorAll('.bottom-nav-item').forEach(b=>b.classList.remove('active')); this.classList.add('active')">
       <i class="fa-solid fa-file-invoice-dollar"></i><span>리포트</span>
     </button>
+    <button class="bottom-nav-item" onclick="document.getElementById('btn-tab-analysis').click(); document.querySelectorAll('.bottom-nav-item').forEach(b=>b.classList.remove('active')); this.classList.add('active')">
+      <i class="fa-solid fa-ranking-star"></i><span>종목</span>
+    </button>
     <button class="bottom-nav-item" onclick="document.getElementById('btn-tab-quant').click(); document.querySelectorAll('.bottom-nav-item').forEach(b=>b.classList.remove('active')); this.classList.add('active')">
       <i class="fa-solid fa-calculator"></i><span>퀀트</span>
     </button>
@@ -768,7 +885,7 @@
       <i class="fa-solid fa-globe"></i><span>매크로</span>
     </button>
     <button class="bottom-nav-item" onclick="document.getElementById('btn-tab-chart').click(); document.querySelectorAll('.bottom-nav-item').forEach(b=>b.classList.remove('active')); this.classList.add('active')">
-      <i class="fa-solid fa-chart-line"></i><span>李⑦듃</span>
+      <i class="fa-solid fa-chart-line"></i><span>차트</span>
     </button>
   </nav>
 

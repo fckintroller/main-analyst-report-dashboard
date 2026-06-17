@@ -202,6 +202,7 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
             conn = sqlite3.connect(db_path)
             table_specs = [
                 ("factor_valuation_per_pbr_month", "period", ["sector", "valuation_score", "per_percentile_sector", "pbr_percentile_sector", "pbr_zscore_own_24m"]),
+                ("factor_sector_relative_value_month", "period", ["sector_relative_per", "sector_relative_pbr", "pbr_roe_adjusted_score", "value_quality_score", "sector_value_zscore"]),
                 ("factor_stock_price_momentum_month", "period", ["close", "ret_1m", "ret_3m", "ret_6m", "momentum_score", "turnover_spike_flag"]),
                 ("factor_size_month", "period", ["market_cap", "size_percentile_cross", "small_cap_score"]),
                 ("factor_liquidity_turnover_month", "period", ["turnover_value_avg", "turnover_ratio", "liquidity_score"]),
@@ -241,6 +242,17 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
         "score_short_squeeze_addon": ["stock_price_momentum__momentum_score", "investor_flow_momentum__flow_score", "shorting__shorting_pressure_score"],
     }
 
+    def weighted_score(parts):
+        vals = []
+        weights = []
+        for value, weight in parts:
+            v = _safe_number(value)
+            if v is None:
+                continue
+            vals.append(v * weight)
+            weights.append(weight)
+        return round(sum(vals) / sum(weights), 4) if weights else None
+
     rows = []
     for _, r in out.iterrows():
         t = str(r.get("ticker", "")).zfill(6)
@@ -262,6 +274,11 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
             "bps": _safe_number(r.get("BPS")),
             "div_yield": _safe_number(r.get("DIV")),
             "valuation_score": _safe_number(r.get("valuation_per_pbr__valuation_score")),
+            "sector_relative_per": _safe_number(r.get("sector_relative_value__sector_relative_per")),
+            "sector_relative_pbr": _safe_number(r.get("sector_relative_value__sector_relative_pbr")),
+            "sector_value_score": _safe_number(r.get("sector_relative_value__value_quality_score")),
+            "sector_pbr_roe_score": _safe_number(r.get("sector_relative_value__pbr_roe_adjusted_score")),
+            "sector_value_zscore": _safe_number(r.get("sector_relative_value__sector_value_zscore")),
             "momentum_score": _safe_number(r.get("stock_price_momentum__momentum_score")),
             "liquidity_score": _safe_number(r.get("liquidity_turnover__liquidity_score")),
             "roe": _safe_number(r.get("roe_trend__roe")),
@@ -283,6 +300,35 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
             vals = [_safe_number(r.get(c)) for c in cols]
             vals = [v for v in vals if v is not None]
             rec[score_name] = round(sum(vals) / len(vals), 4) if vals else None
+        rec["scenario_a_momentum"] = weighted_score([
+            (rec.get("momentum_score"), 0.35),
+            (rec.get("flow_score"), 0.30),
+            (rec.get("liquidity_score"), 0.20),
+            (rec.get("earnings_momentum_score"), 0.15),
+        ])
+        rec["scenario_b_value_quality"] = weighted_score([
+            (rec.get("valuation_score"), 0.20),
+            (rec.get("sector_value_score"), 0.25),
+            (rec.get("roe_score"), 0.20),
+            (rec.get("f_score_norm"), 0.15),
+            (rec.get("earnings_momentum_score"), 0.10),
+            (rec.get("forward_valuation_score"), 0.10),
+        ])
+        rec["scenario_c_reversal"] = weighted_score([
+            (rec.get("meanrev_score"), 0.30),
+            (rec.get("valuation_score"), 0.20),
+            (rec.get("sector_value_score"), 0.20),
+            (rec.get("flow_score"), 0.20),
+            (rec.get("shorting_pressure_score"), 0.10),
+        ])
+        rec["scenario_d_large_stable"] = weighted_score([
+            (_safe_number(r.get("size__size_percentile_cross")), 0.25),
+            (rec.get("liquidity_score"), 0.20),
+            (rec.get("roe_score"), 0.20),
+            (rec.get("valuation_score"), 0.15),
+            (rec.get("flow_score"), 0.10),
+            (rec.get("f_score_norm"), 0.10),
+        ])
         score_vals = [rec.get(k) for k in score_cols if rec.get(k) is not None]
         rec["market_attractiveness_score"] = round(sum(score_vals) / len(score_vals), 4) if score_vals else None
         rows.append(rec)
@@ -566,6 +612,143 @@ def _compute_kospi_pbr_from_stocks(quant_data, raw_data_dir):
         logger.warning(" - KOSPI PBR 계산 실패 (건너뜀): %s", e)
 
 
+def _build_factor_validation(raw_data_dir: Path) -> dict:
+    """팩터 심사표 CSV 산출물을 웹용 payload로 축약."""
+    try:
+        project_dir = Path(__file__).resolve().parents[2]
+        workspace_dir = project_dir.parents[1]
+        outputs_root = workspace_dir / "02_outputs"
+        candidates = sorted(outputs_root.glob("*_factor_validation_dashboard"))
+        if not candidates:
+            return {"as_of": "", "summary": [], "current_top": [], "correlation": {}, "coverage": [], "source_dir": ""}
+        source_dir = candidates[-1]
+
+        def load_csv(name):
+            path = source_dir / name
+            if not path.exists():
+                logger.warning("factor_validation CSV 없음: %s", path)
+                return pd.DataFrame()
+            df = pd.read_csv(path)
+            return df.where(pd.notnull(df), None)
+
+        summary = load_csv("factor_validation_summary.csv")
+        current = load_csv("current_top30_by_factor.csv")
+        corr_df = load_csv("factor_correlation_matrix.csv")
+        coverage = load_csv("factor_coverage_by_period.csv")
+
+        correlation = {}
+        if not corr_df.empty:
+            first_col = corr_df.columns[0]
+            for _, row in corr_df.iterrows():
+                key = row.get(first_col)
+                if key is None:
+                    continue
+                correlation[str(key)] = {
+                    str(col): _safe_number(row.get(col))
+                    for col in corr_df.columns
+                    if col != first_col
+                }
+
+        as_of = ""
+        if not current.empty and "period" in current.columns:
+            vals = [str(v) for v in current["period"].dropna().tolist()]
+            as_of = max(vals) if vals else ""
+        if not as_of and not coverage.empty and "period" in coverage.columns:
+            vals = [str(v) for v in coverage["period"].dropna().tolist()]
+            as_of = max(vals) if vals else ""
+
+        payload = {
+            "as_of": as_of,
+            "source_dir": str(source_dir),
+            "method": "factor_validation_summary/current_top30/correlation/coverage CSV export; TopN 수익률은 거래비용 미반영, look-ahead caveat 유지",
+            "summary": summary.to_dict(orient="records") if not summary.empty else [],
+            "current_top": current.to_dict(orient="records") if not current.empty else [],
+            "correlation": correlation,
+            "coverage": coverage.to_dict(orient="records") if not coverage.empty else [],
+        }
+        return payload
+    except Exception as e:
+        logger.warning("factor_validation payload 로드 실패: %s", e)
+        return {"as_of": "", "summary": [], "current_top": [], "correlation": {}, "coverage": [], "source_dir": ""}
+
+
+def _build_regression_summary(raw_data_dir: Path) -> dict:
+    """regression_* 테이블을 읽어 웹용 요약 딕셔너리 반환."""
+    db_path = Path(raw_data_dir).parent / "database" / "quant_data.sqlite"
+    if not db_path.exists():
+        return {}
+    try:
+        import sqlite3, json as _json
+        conn = sqlite3.connect(db_path)
+
+        # 메타 (JSON 직렬화된 전체 결과 포함)
+        meta_df = pd.read_sql("SELECT key, value FROM regression_meta", conn)
+        meta = dict(zip(meta_df["key"], meta_df["value"]))
+
+        market_timing_full = _json.loads(meta.get("full_market_timing", "{}"))
+        fmb_full          = _json.loads(meta.get("full_fmb", "{}"))
+        regime_full       = _json.loads(meta.get("full_regime", "{}"))
+
+        # 시장 타이밍 요약 (base 모델 기준)
+        base_mt = market_timing_full.get("base", {})
+        timing_summary = {
+            "signal":       base_mt.get("signal", "neutral"),
+            "pred_pct":     base_mt.get("pred_pct", 0),
+            "r2":           base_mt.get("r2", 0),
+            "adj_r2":       base_mt.get("adj_r2", 0),
+            "periods":      base_mt.get("periods", 0),
+            "pred_period":  base_mt.get("pred_period", ""),
+            "factors":      base_mt.get("factors", []),
+            "full":         market_timing_full,  # full model 포함
+        }
+
+        # 팩터 IC 요약
+        ic_summary = {
+            "periods":      fmb_full.get("periods", 0),
+            "stock_count":  fmb_full.get("stock_count", 0),
+            "factors":      fmb_full.get("factors", []),
+        }
+
+        # 레짐 인터랙션 요약
+        regime_summary = {
+            "current_regime":  regime_full.get("current_regime", ""),
+            "current_bucket":  regime_full.get("current_bucket", ""),
+            "current_period":  regime_full.get("current_period", ""),
+            "regimes":         regime_full.get("regimes", {}),
+        }
+
+        conn.close()
+        return {
+            "as_of":        meta.get("as_of", ""),
+            "market_timing": timing_summary,
+            "factor_ic":    ic_summary,
+            "regime":       regime_summary,
+        }
+    except Exception as e:
+        logger.warning("회귀 분석 요약 로드 실패: %s", e)
+        return {}
+
+
+def _inject_regime_scores(quant_data: dict):
+    """regression_regime_adj_scores → stock_attractiveness rows에 regime_adj_score 주입."""
+    db_path = Path(__file__).parents[2] / "data" / "database" / "quant_data.sqlite"
+    if not db_path.exists():
+        return
+    try:
+        import sqlite3
+        conn = sqlite3.connect(db_path)
+        scores_df = pd.read_sql("SELECT ticker, regime_adj_score FROM regression_regime_adj_scores", conn)
+        conn.close()
+        score_map = dict(zip(scores_df["ticker"].astype(str).str.zfill(6),
+                             scores_df["regime_adj_score"]))
+        rows = quant_data.get("stock_attractiveness", {}).get("rows", [])
+        for row in rows:
+            t = str(row.get("ticker", "")).zfill(6)
+            row["regime_adj_score"] = _safe_number(score_map.get(t))
+    except Exception as e:
+        logger.warning("regime_adj_score 주입 실패: %s", e)
+
+
 def collect_quant_data(raw_data_dir, krx_dict=None, include_stock_detail=False):
     raw_data_dir = Path(raw_data_dir)
     krx_dict = krx_dict if krx_dict is not None else _load_krx_names()
@@ -764,6 +947,20 @@ def collect_quant_data(raw_data_dir, krx_dict=None, include_stock_detail=False):
     logger.info(
         " - stock_attractiveness: %d rows loaded",
         len(quant_data["stock_attractiveness"].get("rows", [])),
+    )
+
+    # 6-1. 회귀 분석 결과 (regression_* 테이블 → regression 키)
+    quant_data["regression"] = _build_regression_summary(raw_data_dir)
+    _inject_regime_scores(quant_data)
+    logger.info(" - regression: signal=%s / regime=%s",
+                quant_data["regression"].get("market_timing", {}).get("signal", "-"),
+                quant_data["regression"].get("regime", {}).get("current_regime", "-"))
+    # 6-2. 팩터 심사표 결과 (독립 검증 CSV → factor_validation 키)
+    quant_data["factor_validation"] = _build_factor_validation(raw_data_dir)
+    logger.info(
+        " - factor_validation: summary=%d / current_top=%d",
+        len(quant_data["factor_validation"].get("summary", [])),
+        len(quant_data["factor_validation"].get("current_top", [])),
     )
 
     # 7. 파생 거시지표 계산 (원본 CSV에서 직접 계산)

@@ -4,6 +4,202 @@
 
 ---
 
+## 2026-06-17 18:53 - Hermes
+- Task: 종목 시장 매력도 화면에 A/B/C/D 투자 시나리오 점수와 UI 선택 흐름을 마무리 검증.
+- Modified:
+  - `scripts/03_analyze/export_web_data.py` — `factor_sector_relative_value_month` 결합, A 단기 모멘텀/B 가치+퀄리티/C 저평가 반등/D 대형 안정 가중 점수 산식 추가.
+  - `web/index.html` — 종목 시장 매력도 정렬 기준에 A/B/C/D 시나리오 옵션 추가.
+  - `web/quant_ui.js` — `STOCK_SCENARIOS`에 A/B/C/D 설명 추가; 정렬 드롭다운 변경 시 시나리오 카드 설명이 즉시 동기화되도록 렌더링 순서 수정.
+  - `web/quant_data.js` — 재생성; `stock_attractiveness.rows` 2,770개, 기준일 2026-06-05, A/B/C/D 점수 포함.
+  - `scratch/verify_stock_scenarios_20260617.js` — Puppeteer 기반 payload/드롭다운/시나리오 카드/정렬 검증 스크립트 추가.
+  - `00_context/index.md`, `00_context/work_state.md` — 신규 검증 스크립트 및 lock 완료 상태 반영.
+- Verification:
+  - `python -m py_compile scripts/03_analyze/export_web_data.py` → 통과.
+  - `python scripts/03_analyze/export_web_data.py` → `stock_attractiveness: 2770 rows loaded`, `web/quant_data.js` 생성 완료.
+  - `node --check web/quant_ui.js` / `node --check web/quant_data.js` / `node --check scratch/verify_stock_scenarios_20260617.js` → 통과.
+  - `node scratch/verify_stock_scenarios_20260617.js` → A/B/C/D 모두 payload count 2,770, 드롭다운/카드 라벨 존재, 시나리오별 상위 5개 UI 점수 내림차순 검증 통과.
+- Caveats:
+  - A/B 시나리오 상위권은 여러 종목이 100점으로 동점이어서 순위는 동일 점수 내 원자료/기존 정렬 순서 영향을 받을 수 있음.
+  - export 중 pandas `FutureWarning`/날짜 parse `UserWarning`은 기존 경고이며 JS 생성과 검증은 성공.
+
+---
+
+## 2026-06-16 21:52 - Hermes
+- Task: 팩터 심사표 현재 Top30의 `원값`이 1로 뭉개져 보이는 UX 문제 개선.
+- Modified:
+  - `web/index.html` — 정렬기준 라벨을 `방향점수/원값`에서 `표준점수/기준값`으로 변경하고, 표준점수·기준값 의미 설명문 추가.
+  - `web/quant_ui.js` — 표준점수는 0~100점으로 표시; 기준값은 팩터별 해석 단위로 표시(모멘텀 점수, 섹터 PER/PBR 대비 배수, z-score 등); `해석` 컬럼 추가.
+  - `scratch/verify_factor_validation_tab_20260616.js` — 모멘텀 기준값 표시(`모멘텀 xx.x점`)와 해석 컬럼 검증 추가; raw 정렬 검증이 빈 배열로 통과하지 않도록 보강.
+  - `00_context/index.md`, `00_context/work_state.md` — 변경/lock 상태 갱신.
+- Verification:
+  - `node --check web/quant_ui.js` → 통과.
+  - `node --check scratch/verify_factor_validation_tab_20260616.js` → 통과.
+  - `node scratch/verify_factor_validation_tab_20260616.js` → 삼성전자/005930 검색 true, score/raw asc/desc 정렬 true, momentumDisplayOk true.
+- Note:
+  - `③ 가격·거래량 모멘텀`의 실제 raw는 1.000/0.963/0.918처럼 차이가 있었으나 기존 3자리 숫자 표시와 `원값` 명칭 때문에 모두 1처럼 보였음. 이제 `모멘텀 100.0점`, `모멘텀 96.3점`처럼 기준이 드러남.
+
+---
+
+## 2026-06-16 21:30 - Claude
+- Task: UI/UX 개선 7종 (버그 수정 + 사용성 향상)
+- Modified:
+  - `web/quant_ui.js`
+    - **B2** DOMContentLoaded에 `renderRegressionPanel()` 추가; `renderDartTable()` / `renderEpsTable()` 유령 호출 제거 (함수 정의는 유지)
+    - **B4/D1** 종목 매력도 테이블 `<tr>` onclick → `openStockModal(row.name)` 연결; cursor:pointer + hover 스타일 추가
+    - **D5** `initTabs` + `switchSubTab` 양쪽에 `window.scrollTo({top:0,behavior:'smooth'})` 추가 — 탭/서브탭 전환 시 자동 최상단 이동
+    - **D9** `renderRegressionPanel()` 기준일 표시에 2개월 이상 미갱신 시 ⚠ 주황 경고 추가
+    - **D6** `renderSectorMap()` 등락률 강도에 따라 background rgba opacity 계단 적용 (0.35~1.0); 폰트 크기/굵기도 연동
+  - `web/index.html`
+    - **D4** 모바일 하단 nav에 "종목" (fa-ranking-star, btn-tab-analysis) 추가 → 5개 항목으로 확장
+    - **D2** 매크로&시장 서브탭 사이드바에 구분선 + 그룹 레이블 추가: "시장 데이터" / "분석 모델" 섹션 분리
+    - **D8** 팩터 심사표 탭 상단에 앵커 바로가기 네비 추가 (요약·TopN·현재Top30·상관관계·커버리지); 각 섹션 `data-card`에 `id=fv-*` 앵커 삽입
+- Verification:
+  - `node --check web/quant_ui.js` → OK
+  - HTML ID 중복 없음; 앵커 fv-summary→fv-topn→fv-current→fv-corr→fv-coverage 순서 확인
+- Caveats:
+  - `openStockModal`은 app.js의 analyst DB 기준으로 검색 → 종목명이 analyst_data.js에 없으면 모달 내용이 비어 보일 수 있음 (연결은 되지만 데이터 없음)
+  - `renderDartTable` / `renderEpsTable` 함수는 남겨 뒀음 (HTML에 타깃 없지만 향후 연결 가능)
+
+---
+
+## 2026-06-16 21:20 - Hermes
+- Task: 팩터 심사표 현재 Top30 테이블 검색/정렬 보완.
+- Modified:
+  - `web/index.html` — 현재 Top30 영역에 `정렬기준(순위/방향점수/원값)`과 `정렬방향(오름차순/내림차순)` select 추가.
+  - `web/quant_ui.js` — 팩터 선택에 `전체 팩터` 옵션 추가; 종목명/섹터/팩터명/6자리 보정 종목코드 검색 지원; 방향점수·원값 정렬 로직 추가.
+  - `scratch/verify_factor_validation_tab_20260616.js` — 삼성전자/005930 검색 및 방향점수·원값 정렬 검증 assertion 추가.
+  - `00_context/index.md`, `00_context/work_state.md` — 변경/lock 상태 갱신.
+- Verification:
+  - `node --check web/quant_ui.js` → 통과.
+  - `node --check scratch/verify_factor_validation_tab_20260616.js` → 통과.
+  - `node scratch/verify_factor_validation_tab_20260616.js` → 삼성전자 이름 검색 true, 005930 코드 검색 true, score/raw asc/desc 정렬 검증 true.
+- Note:
+  - 검색이 안 보였던 주된 이유는 기존 기본 팩터가 `㉑ 소형주 점수`로 고정되어 있었고, 검색 대상도 선택 팩터 Top30 안으로 제한됐기 때문. 이제 `전체 팩터` 기본값에서 삼성전자가 `③ 가격·거래량 모멘텀` 후보로 검색됨.
+
+---
+
+## 2026-06-16 21:10 - Claude
+- Task: 탭 재배치 — 회귀 분석 신호·매크로 스코어카드·섹터 모멘텀을 매크로&시장 탭으로 이동, 섹터 히트맵 탭 삭제
+- Modified:
+  - `web/index.html` — 퀀트 사이드바에서 매크로스코어카드·섹터모멘텀·섹터히트맵 서브탭 제거; 매크로 사이드바에 매크로스코어카드·섹터모멘텀·회귀분석신호 서브탭 추가; `#sub-macro-scorecard` / `#sub-macro-sector-momentum` / `#sub-macro-regression` 콘텐츠 블록 추가; `#tab-analysis`에서 구 `regression-insight-panel` 인라인 블록 제거; `#tab-quant`에서 `sub-quant-heatmap` / `sub-quant-scorecard` / `sub-quant-sector-momentum` 제거.
+  - `web/quant_ui.js` — `switchSubTab()` 내 `quant-sector-momentum` → `macro-sector-momentum` 변경, `macro-scorecard`·`macro-regression` 핸들러 추가; `renderStockAttractiveness()`에서 `renderRegressionPanel()` 호출 제거; `renderRegressionPanel()` 내 `display:none` 토글 로직 제거.
+- Verification:
+  - `node --check web/quant_ui.js` → OK
+  - Python ID 중복 검사 → 중복 없음, 9개 핵심 ID 모두 확인
+  - HTTP 서버 `http://localhost:8000/index.html` → 200 OK
+- Caveats:
+  - `renderRegimeCard()` / `renderScorecard()`는 초기 로드 시 DOMContentLoaded에서 이미 실행됨. 매크로 탭 최초 진입 시 `macro-scorecard` sub-tab이 자동으로 선택되지 않으면 클릭해야 렌더링됨.
+
+---
+
+## 2026-06-16 20:53 - Hermes
+- Task: LOCK 해제 후 팩터 심사표를 기존 웹 대시보드의 퀀트 탭 하위 `팩터 심사표` 탭으로 통합.
+- Modified:
+  - `scripts/03_analyze/export_web_data.py` — `_build_factor_validation()` 추가, 독립 검증 CSV 산출물(`02_outputs/*_factor_validation_dashboard`)을 `window.QUANT_DATA.factor_validation` payload로 export.
+  - `web/index.html` — 퀀트 사이드바에 `팩터 심사표` 서브탭 추가, 요약 카드/TopN/현재 Top30/상관관계/커버리지 컨테이너 추가.
+  - `web/quant_ui.js` — `renderFactorValidation*()` 렌더러 추가, 탭 전환 시 렌더링 연결.
+  - `web/quant_data.js` — 재생성; `factor_validation` 포함(summary 135행, current_top 450행, correlation 15개, coverage 37행, as_of 2026-06-01).
+  - `00_context/index.md`, `00_context/work_state.md` — 파일 인덱스/협업 상태 갱신.
+- Created:
+  - `scratch/verify_factor_validation_tab_20260616.js` — Puppeteer 기반 웹 탭 payload/DOM 검증 스크립트.
+- Verification:
+  - `python -m py_compile scripts/03_analyze/export_web_data.py` → 통과.
+  - `node --check web/quant_ui.js` → 통과.
+  - `python scripts/03_analyze/export_web_data.py` → `factor_validation: summary=135 / current_top=450` 로드 및 `web/quant_data.js` 생성 완료.
+  - `node scratch/verify_factor_validation_tab_20260616.js` → payload/DOM 검증 통과: cards 4, summaryRows 15, topRows 15, currentRows 30, corrRows 15, coverageRows 12.
+- Caveats:
+  - 팩터 검증 수익률은 거래비용 미반영.
+  - Puppeteer 검증 중 favicon 404는 기존 정적 리소스 부재로 무시 처리, 기능 오류 아님.
+
+---
+
+## 2026-06-16 - Claude
+- Task: 회귀 분석 3종 구축 (시나리오 1 Fama-MacBeth, 2 시장타이밍, 3 레짐인터랙션) + 종목 매력도 탭 대시보드 업데이트
+- Created:
+  - `scripts/03_analyze/build_regression_analysis.py` — 시나리오 2(KOSPI 시장타이밍 OLS+Ridge: base 178M R²=0.091, full 115M R²=0.149), 시나리오 1(Fama-MacBeth 36기간 395종목; flow_score t=2.15 유의), 시나리오 3(레짐 인터랙션 risk_on/off/other) 수행 후 DB 5개 테이블 저장.
+- Modified:
+  - `scripts/03_analyze/export_web_data.py` — `_build_regression_summary()`, `_inject_regime_scores()` 함수 추가; `regression` 키를 quant_data에 포함, stock_attractiveness rows에 `regime_adj_score` 주입.
+  - `web/quant_data.js` — 재생성 (regression 섹션, regime_adj_score 432종목 포함).
+  - `web/index.html` — 회귀 분석 인사이트 패널(#regression-insight-panel) 추가; 테이블 헤더에 `레짐 점수` 열 추가; sort select에 `레짐 조정 점수` 옵션 추가.
+  - `web/quant_ui.js` — `renderRegressionPanel()` 함수 신규 추가(시장타이밍 신호 게이지, 팩터 기여도 바차트, FM IC 바차트, 레짐별 팩터 IC 교차표); `STOCK_SCENARIOS`에 `regime_adj_score` 시나리오 추가; 테이블 행에 `레짐조정` 컬럼 추가; `renderStockAttractiveness()`에 `renderRegressionPanel()` 호출 연결.
+- DB 신규 테이블:
+  - `regression_market_timing` — 팩터별 OLS/Ridge 계수·t-stat·현재값 (18행: base/full×9팩터)
+  - `regression_factor_ic` — Fama-MacBeth IC·t-stat·IR (6팩터)
+  - `regression_regime_ic` — 레짐별 팩터 IC (3레짐×6팩터=18행)
+  - `regression_regime_adj_scores` — 종목별 레짐 조정 점수 (432행)
+  - `regression_meta` — 전체 JSON 직렬화 결과 캐시
+- 주요 결과:
+  - 시장 타이밍: signal=neutral, 예측 KOSPI 수익률=+2.19% (2026-04 예측), R²=9.1%
+  - 팩터 IC 유의: flow_score(외국인/기관 수급) t=2.15 (p<0.05) → 가장 강한 단기 알파 신호
+  - 현재 레짐: neutral/other
+  - Top 레짐조정 종목: LG디스플레이·SK케미칼·이수시스템·LG화학·삼성 (상위권)
+- 검증:
+  - `python build_regression_analysis.py` → 정상 실행, DB 5개 테이블 생성
+  - export_web_data 실행 → quant_data.js 재생성 (regression 키 + regime_adj_score 확인)
+  - JS 괄호 균형 체크: {} () [] 모두 0 (정상)
+  - HTTP 200 서버 응답 확인
+- 주의사항:
+  - FM 패널이 37개월로 짧아 IC t-stat 신뢰 구간 넓음 (flow_score만 유의, 나머지 참고용)
+  - 시장 타이밍 R²=9.1% (base) — 낮은 설명력, 방향 신호로만 활용 권장
+  - pred_period=2026-03-01: PPI·무역수지가 2026-04 종료라 최신 완성 X는 2026-03 시점
+  - 레짐 기간 분포: risk_on 10개월, risk_off 1개월, other 1개월 (37M 중) — risk_off 구간 너무 짧아 해당 회귀 결과 통계적으로 불안정
+  - scipy/scikit-learn/statsmodels 패키지 필요 (pip install 완료)
+
+---
+
+## 2026-06-16 - Hermes
+- Task: 사용자 요청 PER/PBR 섹터 비교 팩터 1·2·3·5·6 구축 — 섹터상대 PER, 섹터상대 PBR, PBR/ROE 조정, 가치+품질 점수, 섹터 자체 과거 밸류 z-score.
+- Created:
+  - `scripts/03_analyze/build_sector_relative_value_factors.py` — ① `factor_valuation_per_pbr_month`와 ⑮ `factor_roe_trend_month`를 결합해 `sector_relative_per`, `sector_relative_pbr`, `pbr_to_roe`, `pbr_roe_residual_sector`, `pbr_roe_adjusted_score`, `value_quality_score`, `sector_value_zscore` 생성.
+  - `tests/test_sector_relative_value_factors.py` — 섹터 중앙값 기준, 소형 섹터 NaN, PBR/ROE 조정 방향성, 섹터 z-score, catalog 요청번호 매핑 검증.
+  - `data/raw/factors/sector_relative_value_month.csv` — 14,136행, 395종목, 2023-06~2026-06.
+  - `data/raw/factors/sector_relative_value_catalog.csv` — 7행.
+- DB 신규 테이블 (백업: `data/database/backups/quant_data_20260616_1940_before_sector_relative_value.sqlite`):
+  - `factor_sector_relative_value_month` — 14,136 rows, 395 tickers, 2023-06-01~2026-06-01.
+  - `factor_sector_relative_value_catalog` — 7 rows.
+- Verification:
+  - `python -m py_compile scripts/03_analyze/build_sector_relative_value_factors.py` → 통과.
+  - `python scripts/03_analyze/build_sector_relative_value_factors.py` → 적재 완료; non-null `sector_relative_per` 10,202 / `sector_relative_pbr` 13,407 / `pbr_roe_adjusted_score` 10,092 / `value_quality_score` 14,015 / `sector_value_zscore` 9,586.
+  - `pytest tests/test_sector_relative_value_factors.py -q` → 6 passed.
+  - `pytest tests/test_sector_relative_value_factors.py tests/test_valuation_per_pbr_factors.py tests/test_roe_trend_factors.py -q` → 20 passed.
+- Updated:
+  - `00_context/index_factor.md` — ㊲ 요약/상세 섹션 추가, 기준일 2026-06-16.
+  - `00_context/index.md` — 신규 raw CSV, 스크립트, 테스트, DB 테이블, 백업 항목 추가.
+  - `data.md` — 2026-06-16 구축 기록/검증/caveat 추가.
+  - `00_context/work_state.md` — lock 등록/해제 및 완료 기록.
+- Caveats:
+  - 섹터 내 표본 5종목 미만이면 섹터 상대/잔차 지표는 NaN.
+  - ROE≤0 구간은 PBR/ROE 조정 지표 NaN.
+  - 현재 월간 패널에는 부채비율·FCF 원천이 없어 `value_quality_score`는 저평가+ROE 품질 중심의 1차 후보군. 부채/FCF까지 포함하려면 DART 재무제표 기반 확장 필요.
+
+## 2026-06-15 (2) - Claude
+- Task: 신규 퀀트 팩터 4종 구축 — ㉝글로벌 반도체 사이클(SOXX), ㉞한국 국채 수익률곡선(Level/Slope/Curvature), ㉟한국 PPI 인플레이션 사이클(OECD CLI 대체), ㊱원자재(구리·원유) 모멘텀 (모두 기존 raw 데이터 재활용, 신규 수집 없음)
+- Created:
+  - `scripts/03_analyze/build_soxx_semicycle_factors.py` — `macro_macro_indices_soxx`(yfinance, 일별 2016-06~2026-06, 상단 2행 yfinance 메타헤더 `.iloc[2:]` 제거) → 월말 리샘플, soxx_ret_1m/3m + 6M z-score + 3년 롤링 백분위 + semi_momentum_score/semi_cycle_regime/semi_rally_accel_flag
+  - `tests/test_soxx_semicycle_factors.py` — 12 passed
+  - `scripts/03_analyze/build_yield_curve_kr_factors.py` — `macro_macro_indices_kor_gov1y/5y/10y/30y`(ECOS, 일별 2010-01~2026-06; 30y는 2012-09~) → 월말 리샘플, yield_level/yield_slope_10y1y/yield_curvature + 6M z-score + 3년 롤링 백분위 + curve_regime/curve_inversion_flag
+  - `tests/test_yield_curve_kr_factors.py` — 11 passed
+  - `scripts/03_analyze/build_ppi_inflation_cycle_kr_factors.py` — `macro_macro_indices_kor_ppi`(ECOS, 월간 2010-01~2026-04) → kor_ppi_mom/yoy/yoy_chg3m + 12M z-score + 3년 롤링 백분위 + inflation_momentum_score/inflation_cycle_regime/inflation_accel_flag
+  - `tests/test_ppi_inflation_cycle_kr_factors.py` — 12 passed
+  - `scripts/03_analyze/build_commodity_momentum_factors.py` — `macro_commodities_copper/wti/brent`(yfinance, 일별 2009-12~2026-06, 4,138행/시리즈) → 월말 리샘플, copper/brent_ret_3m + 6M z-score + 3년 롤링 백분위 + commodity_cycle_score/cyclical_demand_regime/commodity_surge_flag
+  - `tests/test_commodity_momentum_factors.py` — 12 passed
+- DB 신규 테이블 (백업: `data/database/quant_data_20260615_211610_before_4newfactors_soxx_yc_ppi_commodity.sqlite`):
+  - `factor_soxx_semicycle_month` (121개월, 2016-06~2026-06) / `factor_soxx_semicycle_catalog` (9행) — 2026-06 기준 soxx_close=602.72, soxx_ret_zscore_6m=-0.44, semi_momentum_score=0.427, semi_cycle_regime=strong_up, semi_rally_accel_flag=0
+  - `factor_yield_curve_kr_month` (198개월, 2010-01~2026-06) / `factor_yield_curve_kr_catalog` (13행) — 2026-06 기준 yield_slope_10y1y=1.015, yield_slope_pctile_3y=1.0, curve_regime=steep, curve_inversion_flag=0
+  - `factor_ppi_inflation_cycle_kr_month` (196개월, 2010-01~2026-04) / `factor_ppi_inflation_cycle_kr_catalog` (9행) — 2026-04 기준 kor_ppi_yoy=6.90%, kor_ppi_yoy_zscore_12m=2.61, inflation_cycle_regime=inflation_surge, inflation_accel_flag=1
+  - `factor_commodity_momentum_month` (199개월, 2009-12~2026-06) / `factor_commodity_momentum_catalog` (12행) — 2026-06 기준 copper_pctile_3y=0.81, brent_pctile_3y=0.03, cyclical_demand_regime=neutral, commodity_surge_flag=0
+- Verification: `pytest -q` → **308개 중 307 passed, 1 failed (기존 이슈, 본 작업과 무관 — `test_stock_detail_pipeline.py::test_export_to_web_includes_stock_detail_ticker_series_and_snapshots`, `export_web_data.py`의 `stock_detail` payload 미포함 이슈, Hermes의 이전 export_web_data 변경에 의함)**
+- 주의사항:
+  1. **OECD CLI 대체**: 사용자가 처음 선택한 후보는 "한국 OECD 선행지수(CLI) 경기싸이클"이었으나, `macro_macro_indices_kor_cli`(KORLOLITONOSTSAM)·`macro_macro_indices_usa_cli`(USALOLITONOSTSAM) 모두 FRED/OECD에서 **2024-01 이후 갱신이 전역적으로 중단된 죽은 시계열**임을 확인 → 동일한 "경기/물가 사이클" 취지의 ㉟한국 PPI 인플레이션 사이클로 대체 (사용자에게 사전 통지함).
+  2. `factor_yield_curve_kr_month`의 `kor_gov30y`는 2012-09 이전 NaN (임의 보간 없음, 30y 채권 발행 이전 구간).
+  3. `factor_ppi_inflation_cycle_kr_month`은 2026-04까지(ECOS 최신), 다른 신규 3종은 2026-06까지 — period 범위가 서로 다름에 주의.
+  4. `factor_commodity_momentum_month`의 `brent_close`는 2026-03(118.35)~2026-04(114.01)에 급등 후 2026-05~06 급락(92~94) — yfinance 원천 데이터 그대로이며 임의 보정 없음. `brent_pctile_3y=0.03`(2026-06)은 이 급락 이후 3년 최저권을 반영.
+  5. PPI 팩터(㉟)는 ZSCORE_WINDOW=12/MIN_ZSCORE_OBS=6 (YoY 시리즈 특성), 나머지 3종은 표준값 ZSCORE_WINDOW=6/MIN_ZSCORE_OBS=3 사용.
+- Updated:
+  - `00_context/index_factor.md` — 요약표에 ㉝~㊱ 4행 추가, ㉝~㊱ 상세 섹션 4개 신설, 팩터 결합 가이드(반도체/금리민감/원가압박/시클리컬 섹터 비중 조절 4행 추가)·레짐 조건부 필터링(㉝~㊱ 4줄 추가)·섹터 로테이션(글로벌 사이클 확인 행 추가)·데이터 소스 요약(㉝~㊱ 4행 추가)·종합 팩터 스코어 레짐 오버레이에 ㉝㉞㉟㊱ 추가
+  - `00_context/index.md` — `index_factor.md` 설명 "36개 팩터 패밀리(①~㊱)"로 갱신, `scripts/03_analyze`/`tests` 섹션에 신규 파일 8개 항목 추가, SQLite DB 명세에 2026-06-15 신규 테이블 4쌍 블록 추가
+- 다음 후보: 현재 식별된 우선순위 후보 모두 소진 — 추가 팩터 발굴은 신규 데이터 수집 또는 기존 raw 테이블 재조사 필요
+
 ## 2026-06-15 - Hermes
 - Task: 웹 대시보드 `종목분석` 탭을 검색 가능한 `종목 시장 매력도` 화면으로 개편.
 - Changed:

@@ -5,12 +5,12 @@
     renderMacroChart();
     renderMoneyFlowChart();
     renderBreadthCharts();
-    renderDartTable();
-    renderEpsTable();
     renderStockAttractiveness();
     renderSectorMap();
     renderRegimeCard();
     renderScorecard();
+    renderRegressionPanel();
+    renderFactorValidation();
   }, 200);
 });
 
@@ -34,6 +34,7 @@ function initTabs() {
       });
 
       this.classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
       const targetId = this.id.replace("btn-", "");
       const target = document.getElementById(targetId);
       if (target) target.classList.add("active");
@@ -68,11 +69,15 @@ function switchSubTab(targetId, btn) {
 
   parentContent.querySelectorAll(".sub-tab-content").forEach((c) => c.classList.remove("active"));
   document.getElementById("sub-" + targetId)?.classList.add("active");
+  window.scrollTo({ top: 0, behavior: "smooth" });
 
   // 금리/채권 탭: hidden 상태로 그려진 차트들 크기 재계산
   if (targetId === "macro-leading") { setTimeout(renderLeadingIndicatorCharts, 50); }
   if (targetId === "macro-industry") { setTimeout(renderIndustryCharts, 50); }
-  if (targetId === "quant-sector-momentum") { setTimeout(renderSectorMomentumCharts, 50); }
+  if (targetId === "macro-sector-momentum") { setTimeout(renderSectorMomentumCharts, 50); }
+  if (targetId === "macro-scorecard") { setTimeout(() => { renderRegimeCard(); renderScorecard(); }, 50); }
+  if (targetId === "macro-regression") { setTimeout(renderRegressionPanel, 50); }
+  if (targetId === "quant-factor-validation") { setTimeout(renderFactorValidation, 50); }
   if (targetId === "analysis-market-attractiveness") { setTimeout(renderStockAttractiveness, 50); }
 
   if (targetId === "macro-rates") {
@@ -754,6 +759,30 @@ const STOCK_SCENARIOS = {
     desc: "기본 5팩터·가치퀄리티·모멘텀수급·저평가반등·숏커버 보조 점수의 평균입니다. 한 종목을 처음 볼 때 가장 보편적인 1차 정렬 기준으로 사용합니다.",
     factors: ["가치", "모멘텀", "시총", "유동성", "ROE", "수급", "공매도"]
   },
+  scenario_a_momentum: {
+    label: "A 단기 모멘텀",
+    horizon: "1~3개월 공격형",
+    desc: "가격·거래량 모멘텀 35%, 수급 30%, 유동성 20%, 실적 모멘텀 15%를 결합합니다. 빠르게 움직이는 종목을 찾되 거래대금과 수급 확인을 같이 하는 단기/스윙 후보군입니다.",
+    factors: ["가격·거래량", "외국인·기관 수급", "유동성", "실적 모멘텀"]
+  },
+  scenario_b_value_quality: {
+    label: "B 가치+퀄리티",
+    horizon: "3~12개월 중기",
+    desc: "기존 밸류, 섹터상대 가치품질, ROE, Piotroski, 실적 모멘텀, 선행 밸류를 결합합니다. PER/PBR이 싸기만 한 value trap보다 수익성·재무체력이 동반된 저평가 후보를 우선합니다.",
+    factors: ["밸류", "섹터상대 가치", "ROE", "재무건전성", "실적"]
+  },
+  scenario_c_reversal: {
+    label: "C 저평가 반등",
+    horizon: "1~6개월 역발상",
+    desc: "평균회귀 30%, 밸류 20%, 섹터상대 가치 20%, 수급 20%, 숏커버 압력 10%를 결합합니다. 낙폭 이후 수급이 돌아서는 반등 후보를 찾는 보조 시나리오입니다.",
+    factors: ["과매도", "저평가", "섹터대비 할인", "수급개선", "숏커버"]
+  },
+  scenario_d_large_stable: {
+    label: "D 대형 안정",
+    horizon: "방어형/코어",
+    desc: "시총 규모 25%, 유동성 20%, ROE 20%, 밸류 15%, 수급 10%, 재무건전성 10%를 결합합니다. 급등주보다 실제 매매 가능성과 방어력을 우선하는 코어 후보군입니다.",
+    factors: ["대형주", "거래 유동성", "ROE", "밸류", "수급", "재무건전성"]
+  },
   score_base_5factor: {
     label: "기본 5팩터",
     horizon: "1~6개월",
@@ -801,6 +830,12 @@ const STOCK_SCENARIOS = {
     horizon: "참고용",
     desc: "2년은 표본이 작아 회귀보다 분위별 성과/상위하위 비교가 적합합니다. 장기 방향성 참고용으로만 사용합니다.",
     factors: ["저PBR", "ROE", "장기 모멘텀"]
+  },
+  regime_adj_score: {
+    label: "레짐 조정 점수",
+    horizon: "현재 레짐 최적화",
+    desc: "Fama-MacBeth 회귀에서 현재 레짐(risk_on/risk_off/other)에 유의한 팩터를 IC 크기에 비례해 가중한 종목 점수입니다. 시장 국면 변화 시 가장 민감하게 반응하는 실험적 시나리오입니다.",
+    factors: ["레짐 조건부 팩터 가중", "IC 비례 가중치", "현재 시점 최적화"]
   }
 };
 const STOCK_BACKTEST_SUMMARY = [{"scoreKey":"score_momentum_flow","scenario":"momentum_flow","label":"모멘텀+수급","topn":20,"horizon_m":1,"periods":12,"avg_forward_return":0.076694,"avg_benchmark_return":0.044439,"avg_excess_return":0.032255,"hit_rate_vs_benchmark":0.583333,"max_drawdown_chain":-0.053629},{"scoreKey":"score_base_5factor","scenario":"base_5factor","label":"기본 5팩터","topn":20,"horizon_m":1,"periods":35,"avg_forward_return":0.046846,"avg_benchmark_return":0.024174,"avg_excess_return":0.022672,"hit_rate_vs_benchmark":0.485714,"max_drawdown_chain":-0.173072},{"scoreKey":"score_momentum_flow","scenario":"momentum_flow","label":"모멘텀+수급","topn":30,"horizon_m":1,"periods":12,"avg_forward_return":0.060948,"avg_benchmark_return":0.044439,"avg_excess_return":0.016508,"hit_rate_vs_benchmark":0.666667,"max_drawdown_chain":-0.105099},{"scoreKey":"score_base_5factor","scenario":"base_5factor","label":"기본 5팩터","topn":30,"horizon_m":1,"periods":35,"avg_forward_return":0.038326,"avg_benchmark_return":0.024174,"avg_excess_return":0.014152,"hit_rate_vs_benchmark":0.514286,"max_drawdown_chain":-0.16701},{"scoreKey":"score_reversal_value_flow","scenario":"reversal_value_flow","label":"저평가 반등","topn":20,"horizon_m":1,"periods":12,"avg_forward_return":0.04992,"avg_benchmark_return":0.044439,"avg_excess_return":0.005481,"hit_rate_vs_benchmark":0.583333,"max_drawdown_chain":-0.109645},{"scoreKey":"market_attractiveness_score","scenario":"composite_attractiveness","label":"종합 매력도","topn":20,"horizon_m":1,"periods":35,"avg_forward_return":0.02893,"avg_benchmark_return":0.024174,"avg_excess_return":0.004756,"hit_rate_vs_benchmark":0.4,"max_drawdown_chain":-0.199582},{"scoreKey":"score_value_quality","scenario":"value_quality","label":"가치+퀄리티","topn":20,"horizon_m":1,"periods":33,"avg_forward_return":0.02921,"avg_benchmark_return":0.027027,"avg_excess_return":0.002183,"hit_rate_vs_benchmark":0.454545,"max_drawdown_chain":-0.171149},{"scoreKey":"market_attractiveness_score","scenario":"composite_attractiveness","label":"종합 매력도","topn":30,"horizon_m":1,"periods":35,"avg_forward_return":0.024763,"avg_benchmark_return":0.024174,"avg_excess_return":0.000589,"hit_rate_vs_benchmark":0.428571,"max_drawdown_chain":-0.188473},{"scoreKey":"score_value_quality","scenario":"value_quality","label":"가치+퀄리티","topn":30,"horizon_m":1,"periods":33,"avg_forward_return":0.027248,"avg_benchmark_return":0.027027,"avg_excess_return":0.000221,"hit_rate_vs_benchmark":0.484848,"max_drawdown_chain":-0.16335},{"scoreKey":"score_reversal_value_flow","scenario":"reversal_value_flow","label":"저평가 반등","topn":30,"horizon_m":1,"periods":12,"avg_forward_return":0.038316,"avg_benchmark_return":0.044439,"avg_excess_return":-0.006123,"hit_rate_vs_benchmark":0.5,"max_drawdown_chain":-0.125426},{"scoreKey":"score_momentum_flow","scenario":"momentum_flow","label":"모멘텀+수급","topn":20,"horizon_m":3,"periods":10,"avg_forward_return":0.223871,"avg_benchmark_return":0.152107,"avg_excess_return":0.071764,"hit_rate_vs_benchmark":0.7,"max_drawdown_chain":0.0},{"scoreKey":"score_momentum_flow","scenario":"momentum_flow","label":"모멘텀+수급","topn":30,"horizon_m":3,"periods":10,"avg_forward_return":0.206249,"avg_benchmark_return":0.152107,"avg_excess_return":0.054142,"hit_rate_vs_benchmark":0.7,"max_drawdown_chain":0.0},{"scoreKey":"score_base_5factor","scenario":"base_5factor","label":"기본 5팩터","topn":20,"horizon_m":3,"periods":33,"avg_forward_return":0.133166,"avg_benchmark_return":0.079048,"avg_excess_return":0.054118,"hit_rate_vs_benchmark":0.666667,"max_drawdown_chain":-0.184317},{"scoreKey":"score_base_5factor","scenario":"base_5factor","label":"기본 5팩터","topn":30,"horizon_m":3,"periods":33,"avg_forward_return":0.119177,"avg_benchmark_return":0.079048,"avg_excess_return":0.040129,"hit_rate_vs_benchmark":0.636364,"max_drawdown_chain":-0.214582},{"scoreKey":"market_attractiveness_score","scenario":"composite_attractiveness","label":"종합 매력도","topn":30,"horizon_m":3,"periods":33,"avg_forward_return":0.09231,"avg_benchmark_return":0.079048,"avg_excess_return":0.013262,"hit_rate_vs_benchmark":0.454545,"max_drawdown_chain":-0.347494},{"scoreKey":"market_attractiveness_score","scenario":"composite_attractiveness","label":"종합 매력도","topn":20,"horizon_m":3,"periods":33,"avg_forward_return":0.090575,"avg_benchmark_return":0.079048,"avg_excess_return":0.011527,"hit_rate_vs_benchmark":0.454545,"max_drawdown_chain":-0.330506},{"scoreKey":"score_value_quality","scenario":"value_quality","label":"가치+퀄리티","topn":30,"horizon_m":3,"periods":31,"avg_forward_return":0.097089,"avg_benchmark_return":0.088703,"avg_excess_return":0.008386,"hit_rate_vs_benchmark":0.483871,"max_drawdown_chain":-0.288919},{"scoreKey":"score_value_quality","scenario":"value_quality","label":"가치+퀄리티","topn":20,"horizon_m":3,"periods":31,"avg_forward_return":0.095503,"avg_benchmark_return":0.088703,"avg_excess_return":0.0068,"hit_rate_vs_benchmark":0.516129,"max_drawdown_chain":-0.289683},{"scoreKey":"score_reversal_value_flow","scenario":"reversal_value_flow","label":"저평가 반등","topn":20,"horizon_m":3,"periods":10,"avg_forward_return":0.153806,"avg_benchmark_return":0.152107,"avg_excess_return":0.001699,"hit_rate_vs_benchmark":0.6,"max_drawdown_chain":0.0},{"scoreKey":"score_reversal_value_flow","scenario":"reversal_value_flow","label":"저평가 반등","topn":30,"horizon_m":3,"periods":10,"avg_forward_return":0.131828,"avg_benchmark_return":0.152107,"avg_excess_return":-0.020279,"hit_rate_vs_benchmark":0.5,"max_drawdown_chain":0.0},{"scoreKey":"score_base_5factor","scenario":"base_5factor","label":"기본 5팩터","topn":20,"horizon_m":6,"periods":30,"avg_forward_return":0.264517,"avg_benchmark_return":0.177009,"avg_excess_return":0.087508,"hit_rate_vs_benchmark":0.666667,"max_drawdown_chain":-0.192694},{"scoreKey":"score_base_5factor","scenario":"base_5factor","label":"기본 5팩터","topn":30,"horizon_m":6,"periods":30,"avg_forward_return":0.250908,"avg_benchmark_return":0.177009,"avg_excess_return":0.073899,"hit_rate_vs_benchmark":0.7,"max_drawdown_chain":-0.202618},{"scoreKey":"score_momentum_flow","scenario":"momentum_flow","label":"모멘텀+수급","topn":20,"horizon_m":6,"periods":7,"avg_forward_return":0.419391,"avg_benchmark_return":0.360002,"avg_excess_return":0.059389,"hit_rate_vs_benchmark":0.714286,"max_drawdown_chain":0.0},{"scoreKey":"score_momentum_flow","scenario":"momentum_flow","label":"모멘텀+수급","topn":30,"horizon_m":6,"periods":7,"avg_forward_return":0.393795,"avg_benchmark_return":0.360002,"avg_excess_return":0.033793,"hit_rate_vs_benchmark":0.571429,"max_drawdown_chain":0.0},{"scoreKey":"market_attractiveness_score","scenario":"composite_attractiveness","label":"종합 매력도","topn":20,"horizon_m":6,"periods":30,"avg_forward_return":0.199176,"avg_benchmark_return":0.177009,"avg_excess_return":0.022167,"hit_rate_vs_benchmark":0.466667,"max_drawdown_chain":-0.442576},{"scoreKey":"market_attractiveness_score","scenario":"composite_attractiveness","label":"종합 매력도","topn":30,"horizon_m":6,"periods":30,"avg_forward_return":0.199068,"avg_benchmark_return":0.177009,"avg_excess_return":0.022059,"hit_rate_vs_benchmark":0.533333,"max_drawdown_chain":-0.368338},{"scoreKey":"score_value_quality","scenario":"value_quality","label":"가치+퀄리티","topn":30,"horizon_m":6,"periods":28,"avg_forward_return":0.191079,"avg_benchmark_return":0.189451,"avg_excess_return":0.001629,"hit_rate_vs_benchmark":0.285714,"max_drawdown_chain":-0.416693},{"scoreKey":"score_value_quality","scenario":"value_quality","label":"가치+퀄리티","topn":20,"horizon_m":6,"periods":28,"avg_forward_return":0.188207,"avg_benchmark_return":0.189451,"avg_excess_return":-0.001244,"hit_rate_vs_benchmark":0.357143,"max_drawdown_chain":-0.475373},{"scoreKey":"score_reversal_value_flow","scenario":"reversal_value_flow","label":"저평가 반등","topn":20,"horizon_m":6,"periods":7,"avg_forward_return":0.311828,"avg_benchmark_return":0.360002,"avg_excess_return":-0.048174,"hit_rate_vs_benchmark":0.428571,"max_drawdown_chain":0.0},{"scoreKey":"score_reversal_value_flow","scenario":"reversal_value_flow","label":"저평가 반등","topn":30,"horizon_m":6,"periods":7,"avg_forward_return":0.307367,"avg_benchmark_return":0.360002,"avg_excess_return":-0.052634,"hit_rate_vs_benchmark":0.428571,"max_drawdown_chain":0.0}];
@@ -961,12 +996,136 @@ function populateStockSectorFilter(rows) {
   select.dataset.ready = "1";
 }
 
+function renderRegressionPanel() {
+  const reg = window.QUANT_DATA?.regression || {};
+  const panel = document.getElementById("regression-insight-panel");
+  if (!panel) return;
+  if (!reg.as_of) return;
+
+  const asOf = document.getElementById("regression-as-of");
+  if (asOf) {
+    const asOfDate = new Date(reg.as_of);
+    const monthsStale = (new Date() - asOfDate) / (1000 * 60 * 60 * 24 * 30);
+    const staleWarn = monthsStale > 2 ? ` <span style="color:#f59e0b; font-weight:700;">⚠ ${Math.floor(monthsStale)}개월 미갱신</span>` : "";
+    asOf.innerHTML = `분석 기준: ${reg.as_of}${staleWarn}`;
+  }
+
+  const mt = reg.market_timing || {};
+  const fi = reg.factor_ic || {};
+  const re = reg.regime || {};
+
+  // 시그널 색상
+  const sigColor = mt.signal === "bullish" ? "#10b981" : mt.signal === "bearish" ? "#ef4444" : "#f59e0b";
+  const sigLabel = { bullish: "강세 진입", neutral: "중립 대기", bearish: "약세 회피" }[mt.signal] || mt.signal;
+  const sigIcon  = { bullish: "fa-arrow-trend-up", neutral: "fa-minus", bearish: "fa-arrow-trend-down" }[mt.signal] || "fa-minus";
+
+  const regimeLabelMap = { risk_on: "위험선호", risk_off: "위험회피", growth_on: "성장랠리", dollar_pressure: "달러압박", export_recovery: "수출회복", neutral: "중립", other: "기타" };
+  const regimeColor = re.current_bucket === "risk_on" ? "#10b981" : re.current_bucket === "risk_off" ? "#ef4444" : "#f59e0b";
+
+  const topCards = document.getElementById("regression-top-cards");
+  if (topCards) topCards.innerHTML = `
+    <div style="border:1px solid ${sigColor}40; border-radius:10px; padding:16px; background:${sigColor}08;">
+      <div style="font-size:0.75rem; color:var(--text-sub); font-weight:700; margin-bottom:6px;">시장 타이밍 신호</div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <i class="fa-solid ${sigIcon}" style="font-size:1.6rem; color:${sigColor};"></i>
+        <div>
+          <div style="font-size:1.25rem; font-weight:900; color:${sigColor};">${sigLabel}</div>
+          <div style="font-size:0.78rem; color:var(--text-sub); margin-top:2px;">예측 ${mt.pred_pct != null ? (mt.pred_pct >= 0 ? "+" : "") + mt.pred_pct.toFixed(2) + "%" : "-"} / R² ${mt.r2 != null ? (mt.r2 * 100).toFixed(1) + "%" : "-"} · ${mt.periods || 0}개월 기간</div>
+        </div>
+      </div>
+    </div>
+    <div style="border:1px solid ${regimeColor}40; border-radius:10px; padding:16px; background:${regimeColor}08;">
+      <div style="font-size:0.75rem; color:var(--text-sub); font-weight:700; margin-bottom:6px;">현재 시장 레짐</div>
+      <div style="font-size:1.25rem; font-weight:900; color:${regimeColor};">${regimeLabelMap[re.current_regime] || re.current_regime || "-"}</div>
+      <div style="font-size:0.78rem; color:var(--text-sub); margin-top:4px;">
+        버킷: ${regimeLabelMap[re.current_bucket] || re.current_bucket || "-"} · ${re.current_period || ""}
+      </div>
+    </div>
+    <div style="border:1px solid var(--card-border); border-radius:10px; padding:16px; background:var(--btn-bg);">
+      <div style="font-size:0.75rem; color:var(--text-sub); font-weight:700; margin-bottom:6px;">Fama-MacBeth 분석</div>
+      <div style="font-size:1.1rem; font-weight:700; color:var(--text-heading);">${fi.periods || 0}개월 / ${fi.stock_count || 0}종목</div>
+      <div style="font-size:0.78rem; color:var(--text-sub); margin-top:4px;">횡단면 회귀 × Newey-West t-stat</div>
+    </div>
+  `;
+
+  // 시장 타이밍 팩터 바
+  const factorBars = document.getElementById("regression-factor-bars");
+  if (factorBars && mt.factors) {
+    const maxAbs = Math.max(...mt.factors.map(f => Math.abs(f.coef_ols || 0)), 0.01);
+    factorBars.innerHTML = mt.factors.slice().sort((a, b) => Math.abs(b.coef_ols) - Math.abs(a.coef_ols)).map(f => {
+      const pct = Math.abs((f.coef_ols || 0) / maxAbs) * 100;
+      const c = f.coef_ols >= 0 ? "#10b981" : "#ef4444";
+      const sig = f.significant ? "★" : "";
+      return `<div style="display:flex; align-items:center; gap:8px; font-size:0.77rem;">
+        <div style="min-width:90px; color:var(--text-sub); text-align:right;">${f.label || f.key}</div>
+        <div style="flex:1; background:var(--card-border); border-radius:4px; height:10px; overflow:hidden;">
+          <div style="width:${pct.toFixed(1)}%; background:${c}; height:100%; border-radius:4px;"></div>
+        </div>
+        <div style="min-width:60px; color:${f.significant ? c : "var(--text-sub)"}; font-weight:${f.significant ? "700" : "400"};">${sig}t=${f.t_stat?.toFixed(2) || "-"}</div>
+      </div>`;
+    }).join("");
+  }
+
+  // Fama-MacBeth IC 바
+  const fmBars = document.getElementById("fm-factor-bars");
+  if (fmBars && fi.factors) {
+    const maxIC = Math.max(...fi.factors.map(f => Math.abs(f.ic_mean || 0)), 0.01);
+    fmBars.innerHTML = fi.factors.slice().sort((a, b) => Math.abs(b.ic_mean) - Math.abs(a.ic_mean)).map(f => {
+      const pct = Math.abs((f.ic_mean || 0) / maxIC) * 100;
+      const c = (f.ic_mean || 0) >= 0 ? "#10b981" : "#ef4444";
+      const sig = f.significant ? "★" : "";
+      return `<div style="display:flex; align-items:center; gap:8px; font-size:0.77rem;">
+        <div style="min-width:90px; color:var(--text-sub); text-align:right;">${f.label || f.key}</div>
+        <div style="flex:1; background:var(--card-border); border-radius:4px; height:10px; overflow:hidden;">
+          <div style="width:${pct.toFixed(1)}%; background:${c}; height:100%; border-radius:4px;"></div>
+        </div>
+        <div style="min-width:80px; color:${f.significant ? c : "var(--text-sub)"}; font-weight:${f.significant ? "700" : "400"};">${sig}IC=${f.ic_mean?.toFixed(4) || "-"} t=${f.ic_t?.toFixed(2) || "-"}</div>
+      </div>`;
+    }).join("");
+  }
+
+  // 레짐별 팩터 IC 테이블
+  const regTable = document.getElementById("regime-factor-table");
+  if (regTable && re.regimes) {
+    const regimes = Object.keys(re.regimes);
+    const allFactorKeys = fi.factors?.map(f => ({ key: f.key, label: f.label })) || [];
+    const regimeLabelKo = { risk_on: "위험선호(Risk-On)", risk_off: "위험회피(Risk-Off)", other: "중립/기타" };
+    regTable.innerHTML = `
+      <table style="width:100%; border-collapse:collapse; font-size:0.78rem;">
+        <thead>
+          <tr>
+            <th style="border:1px solid var(--card-border); padding:6px 8px; background:var(--th-bg); color:var(--text-sub);">팩터</th>
+            ${regimes.map(r => `<th style="border:1px solid var(--card-border); padding:6px 8px; background:var(--th-bg); color:${r === re.current_bucket ? "var(--primary)" : "var(--text-sub)"};">${regimeLabelKo[r] || r}${r === re.current_bucket ? " ◀현재" : ""}</th>`).join("")}
+          </tr>
+        </thead>
+        <tbody>
+          ${allFactorKeys.map(fac => `
+            <tr>
+              <td style="border:1px solid var(--card-border); padding:6px 8px; color:var(--text-sub);">${fac.label}</td>
+              ${regimes.map(r => {
+                const rf = (re.regimes[r]?.factors || []).find(x => x.key === fac.key);
+                const ic = rf?.ic;
+                const sig = rf?.sig;
+                const t = rf?.t_stat;
+                const c = ic == null ? "var(--text-sub)" : ic >= 0 ? "#10b981" : "#ef4444";
+                return `<td style="border:1px solid var(--card-border); padding:6px 8px; text-align:center; color:${c}; font-weight:${sig ? "800" : "400"};">
+                  ${ic != null ? (sig ? "★" : "") + ic.toFixed(4) + (t != null ? `<br><span style="font-size:0.7rem;">t=${t.toFixed(2)}</span>` : "") : "-"}
+                </td>`;
+              }).join("")}
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+  }
+}
+window.renderRegressionPanel = renderRegressionPanel;
+
 function renderStockAttractiveness() {
   const payload = window.QUANT_DATA?.stock_attractiveness || {};
   const rows = Array.isArray(payload.rows) ? payload.rows : [];
   const tbody = document.querySelector("#stock-attractiveness-table tbody");
   if (!tbody) return;
-  renderScenarioToggles();
   populateStockSectorFilter(rows);
 
   const meta = document.getElementById("stock-attractiveness-meta");
@@ -980,6 +1139,7 @@ function renderStockAttractiveness() {
   if (!window.activeStockScenario || (!window.activeStockScenario.startsWith("horizon_") && window.activeStockScenario !== sortKey)) {
     window.activeStockScenario = sortKey;
   }
+  renderScenarioToggles();
   const scoreKey = selectedScenarioKey();
   const { ranks: scenarioRanks, validCount: scenarioValidCount } = buildScenarioRanks(rows, scoreKey);
   renderScenarioBacktestSummary(scoreKey, scenarioValidCount, rows.length);
@@ -1006,7 +1166,7 @@ function renderStockAttractiveness() {
     const growthNext = fmtPctValue(row.next_year_op_growth_pct);
     const badges = [row.market, row.size_bucket, row.kospi200_proxy ? "KOSPI200근사" : null].filter(Boolean).map(v => `<span class="tag">${html(v)}</span>`).join(" ");
     return `
-      <tr>
+      <tr onclick="openStockModal('${html(row.name || row.ticker)}')" style="cursor:pointer;" onmouseover="this.style.background='var(--tr-hover-bg)'" onmouseout="this.style.background=''">
         <td>
           <div class="company-name" style="font-size:0.95rem; font-weight:800;">${html(row.name || row.ticker)}</div>
           <div class="company-code" style="font-size:0.75rem; color:var(--text-sub);">${html(row.ticker)} · ${html(row.sector || "업종 미분류")}</div>
@@ -1029,6 +1189,14 @@ function renderStockAttractiveness() {
           <div style="font-size:0.75rem; color:var(--text-sub);">${html(row.market || "")} ${row.market_cap_rank ? `#${row.market_cap_rank}` : ""}</div>
         </td>
         <td>
+          ${(() => {
+            const rs = row.regime_adj_score;
+            if (rs == null) return '<div style="color:var(--text-sub); font-size:0.8rem;">-</div>';
+            const c = rs >= 0.65 ? "#10b981" : rs >= 0.45 ? "#f59e0b" : "#ef4444";
+            return `<div style="font-weight:900; color:${c}; font-size:0.95rem;">${(rs * 100).toFixed(1)}</div><div style="font-size:0.68rem; color:var(--text-sub);">레짐조정</div>`;
+          })()}
+        </td>
+        <td>
           <div style="font-weight:900; color:${scoreColor};">${scorePct}</div>
           <div style="font-size:0.75rem; color:var(--text-sub); margin-top:3px;">${html(scenario.label)}</div>
           <div style="font-size:0.72rem; color:var(--text-sub); margin-top:3px;">전체순위 ${rank ? `#${rank.toLocaleString("ko-KR")}/${scenarioValidCount.toLocaleString("ko-KR")}` : "산정불가"}</div>
@@ -1036,7 +1204,7 @@ function renderStockAttractiveness() {
         </td>
       </tr>
     `;
-  }).join("") || '<tr><td colspan="7" style="text-align:center; padding:22px; color:var(--text-sub);">조건에 맞는 종목이 없습니다.</td></tr>';
+  }).join("") || '<tr><td colspan="8" style="text-align:center; padding:22px; color:var(--text-sub);">조건에 맞는 종목이 없습니다.</td></tr>';
 
   const count = document.getElementById("stock-attractiveness-count");
   if (count) count.textContent = `검색 결과 ${filtered.length.toLocaleString("ko-KR")}개 / 화면 표시 ${display.length.toLocaleString("ko-KR")}개 · ${scenario.label} 산정 가능 ${scenarioValidCount.toLocaleString("ko-KR")}개`;
@@ -1054,11 +1222,22 @@ function renderSectorMap() {
     const pct = sector["전일대비"];
     if (!name || !pct) return;
 
-    const isUp = String(pct).includes("+") || Number.parseFloat(pct) > 0;
-    const isDown = String(pct).includes("-");
+    const val = Number.parseFloat(pct) || 0;
+    const isUp = val > 0;
+    const isDown = val < 0;
+    const absVal = Math.abs(val);
+    // 강도: 0.3%미만=40%, 1%미만=60%, 2%미만=80%, 2%이상=100%
+    const intensity = absVal < 0.3 ? 0.35 : absVal < 1 ? 0.55 : absVal < 2 ? 0.78 : 1.0;
+    const bg = isUp
+      ? `rgba(239,68,68,${intensity})`
+      : isDown
+      ? `rgba(59,130,246,${intensity})`
+      : "rgba(107,114,128,0.4)";
+    const fontSize = absVal >= 2 ? "1.2rem" : absVal >= 1 ? "1.05rem" : "0.95rem";
     const box = document.createElement("div");
-    box.className = `sector-box ${isUp ? "sector-up" : isDown ? "sector-down" : "sector-flat"}`;
-    box.innerHTML = `<div style="font-size:0.9rem;">${html(name)}</div><div style="font-size:1.1rem; margin-top:5px;">${html(pct)}</div>`;
+    box.className = "sector-box";
+    box.style.background = bg;
+    box.innerHTML = `<div style="font-size:0.85rem;">${html(name)}</div><div style="font-size:${fontSize}; margin-top:5px; font-weight:${absVal >= 1 ? 800 : 600};">${html(pct)}</div>`;
     container.appendChild(box);
   });
 }
@@ -1463,3 +1642,209 @@ function renderScorecard() {
   `;
 }
 window.renderScorecard = renderScorecard;
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 팩터 심사표
+// ─────────────────────────────────────────────────────────────────────────────
+function fvFmtPct(x, p = 2) {
+  const n = Number(x);
+  return Number.isFinite(n) ? `${(n * 100).toFixed(p)}%` : "—";
+}
+function fvFmtNum(x, p = 3) {
+  const n = Number(x);
+  return Number.isFinite(n) ? n.toFixed(p) : "—";
+}
+function fvFmtScore(x) {
+  const n = Number(x);
+  return Number.isFinite(n) ? (n * 100).toFixed(1) : "—";
+}
+function fvFmtFactorBase(row) {
+  const raw = Number(row?.raw_value);
+  if (!Number.isFinite(raw)) return "—";
+  const pctScore = `${(raw * 100).toFixed(1)}점`;
+  const ratio = `${raw.toFixed(2)}배`;
+  const z = `${raw.toFixed(2)}σ`;
+  const factor = String(row?.factor || "");
+  const label = String(row?.label || "");
+  if (factor === "momentum_score") return `모멘텀 ${pctScore}`;
+  if (factor === "valuation_score") return `밸류 ${pctScore}`;
+  if (factor === "flow_score") return `수급 ${pctScore}`;
+  if (factor === "liquidity_score") return `유동성 ${pctScore}`;
+  if (factor === "small_cap_score") return `소형주 ${pctScore}`;
+  if (factor === "value_quality_score") return `품질 ${pctScore}`;
+  if (factor === "pbr_roe_adjusted_score") return `ROE조정 ${pctScore}`;
+  if (factor === "sector_relative_per") return `섹터 PER 대비 ${ratio}`;
+  if (factor === "sector_relative_pbr") return `섹터 PBR 대비 ${ratio}`;
+  if (factor === "sector_value_zscore") return `섹터 밸류 ${z}`;
+  if (factor === "pbr_roe_residual_sector") return `PBR/ROE 잔차 ${z}`;
+  if (factor.includes("percentile") || label.includes("백분위")) return `백분위 ${pctScore}`;
+  return raw >= 0 && raw <= 1 ? pctScore : fvFmtNum(raw, 3);
+}
+function fvFmtFactorInterpretation(row) {
+  const factor = String(row?.factor || "");
+  const score = Number(row?.score);
+  const raw = Number(row?.raw_value);
+  const tier = Number.isFinite(score) ? (score >= 0.95 ? "최상위" : score >= 0.85 ? "상위" : score >= 0.65 ? "양호" : "중립") : "참고";
+  if (factor === "momentum_score") return `${tier} 가격·거래량 추세`;
+  if (factor === "valuation_score") return `${tier} 저평가 복합 신호`;
+  if (factor === "flow_score") return `${tier} 수급 유입 신호`;
+  if (factor === "liquidity_score") return `${tier} 거래 유동성`;
+  if (factor === "small_cap_score") return `${tier} 소형주 성격`;
+  if (factor === "value_quality_score") return `${tier} 가치+ROE 품질`;
+  if (factor === "pbr_roe_adjusted_score") return `${tier} ROE 대비 PBR 매력`;
+  if (factor === "sector_relative_per") return Number.isFinite(raw) && raw < 1 ? "섹터 중위 PER보다 낮음" : "섹터 PER 대비 확인 필요";
+  if (factor === "sector_relative_pbr") return Number.isFinite(raw) && raw < 1 ? "섹터 중위 PBR보다 낮음" : "섹터 PBR 대비 확인 필요";
+  if (factor === "sector_value_zscore") return Number.isFinite(raw) && raw < 0 ? "섹터 역사 대비 저평가" : "섹터 역사 대비 고평가권";
+  if (factor === "pbr_roe_residual_sector") return Number.isFinite(raw) && raw < 0 ? "ROE 대비 PBR 낮음" : "ROE 대비 PBR 높음";
+  return `${tier} 신호`;
+}
+function fvFmtInt(x) {
+  const n = Number(x);
+  return Number.isFinite(n) ? Math.round(n).toLocaleString() : "—";
+}
+function fvTable(rows, cols) {
+  return `<table class="alerts-table"><thead><tr>${cols.map((c) => `<th>${html(c[1])}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${cols.map((c) => `<td>${c[2](r[c[0]], r)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+}
+function fvCard(label, value, sub = "") {
+  return `<div class="data-card" style="padding:14px;"><div style="color:var(--text-sub); font-size:0.78rem; font-weight:700;">${html(label)}</div><div style="font-size:1.5rem; font-weight:800; color:var(--text-heading); margin-top:4px;">${value}</div>${sub ? `<div style="color:var(--text-sub); font-size:0.78rem; margin-top:4px;">${sub}</div>` : ""}</div>`;
+}
+function renderFactorValidation() {
+  const payload = window.QUANT_DATA?.factor_validation || {};
+  const summary = Array.isArray(payload.summary) ? payload.summary : [];
+  const current = Array.isArray(payload.current_top) ? payload.current_top : [];
+  const cards = document.getElementById("factor-validation-cards");
+  if (!cards) return;
+  const asOf = document.getElementById("factor-validation-as-of");
+  if (asOf) asOf.textContent = payload.as_of ? `검증 기준: ${payload.as_of}` : "검증 데이터 없음";
+  if (!summary.length) {
+    cards.innerHTML = fvCard("상태", "데이터 없음", "factor_validation payload를 확인하세요.");
+    return;
+  }
+  const base = summary.filter((r) => r.horizon === "1m" && Number(r.topn) === 30)
+    .sort((a, b) => Number(b.avg_excess ?? -999) - Number(a.avg_excess ?? -999));
+  const best = base[0] || {};
+  const factorCount = new Set(summary.map((r) => r.factor)).size;
+  const hitBest = base.reduce((m, r) => Math.max(m, Number(r.hit_rate || 0)), 0);
+  cards.innerHTML = [
+    fvCard("검증 팩터", fvFmtInt(factorCount), `요약 행 ${summary.length.toLocaleString()}개`),
+    fvCard("최고 1M Top30 초과", `<span style="color:${Number(best.avg_excess) >= 0 ? '#10b981' : '#ef4444'}">${fvFmtPct(best.avg_excess)}</span>`, html(best.label || "")),
+    fvCard("최고 Hit Rate", fvFmtPct(hitBest), "1M Top30 기준"),
+    fvCard("현재 Top 종목", fvFmtInt(current.length), "팩터별 Top30 후보"),
+  ].join("");
+  const summaryEl = document.getElementById("factor-validation-summary-table");
+  if (summaryEl) summaryEl.innerHTML = fvTable(base.slice(0, 15), [
+    ["label", "팩터", (v) => html(v)],
+    ["months", "개월", fvFmtInt],
+    ["avg_return", "평균수익", fvFmtPct],
+    ["avg_benchmark", "벤치", fvFmtPct],
+    ["avg_excess", "초과", fvFmtPct],
+    ["hit_rate", "승률", fvFmtPct],
+    ["ic_mean", "IC", fvFmtNum],
+    ["coverage_latest", "최신커버", fvFmtInt],
+  ]);
+  const factorSel = document.getElementById("factor-validation-factor");
+  if (factorSel && !factorSel.dataset.loaded) {
+    const labels = [...new Set(current.map((r) => r.label).filter(Boolean))];
+    factorSel.innerHTML = [`<option value="">전체 팩터</option>`]
+      .concat(labels.map((label) => `<option value="${html(label)}">${html(label)}</option>`))
+      .join("");
+    factorSel.dataset.loaded = "1";
+  }
+  renderFactorValidationTopn();
+  renderFactorValidationCurrent();
+  renderFactorValidationCorr();
+  renderFactorValidationCoverage();
+}
+function renderFactorValidationTopn() {
+  const payload = window.QUANT_DATA?.factor_validation || {};
+  const summary = Array.isArray(payload.summary) ? payload.summary : [];
+  const h = document.getElementById("factor-validation-horizon")?.value || "1m";
+  const n = Number(document.getElementById("factor-validation-topn")?.value || 30);
+  const rows = summary.filter((r) => r.horizon === h && Number(r.topn) === n)
+    .sort((a, b) => Number(b.avg_excess ?? -999) - Number(a.avg_excess ?? -999));
+  const el = document.getElementById("factor-validation-topn-table");
+  if (el) el.innerHTML = fvTable(rows, [
+    ["label", "팩터", (v) => html(v)],
+    ["months", "개월", fvFmtInt],
+    ["avg_return", "평균수익", fvFmtPct],
+    ["avg_benchmark", "벤치", fvFmtPct],
+    ["avg_excess", "초과", fvFmtPct],
+    ["hit_rate", "승률", fvFmtPct],
+    ["max_drawdown", "MDD", fvFmtPct],
+    ["avg_turnover", "회전율", fvFmtPct],
+  ]);
+}
+function renderFactorValidationCurrent() {
+  const payload = window.QUANT_DATA?.factor_validation || {};
+  const current = Array.isArray(payload.current_top) ? payload.current_top : [];
+  const label = document.getElementById("factor-validation-factor")?.value || "";
+  const q = (document.getElementById("factor-validation-search")?.value || "").toLowerCase().trim();
+  const sortKey = document.getElementById("factor-validation-current-sort-key")?.value || "rank";
+  const sortOrder = document.getElementById("factor-validation-current-sort-order")?.value || "desc";
+  const normTicker = (v) => String(v ?? "").replace(/\.0$/, "").padStart(6, "0");
+  const rows = current
+    .filter((r) => {
+      const ticker = normTicker(r.ticker);
+      const haystack = [
+        ticker,
+        String(r.ticker ?? ""),
+        String(r.name ?? ""),
+        String(r.label ?? ""),
+        String(r.factor ?? ""),
+        String(r.sector ?? ""),
+      ].join(" ").toLowerCase();
+      return (!label || r.label === label) && (!q || haystack.includes(q));
+    })
+    .sort((a, b) => {
+      const av = Number(a[sortKey]);
+      const bv = Number(b[sortKey]);
+      let cmp;
+      if (Number.isFinite(av) && Number.isFinite(bv)) cmp = av - bv;
+      else cmp = String(a[sortKey] ?? "").localeCompare(String(b[sortKey] ?? ""), "ko");
+      return sortOrder === "desc" ? -cmp : cmp;
+    })
+    .slice(0, 30);
+  const el = document.getElementById("factor-validation-current-table");
+  if (el) el.innerHTML = fvTable(rows, [
+    ["rank", "순위", fvFmtInt],
+    ["ticker", "코드", (v) => html(normTicker(v))],
+    ["name", "종목명", (v) => html(v || "")],
+    ["sector", "섹터", (v) => html(v || "")],
+    ["score", "표준점수", fvFmtScore],
+    ["raw_value", "기준값", (v, r) => html(fvFmtFactorBase(r))],
+    ["factor_note", "해석", (v, r) => html(fvFmtFactorInterpretation(r))],
+  ]);
+}
+function renderFactorValidationCorr() {
+  const corr = window.QUANT_DATA?.factor_validation?.correlation || {};
+  const keys = Object.keys(corr).slice(0, 15);
+  const el = document.getElementById("factor-validation-corr-table");
+  if (!el) return;
+  if (!keys.length) { el.innerHTML = "<p style='color:var(--text-sub);'>상관관계 데이터 없음</p>"; return; }
+  let out = `<table class="alerts-table"><thead><tr><th>팩터</th>${keys.map((k) => `<th>${html(k)}</th>`).join("")}</tr></thead><tbody>`;
+  keys.forEach((r) => {
+    out += `<tr><th>${html(r)}</th>`;
+    keys.forEach((c) => {
+      const v = Number(corr[r]?.[c]);
+      const hue = Number.isFinite(v) && v >= 0 ? 145 : 0;
+      const alpha = Number.isFinite(v) ? Math.min(Math.abs(v), 1) * 0.65 : 0;
+      out += `<td><span style="display:inline-block; min-width:48px; padding:3px 6px; border-radius:4px; background:hsla(${hue},70%,35%,${alpha});">${fvFmtNum(v, 2)}</span></td>`;
+    });
+    out += "</tr>";
+  });
+  el.innerHTML = out + "</tbody></table>";
+}
+function renderFactorValidationCoverage() {
+  const coverage = window.QUANT_DATA?.factor_validation?.coverage || [];
+  const rows = coverage.slice(-12).reverse();
+  const el = document.getElementById("factor-validation-coverage-table");
+  if (!el) return;
+  if (!rows.length) { el.innerHTML = "<p style='color:var(--text-sub);'>커버리지 데이터 없음</p>"; return; }
+  const preferred = ["period", "universe", "fwd_1m_available", "valuation_score", "momentum_score", "roe_sector_pct_ts", "sector_relative_per", "sector_relative_pbr", "value_quality_score", "sector_value_zscore", "small_cap_score"];
+  const cols = preferred.filter((k) => k in rows[0]).map((k) => [k, k, (v) => k === "period" ? html(v) : fvFmtInt(v)]);
+  el.innerHTML = fvTable(rows, cols);
+}
+window.renderFactorValidation = renderFactorValidation;
+window.renderFactorValidationTopn = renderFactorValidationTopn;
+window.renderFactorValidationCurrent = renderFactorValidationCurrent;
