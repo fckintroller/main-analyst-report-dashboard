@@ -768,8 +768,8 @@ const STOCK_SCENARIOS = {
   scenario_b_value_quality: {
     label: "B 가치+퀄리티",
     horizon: "3~12개월 중기",
-    desc: "기존 밸류, 섹터상대 가치품질, ROE, Piotroski, 실적 모멘텀, 선행 밸류를 결합합니다. PER/PBR이 싸기만 한 value trap보다 수익성·재무체력이 동반된 저평가 후보를 우선합니다.",
-    factors: ["밸류", "섹터상대 가치", "ROE", "재무건전성", "실적"]
+    desc: "기존 밸류, 섹터상대 가치품질(부채비율·FCF 포함), ROE, Piotroski, 실적 모멘텀, 선행 밸류를 결합합니다. PER/PBR이 싸기만 한 value trap보다 수익성·재무체력·현금창출력이 동반된 저평가 후보를 우선합니다.",
+    factors: ["밸류", "섹터상대 가치", "ROE", "부채·FCF", "재무건전성", "실적"]
   },
   scenario_c_reversal: {
     label: "C 저평가 반등",
@@ -1177,6 +1177,8 @@ function renderStockAttractiveness() {
             <div>PER <b style="color:#3b82f6;">${fmtNum(row.per ?? row.consensus_per)}</b></div>
             <div>PBR <b style="color:#8b5cf6;">${fmtNum(row.pbr ?? row.consensus_pbr)}</b></div>
             <div>ROE <b style="color:#10b981;">${row.roe == null ? "-" : `${(row.roe * 100).toFixed(1)}%`}</b></div>
+            <div>부채 <b>${row.debt_ratio == null ? "-" : `${(row.debt_ratio * 100).toFixed(0)}%`}</b></div>
+            <div>FCF/자산 <b style="color:#10b981;">${row.fcf_to_assets == null ? "-" : `${(row.fcf_to_assets * 100).toFixed(1)}%`}</b></div>
             <div>DIV <b>${fmtNum(row.div_yield)}</b></div>
           </div>
         </td>

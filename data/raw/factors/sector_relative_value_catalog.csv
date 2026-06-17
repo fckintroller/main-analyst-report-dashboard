@@ -1,0 +1,11 @@
+﻿factor_family,factor_name,definition,interpretation,preferred_use,requested_no
+sector_relative_value,sector_relative_per,종목 PER / 동일 월·섹터 PER 중위값,낮을수록 섹터 대비 저PER,핵심,1
+sector_relative_value,sector_relative_pbr,종목 PBR / 동일 월·섹터 PBR 중위값,낮을수록 섹터 대비 저PBR,핵심,2
+sector_relative_value,pbr_to_roe,PBR / ROE,ROE 1단위당 지불하는 장부가 배수. ROE<=0은 N/A,해석,3
+sector_relative_value,pbr_roe_residual_sector,log(PBR) - log(섹터 중앙 PBR/ROE × ROE),낮을수록 같은 섹터 ROE 대비 저평가,핵심,3
+sector_relative_value,pbr_roe_adjusted_score,섹터 내 PBR/ROE 잔차 역백분위,1에 가까울수록 ROE 대비 싼 종목,핵심,3
+sector_relative_value,debt_ratio,(유동부채+비유동부채) / 자본총계,낮을수록 재무 레버리지 부담이 낮음,품질,debt_fcf
+sector_relative_value,fcf_to_assets,(영업현금흐름 - |CAPEX|) / 자산총계,높을수록 자산 대비 잉여현금흐름 창출력 우수,품질,debt_fcf
+sector_relative_value,financial_quality_score,저부채·FCF창출력·FCF양수 여부 합성,1에 가까울수록 재무건전성+현금창출 품질 우수,품질,debt_fcf
+sector_relative_value,value_quality_score,저PER·저PBR·ROE수준·ROE대비PBR·저부채·FCF를 가중 합성,1에 가까울수록 가치+품질 동시 충족,핵심,5
+sector_relative_value,sector_value_zscore,섹터 PER/PBR 중위값의 24개월 rolling z-score 평균,음수일수록 해당 섹터 자체가 과거 대비 저평가,섹터 필터,6

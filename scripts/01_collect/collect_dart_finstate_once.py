@@ -55,6 +55,9 @@ ACCOUNT_MAP: list[tuple[str, str, list[str]]] = [
     # --- 현금흐름표 (CF) ---
     ("CF", "cfo",                 ["영업활동현금흐름", "영업활동으로인한현금흐름",
                                    "영업활동으로 인한 현금흐름"]),
+    ("CF", "capex",               ["유형자산의 취득", "유형자산 취득", "유형자산의취득",
+                                   "유형자산및투자부동산의 취득", "유형자산과 투자부동산의 취득",
+                                   "Property, Plant and Equipment"],),
 ]
 
 
@@ -62,13 +65,18 @@ def _to_num(val) -> float | None:
     if val is None or (isinstance(val, float) and pd.isna(val)):
         return None
     try:
-        return float(str(val).replace(",", ""))
+        text = str(val).replace(",", "").strip()
+        if text.startswith("(") and text.endswith(")"):
+            text = "-" + text[1:-1]
+        return float(text)
     except Exception:
         return None
 
 
 def _extract_account(df: pd.DataFrame, sj_div: str, keywords: list[str],
                      col: str) -> float | None:
+    if col not in df.columns:
+        return None
     # finstate_all은 IS 대신 CIS(포괄손익계산서)를 반환하므로 둘 다 검색
     divs = [sj_div, "CIS"] if sj_div == "IS" else [sj_div]
     sub = df[df["sj_div"].isin(divs)]

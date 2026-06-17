@@ -202,7 +202,11 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
             conn = sqlite3.connect(db_path)
             table_specs = [
                 ("factor_valuation_per_pbr_month", "period", ["sector", "valuation_score", "per_percentile_sector", "pbr_percentile_sector", "pbr_zscore_own_24m"]),
-                ("factor_sector_relative_value_month", "period", ["sector_relative_per", "sector_relative_pbr", "pbr_roe_adjusted_score", "value_quality_score", "sector_value_zscore"]),
+                ("factor_sector_relative_value_month", "period", [
+                    "sector_relative_per", "sector_relative_pbr", "pbr_roe_adjusted_score", "value_quality_score",
+                    "sector_value_zscore", "debt_ratio", "debt_to_assets", "fcf", "fcf_to_assets",
+                    "debt_ratio_score", "fcf_to_assets_score", "financial_quality_score", "quality_source",
+                ]),
                 ("factor_stock_price_momentum_month", "period", ["close", "ret_1m", "ret_3m", "ret_6m", "momentum_score", "turnover_spike_flag"]),
                 ("factor_size_month", "period", ["market_cap", "size_percentile_cross", "small_cap_score"]),
                 ("factor_liquidity_turnover_month", "period", ["turnover_value_avg", "turnover_ratio", "liquidity_score"]),
@@ -279,6 +283,14 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
             "sector_value_score": _safe_number(r.get("sector_relative_value__value_quality_score")),
             "sector_pbr_roe_score": _safe_number(r.get("sector_relative_value__pbr_roe_adjusted_score")),
             "sector_value_zscore": _safe_number(r.get("sector_relative_value__sector_value_zscore")),
+            "debt_ratio": _safe_number(r.get("sector_relative_value__debt_ratio")),
+            "debt_to_assets": _safe_number(r.get("sector_relative_value__debt_to_assets")),
+            "fcf": _safe_number(r.get("sector_relative_value__fcf")),
+            "fcf_to_assets": _safe_number(r.get("sector_relative_value__fcf_to_assets")),
+            "debt_ratio_score": _safe_number(r.get("sector_relative_value__debt_ratio_score")),
+            "fcf_to_assets_score": _safe_number(r.get("sector_relative_value__fcf_to_assets_score")),
+            "financial_quality_score": _safe_number(r.get("sector_relative_value__financial_quality_score")),
+            "quality_source": r.get("sector_relative_value__quality_source"),
             "momentum_score": _safe_number(r.get("stock_price_momentum__momentum_score")),
             "liquidity_score": _safe_number(r.get("liquidity_turnover__liquidity_score")),
             "roe": _safe_number(r.get("roe_trend__roe")),

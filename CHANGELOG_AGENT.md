@@ -4,6 +4,35 @@
 
 ---
 
+## 2026-06-17 19:29 - Hermes
+- Task: B 가치+퀄리티/섹터 상대 가치품질 팩터에 부채비율·FCF를 붙이고 웹 종목 매력도에 노출.
+- Modified:
+  - `scripts/01_collect/collect_dart_finstate_once.py` — DART finstate 수집 계정에 `capex` 추가, 괄호 음수 파싱 보강, 과거 컬럼 부재 시 안전 처리.
+  - `scripts/03_analyze/build_sector_relative_value_factors.py` — DART 최신 연간 재무제표 스냅샷에서 `debt_ratio`, `debt_to_assets`, `fcf`, `fcf_to_assets`, `debt_ratio_score`, `fcf_to_assets_score`, `financial_quality_score`, `quality_source` 생성; `value_quality_score`에 저부채/FCF 품질 반영.
+  - `tests/test_sector_relative_value_factors.py` — 부채비율·FCF 품질 방향성과 결측 재무품질 fallback 테스트 추가.
+  - `data/raw/valuation/dart_finstate/finstate_all.csv` — 재수집; 12,830행/379종목, `capex` 1,091행 포함.
+  - `data/raw/factors/sector_relative_value_month.csv`, `data/raw/factors/sector_relative_value_catalog.csv` — 재생성; monthly 14,136행, catalog 10행.
+  - `data/database/quant_data.sqlite` — `factor_sector_relative_value_month`/catalog 재적재. 사전 백업: `data/database/backups/quant_data_20260617_192517_before_debt_fcf.sqlite`.
+  - `scripts/03_analyze/export_web_data.py` — stock_attractiveness export에 debt/FCF/financial_quality 필드 추가.
+  - `web/quant_data.js` — 재생성; stock_attractiveness 2,770행, debt/FCF 동시 노출 315행.
+  - `web/quant_ui.js` — B 가치+퀄리티 설명을 부채비율·FCF 포함으로 갱신하고 종목 표에 부채/FCF·자산 표시.
+  - `scratch/verify_debt_fcf_stock_scenarios_20260617.js` — Puppeteer payload/UI 검증 추가.
+  - `data.md`, `00_context/index.md`, `00_context/index_factor.md`, `00_context/work_state.md` — 커버리지/검증/락 상태 반영.
+- Verification:
+  - `python scripts/01_collect/collect_dart_finstate_once.py` → 완료; DART raw 12,830행/379종목, `capex` 1,091행.
+  - `python scripts/03_analyze/build_sector_relative_value_factors.py` → monthly 14,136행/395종목, catalog 10행; non-null debt_ratio 12,730 / fcf_to_assets 11,976 / financial_quality_score 13,539 / value_quality_score 14,124.
+  - `python scripts/03_analyze/export_web_data.py` → `stock_attractiveness: 2770 rows loaded`, `web/quant_data.js` 생성 완료.
+  - `python -m py_compile scripts/01_collect/collect_dart_finstate_once.py scripts/03_analyze/build_sector_relative_value_factors.py scripts/03_analyze/export_web_data.py` → 통과.
+  - `node --check web/quant_ui.js` / `node --check web/quant_data.js` / `node --check scratch/verify_debt_fcf_stock_scenarios_20260617.js` → 통과.
+  - `pytest tests/test_sector_relative_value_factors.py tests/test_valuation_per_pbr_factors.py tests/test_roe_trend_factors.py tests/test_piotroski_factors.py -q` → 34 passed.
+  - `node scratch/verify_debt_fcf_stock_scenarios_20260617.js` → rows 2,770, enriched 315, quality_source 존재, B 가치+퀄리티 UI와 부채/FCF 표시 확인.
+- Caveats:
+  - 부채비율·FCF는 DART 최신 연간 스냅샷을 월간 패널에 ticker 기준으로 붙인 값입니다.
+  - 웹 전체 2,770개 종목 중 debt/FCF 동시 노출은 DART 상세 수집·월간 팩터 매칭 가능한 315개입니다. 나머지는 기존 가치/ROE/실적 기반 점수로 fallback됩니다.
+  - export 중 pandas `FutureWarning`/날짜 parse `UserWarning`, 로컬 브라우저 검증 중 favicon 404는 기존 경고이며 산출물 생성/검증은 성공.
+
+---
+
 ## 2026-06-17 18:53 - Hermes
 - Task: 종목 시장 매력도 화면에 A/B/C/D 투자 시나리오 점수와 UI 선택 흐름을 마무리 검증.
 - Modified:

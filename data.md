@@ -487,3 +487,79 @@ logger                               # 표준 로거 인스턴스 (모든 스크
   - 본 테이블은 예측모델 결과가 아니라 모델링 전 regime-aware factor 후보군입니다.
   - `regime_adjusted_interest_score`는 검색 관심도 점수를 risk-off/달러압박에서는 할인하고, risk-on/growth/export 환경에서는 일부 가중한 규칙 기반 점수입니다.
   - 최신월 `neutral` regime에서는 growth/export/risk 할인 가중이 적용되지 않았으므로 관심도 원신호의 상대순위 영향이 큽니다.
+
+---
+
+## 18. 2026-06-10 미국/한국 무역 통계 수집·DB 적재
+
+- 실행 agent: Hermes
+- 목적: 미국 글로벌 무역, 미국-한국 양자 교역, 한국 수출입 장기 시계열을 FRED 기반으로 보강
+- 수집 스크립트: `scripts/01_collect/collect_us_korea_trade_once.py`
+- 실행 명령: `python scripts/01_collect/collect_us_korea_trade_once.py`
+- DB 백업:
+  - `data/database/quant_data.sqlite.backup_trade_stats_20260610_214100` — 성공 적재 직전 백업
+  - `data/database/quant_data.sqlite.backup_trade_stats_20260610_212826` — graph CSV timeout으로 중단된 1차 시도 직전 백업
+- raw 파일:
+  - 개별 FRED series CSV 8개: `fred_BOPTEXP.csv`, `fred_BOPTIMP.csv`, `fred_EXPGS.csv`, `fred_IMPGS.csv`, `fred_EXPKR.csv`, `fred_IMPKR.csv`, `fred_XTEXVA01KRM667S.csv`, `fred_XTIMVA01KRM667S.csv`
+  - 통합/파생 CSV: `us_korea_trade_fred_long.csv`, `us_korea_trade_fred_monthly.csv`, `us_trade_fred_quarterly_nipa.csv`, `us_korea_trade_fred_metadata.csv`
+  - 요약 JSON: `us_korea_trade_collection_summary.json`
+- SQLite 테이블:
+  - `macro_trade_us_korea_fred` — 4,112 rows, 1947-01-01~2026-04-01
+  - `macro_trade_us_korea_monthly` — 3,478 rows, 1957-01-01~2026-04-01
+  - `macro_trade_us_quarterly_nipa` — 634 rows, 1947-01-01~2026-01-01
+  - `macro_trade_us_korea_metadata` — 8 rows, all success
+  - 개별 series 테이블: `macro_trade_boptexp`, `macro_trade_boptimp`, `macro_trade_expgs`, `macro_trade_impgs`, `macro_trade_expkr`, `macro_trade_impkr`, `macro_trade_xtexva01krm667s`, `macro_trade_xtimva01krm667s`
+- 시리즈 범위:
+  - `BOPTEXP`/`BOPTIMP`: 1992-01-01~2026-04-01, 각 412 rows
+  - `EXPGS`/`IMPGS`: 1947-01-01~2026-01-01, 각 317 rows
+  - `EXPKR`/`IMPKR`: 1985-01-01~2026-04-01, 각 496 rows
+  - `XTEXVA01KRM667S`/`XTIMVA01KRM667S`: 1957-01-01~2026-03-01, 각 831 rows
+- Caveats:
+  - FRED graph CSV endpoint는 현재 환경에서 read timeout이 발생해, 프로젝트 `.env`의 `FRED_API_KEY`를 사용하는 FRED observations API fallback으로 성공 수집했습니다. 키 값은 문서/로그에 기록하지 않았습니다.
+  - 월간 BoP/양자 통계와 분기 NIPA 통계는 단위·계절조정·빈도가 다르므로 metadata를 기준으로 분리 사용해야 합니다.
+
+---
+
+## 19. 2026-06-16 섹터 상대 PER/PBR·ROE 조정 팩터 구축
+
+- 실행 agent: Hermes
+- 목적: 사용자 요청 팩터 1·2·3·5·6 구현 후 2026-06-17에 부채비율·FCF 품질을 추가 반영
+  1. `sector_relative_per` — 종목 PER / 동일 섹터 PER 중위값
+  2. `sector_relative_pbr` — 종목 PBR / 동일 섹터 PBR 중위값
+  3. `pbr_to_roe`, `pbr_roe_residual_sector`, `pbr_roe_adjusted_score` — ROE 대비 PBR 조정
+  5. `value_quality_score` — 저PER·저PBR·ROE수준·ROE대비PBR·저부채·FCF 합성
+  6. `sector_value_zscore` — 섹터 PER/PBR 중위값의 자기 과거 대비 위치
+  debt/FCF. `debt_ratio`, `fcf_to_assets`, `financial_quality_score` — DART 최신 연간 재무제표 기반 재무건전성·현금창출 품질
+- 원천: 기존 `factor_valuation_per_pbr_month`, `factor_roe_trend_month` + `data/raw/valuation/dart_finstate/finstate_all.csv`(CAPEX 계정 추가 수집)
+- DB 백업:
+  - `data/database/backups/quant_data_20260616_1940_before_sector_relative_value.sqlite`
+  - `data/database/backups/quant_data_20260617_192517_before_debt_fcf.sqlite`
+- 가공 스크립트: `scripts/03_analyze/build_sector_relative_value_factors.py`
+- 수집 스크립트 보강: `scripts/01_collect/collect_dart_finstate_once.py` — `capex` 계정 및 괄호 음수 파싱 추가
+- 테스트: `tests/test_sector_relative_value_factors.py`
+- 실행 명령:
+  - `python scripts/01_collect/collect_dart_finstate_once.py`
+  - `python scripts/03_analyze/build_sector_relative_value_factors.py`
+- 출력 CSV:
+  - `data/raw/factors/sector_relative_value_month.csv`
+  - `data/raw/factors/sector_relative_value_catalog.csv`
+- SQLite 테이블:
+  - `factor_sector_relative_value_month` — 14,136 rows, 395 tickers, 2023-06-01~2026-06-01
+  - `factor_sector_relative_value_catalog` — 10 rows
+- 검증 요약:
+  - non-null `sector_relative_per`: 10,202
+  - non-null `sector_relative_pbr`: 13,407
+  - non-null `pbr_roe_adjusted_score`: 10,092
+  - non-null `debt_ratio`: 12,730
+  - non-null `fcf_to_assets`: 11,976
+  - non-null `financial_quality_score`: 13,539
+  - non-null `value_quality_score`: 14,124
+  - non-null `sector_value_zscore`: 9,586
+  - DART finstate raw: 12,830 rows / 379 tickers / `capex` 1,091 rows
+  - `python -m py_compile scripts/01_collect/collect_dart_finstate_once.py scripts/03_analyze/build_sector_relative_value_factors.py scripts/03_analyze/export_web_data.py` → 통과
+  - `pytest tests/test_sector_relative_value_factors.py tests/test_valuation_per_pbr_factors.py tests/test_roe_trend_factors.py tests/test_piotroski_factors.py -q` → 34 passed
+  - `node scratch/verify_debt_fcf_stock_scenarios_20260617.js` → stock_attractiveness 2,770 rows, debt/FCF enriched 315 rows, B 가치+퀄리티 UI 부채·FCF 표시 확인
+- Caveats:
+  - 섹터 내 표본 5종목 미만이면 섹터 상대/잔차 지표를 NaN 처리합니다.
+  - ROE≤0 구간은 PBR/ROE 조정 지표를 NaN 처리합니다.
+  - 부채비율·FCF는 DART 최신 연간 스냅샷을 월간 패널에 ticker 기준으로 붙입니다. 전체 2,770개 웹 종목 중 debt/FCF 동시 노출은 DART 상세 수집·월간 팩터 매칭 가능한 315개로 제한됩니다.
