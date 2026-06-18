@@ -19,6 +19,8 @@
   - payload probe → rows 2,770 / factor_profile 보유 2,742 / risk_flags 필드 2,770; 삼성전자 샘플에서 PER·섹터상대가치·ROE profile 및 최근 3개월 변동 리스크 확인.
   - `node --check web/quant_ui.js`, `node --check web/quant_data.js`, `node --check scratch/verify_stock_ranking_explain_20260618.js` → 통과.
   - Puppeteer → 종목시장매력도 rows 300, `왜 선정됐나`, 랭킹 해석 가이드, 섹터별 상위 종목, 섹터 내 순위, 최근 3개월 변화, 리스크 플래그 표시; B 가치+퀄리티 전환 및 삼성전자 검색 후 설명 유지; pageErrors 0.
+  - Git commit/push: `cd5589f` (`Add stock ranking explanation UI`) → GitHub Actions Deploy Web Dashboard run `27755694572` completed success.
+  - Live URL `https://fckintroller.github.io/main-analyst-report-dashboard/` → HTTP 200; root HTML에 `랭킹 해석 가이드`/`섹터별 상위 종목`, `quant_data.js`에 `factor_profile`/`risk_flags`/`foreign_net_ratio_change`, `quant_ui.js`에 `buildWhyHtml`/`renderStockRankingInsights`/`왜 선정됐나` 마커 확인.
 - Caveats:
   - 최근 3개월 변화는 현재 payload 기준 3개월 가격수익률/모멘텀 맥락 표시이며, 월별 리밸런싱 NAV가 아님.
   - `risk_flags`는 투자 경고가 아니라 데이터 기반 점검 포인트로 해석.
