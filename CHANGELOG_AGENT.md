@@ -20,6 +20,8 @@
   - payload probe → `topnSummary=216`, `quintileSummary=360`, `quintileSpread=72`, `tqCurrent=720`, `tqCoverage=888`, `tqAsOf=2026-06`.
   - `node --check web/quant_ui.js` 및 `node --check scratch/verify_factor_topn_quintile_dashboard_20260618.js` → 통과.
   - `node scratch/verify_factor_topn_quintile_dashboard_20260618.js` → TopN rows 12, Q1-Q5 rows 12, 필터 변경 후 rows 12/12, 주의문구 표시, pageErrors 0.
+  - Git commit/push: `aa75fa8` (`Add TopN quintile dashboard view`) → GitHub Actions Deploy Web Dashboard run `27753076863` completed success.
+  - Live URL `https://fckintroller.github.io/main-analyst-report-dashboard/` → HTTP 200; `quant_data.js`에 `topn_quintile`/`quintile_spread`, `quant_ui.js`에 `renderFactorTopnQuintile`, root HTML에 `실전 TopN` 마커 확인.
 - Caveats:
   - 기존 백테스트와 동일하게 실제 KRX KOSPI200 구성종목이 아닌 월별 시가총액 상위 200개 프록시 기준.
   - 3/6개월 forward return은 중첩 표본이며 거래비용·세금·슬리피지 미반영.
