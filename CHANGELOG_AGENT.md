@@ -14,6 +14,9 @@
 - Verification:
   - `node --check web/quant_ui.js`, `node --check web/quant_data.js`, `node --check scratch/verify_stock_table_compact_20260618.js` → 통과.
   - Puppeteer 920px viewport → headers 5개, row columns 5개, table wrapper `scrollWidth == clientWidth`로 가로 스크롤 없음, 영업이익 `억` 단위/배당률 `%`/품질 결측 `데이터없음`/레짐/왜 선정됐나 표시, pageErrors 0.
+  - Git commit/push: `1926077` (`Compact stock attractiveness table`) → `main` push 완료.
+  - GitHub Actions: Deploy Web Dashboard run `27760908023` → success.
+  - Live Pages probe → root `stock-table-wrap`/`가치/퀄리티`/`영업이익`, `quant_ui.js` `fmtOpProfit`/`fmtPctNumber`/`stock-why-box`/`colspan="5"` 마커 확인.
 
 ## 2026-06-18 21:29 - Hermes
 - Task: 종목 시장 매력도 데이터 유니버스를 명확화하고, 개발 우선순위 `B 유지 + A 별도 플래그`를 웹에 적용.
