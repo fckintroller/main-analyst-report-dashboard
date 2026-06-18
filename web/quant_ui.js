@@ -878,6 +878,18 @@ function scenarioScore(row) {
   return row[key] ?? row.market_attractiveness_score;
 }
 
+function fmtPctNumber(value, digits = 1, missing = "-") {
+  const n = stockNum(value);
+  if (n === null) return missing;
+  return `${(n * 100).toFixed(digits)}%`;
+}
+
+function fmtOpProfit(value) {
+  const n = stockNum(value);
+  if (n === null) return "-";
+  return `${Math.round(n).toLocaleString("ko-KR")}억`;
+}
+
 function fmtBacktestPct(value, digits = 1) {
   const n = stockNum(value);
   if (n === null) return "-";
@@ -958,10 +970,10 @@ function buildWhyHtml(row, scoreKey, rank, sectorRank, sectorCount) {
   const ret3m = stockNum(row.ret_3m);
   const retText = ret3m === null ? "3개월 변화 -" : `최근 3개월 ${ret3m >= 0 ? "+" : ""}${(ret3m * 100).toFixed(1)}%`;
   return `
-    <div style="margin-top:8px; padding:8px; border:1px solid rgba(148,163,184,0.18); border-radius:8px; background:rgba(15,23,42,0.28);">
-      <div style="font-size:0.74rem; color:var(--text-sub); margin-bottom:5px;">${rankText} · ${sectorText} · ${retText}</div>
-      <div style="font-size:0.76rem; color:var(--text-heading); font-weight:800; margin-bottom:4px;">왜 선정됐나</div>
-      <ul style="margin:0 0 6px 16px; padding:0; color:var(--text-sub); font-size:0.74rem; line-height:1.55;">${reasons || "<li>표시 가능한 팩터 breakdown이 부족합니다.</li>"}</ul>
+    <div class="stock-why-box">
+      <div style="font-size:0.72rem; color:var(--text-sub); margin-bottom:5px;">${rankText} · ${sectorText} · ${retText}</div>
+      <div style="font-size:0.75rem; color:var(--text-heading); font-weight:800; margin-bottom:4px;">왜 선정됐나</div>
+      <ul>${reasons || "<li>표시 가능한 팩터 breakdown이 부족합니다.</li>"}</ul>
       <div style="display:flex; gap:4px; flex-wrap:wrap;">${risks}</div>
     </div>`;
 }
@@ -1323,32 +1335,34 @@ function renderStockAttractiveness() {
           <div style="margin-top:5px; display:flex; gap:4px; flex-wrap:wrap;">${badges}</div>
         </td>
         <td>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; font-size:0.8rem; color:var(--text-sub);">
+          <div class="stock-metric-grid">
             <div>PER <b style="color:#3b82f6;">${fmtNum(row.per ?? row.consensus_per)}</b></div>
             <div>PBR <b style="color:#8b5cf6;">${fmtNum(row.pbr ?? row.consensus_pbr)}</b></div>
-            <div>ROE <b style="color:#10b981;">${row.roe == null ? "-" : `${(row.roe * 100).toFixed(1)}%`}</b></div>
-            <div>부채 <b>${row.debt_ratio == null ? "-" : `${(row.debt_ratio * 100).toFixed(0)}%`}</b></div>
-            <div>FCF/자산 <b style="color:#10b981;">${row.fcf_to_assets == null ? "-" : `${(row.fcf_to_assets * 100).toFixed(1)}%`}</b></div>
-            <div>BS품질 <b>${row.balance_sheet_quality_score == null ? "-" : `${(row.balance_sheet_quality_score * 100).toFixed(0)}점`}</b></div>
-            <div>CF품질 <b>${row.cashflow_quality_score == null ? "-" : `${(row.cashflow_quality_score * 100).toFixed(0)}점`}</b></div>
-            <div>이익안정 <b>${row.earnings_stability_score == null ? "-" : `${(row.earnings_stability_score * 100).toFixed(0)}점`}</b></div>
-            <div>DIV <b>${fmtNum(row.div_yield)}</b></div>
+            <div>ROE <b style="color:#10b981;">${fmtPctNumber(row.roe)}</b></div>
+            <div>부채 <b>${fmtPctNumber(row.debt_ratio, 0)}</b></div>
+            <div>FCF/자산 <b style="color:#10b981;">${fmtPctNumber(row.fcf_to_assets)}</b></div>
+            <div>BS품질 <b>${row.balance_sheet_quality_score == null ? "데이터없음" : `${(row.balance_sheet_quality_score * 100).toFixed(0)}점`}</b></div>
+            <div>CF품질 <b>${row.cashflow_quality_score == null ? "데이터없음" : `${(row.cashflow_quality_score * 100).toFixed(0)}점`}</b></div>
+            <div>이익안정 <b>${row.earnings_stability_score == null ? "데이터없음" : `${(row.earnings_stability_score * 100).toFixed(0)}점`}</b></div>
+            <div>DIV <b>${fmtPctNumber(row.div_yield)}</b></div>
           </div>
         </td>
-        <td>${fmtCompact(row.recent_op_profit, "")}</td>
-        <td><b style="color:#10b981;">${fmtCompact(row.this_year_op_profit_est, "")}</b>${growthThis}</td>
-        <td><b style="color:#3b82f6;">${fmtCompact(row.next_year_op_profit_est, "")}</b>${growthNext}</td>
+        <td>
+          <div style="display:grid; gap:4px; font-size:0.78rem;">
+            <div>최근 <b>${fmtOpProfit(row.recent_op_profit)}</b></div>
+            <div>올해 <b style="color:#10b981;">${fmtOpProfit(row.this_year_op_profit_est)}</b>${growthThis}</div>
+            <div>내년 <b style="color:#3b82f6;">${fmtOpProfit(row.next_year_op_profit_est)}</b>${growthNext}</div>
+          </div>
+        </td>
         <td>
           <div>시총 <b>${fmtCompact(row.market_cap)}</b></div>
           <div style="font-size:0.75rem; color:var(--text-sub);">거래대금 ${fmtCompact(row.trading_value)}</div>
           <div style="font-size:0.75rem; color:var(--text-sub);">${html(row.market || "")} ${row.market_cap_rank ? `#${row.market_cap_rank}` : ""}</div>
-        </td>
-        <td>
           ${(() => {
             const rs = row.regime_adj_score;
-            if (rs == null) return '<div style="color:var(--text-sub); font-size:0.8rem;">-</div>';
+            if (rs == null) return '<div style="color:var(--text-sub); font-size:0.72rem; margin-top:4px;">레짐 -</div>';
             const c = rs >= 0.65 ? "#10b981" : rs >= 0.45 ? "#f59e0b" : "#ef4444";
-            return `<div style="font-weight:900; color:${c}; font-size:0.95rem;">${(rs * 100).toFixed(1)}</div><div style="font-size:0.68rem; color:var(--text-sub);">레짐조정</div>`;
+            return `<div style="font-size:0.72rem; color:var(--text-sub); margin-top:4px;">레짐 <b style="color:${c};">${(rs * 100).toFixed(1)}</b></div>`;
           })()}
         </td>
         <td>
@@ -1360,7 +1374,7 @@ function renderStockAttractiveness() {
         </td>
       </tr>
     `;
-  }).join("") || '<tr><td colspan="8" style="text-align:center; padding:22px; color:var(--text-sub);">조건에 맞는 종목이 없습니다.</td></tr>';
+  }).join("") || '<tr><td colspan="5" style="text-align:center; padding:22px; color:var(--text-sub);">조건에 맞는 종목이 없습니다.</td></tr>';
 
   const count = document.getElementById("stock-attractiveness-count");
   if (count) count.textContent = `${universeLabel(market)} · 검색 결과 ${filtered.length.toLocaleString("ko-KR")}개 / 화면 표시 ${display.length.toLocaleString("ko-KR")}개 · ${scenario.label} 산정 가능 ${scenarioValidCount.toLocaleString("ko-KR")}개`;

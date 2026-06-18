@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-06-18 21:54 - Hermes
+- Task: 종목 시장 매력도 표의 가로 스크롤/잘림 문제와 수치 표기 누락감을 개선.
+- Modified:
+  - `web/index.html` — `#stock-attractiveness-table` 전용 compact/fixed layout CSS 추가; stock table wrapper를 세로 스크롤만 허용하도록 변경; 컬럼을 8개에서 5개로 재구성.
+  - `web/quant_ui.js` — 영업이익 최근/올해/내년을 한 컬럼에 묶고 `억` 단위 표시; 레짐 점수를 시총/거래 컬럼으로 병합; DIV/ROE/부채/FCF는 `%` 형식으로 표시; 품질 점수 결측은 `데이터없음`으로 명확히 표시; `왜 선정됐나` 박스 폭/줄바꿈 개선.
+- Created:
+  - `scratch/verify_stock_table_compact_20260618.js` — Puppeteer compact table 검증 스크립트.
+- Verification:
+  - `node --check web/quant_ui.js`, `node --check web/quant_data.js`, `node --check scratch/verify_stock_table_compact_20260618.js` → 통과.
+  - Puppeteer 920px viewport → headers 5개, row columns 5개, table wrapper `scrollWidth == clientWidth`로 가로 스크롤 없음, 영업이익 `억` 단위/배당률 `%`/품질 결측 `데이터없음`/레짐/왜 선정됐나 표시, pageErrors 0.
+
 ## 2026-06-18 21:29 - Hermes
 - Task: 종목 시장 매력도 데이터 유니버스를 명확화하고, 개발 우선순위 `B 유지 + A 별도 플래그`를 웹에 적용.
 - Modified:
