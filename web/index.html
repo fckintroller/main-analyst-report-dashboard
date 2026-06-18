@@ -609,12 +609,14 @@
                 <input type="text" id="stock-attractiveness-search" placeholder="종목명/코드 검색" oninput="renderStockAttractiveness()" style="background:var(--btn-bg); border:1px solid var(--card-border); color:var(--text-heading); padding:10px 12px; border-radius:6px; outline:none;">
               </label>
               <label style="display:flex; flex-direction:column; gap:6px; color:var(--text-sub); font-size:0.78rem; font-weight:700;">
-                시장
+                유니버스
                 <select id="stock-filter-market" onchange="renderStockAttractiveness()" style="background:var(--btn-bg); border:1px solid var(--card-border); color:var(--text-heading); padding:10px 12px; border-radius:6px;">
-                  <option value="all">전체</option>
-                  <option value="KOSPI">KOSPI</option>
-                  <option value="KOSDAQ">KOSDAQ</option>
-                  <option value="KOSPI200_PROXY">KOSPI200 근사</option>
+                  <option value="B_PROJECT_DEFAULT" selected>B 기본: KOSPI200 + KOSDAQ150</option>
+                  <option value="A_KOSPI200_PROXY">A KOSPI200 proxy</option>
+                  <option value="C_SCREENABLE">C 전체상장 스크리닝</option>
+                  <option value="all">전체 상장사</option>
+                  <option value="KOSPI">KOSPI 전체</option>
+                  <option value="KOSDAQ">KOSDAQ 전체</option>
                 </select>
               </label>
               <label style="display:flex; flex-direction:column; gap:6px; color:var(--text-sub); font-size:0.78rem; font-weight:700;">
@@ -659,6 +661,14 @@
               <button class="filter-btn" data-filter="high-roe" onclick="toggleStockQuickFilter('high-roe', this)">ROE 우수</button>
               <button class="filter-btn" data-filter="high-liquidity" onclick="toggleStockQuickFilter('high-liquidity', this)">거래대금 우수</button>
               <button class="filter-btn" data-filter="consensus" onclick="toggleStockQuickFilter('consensus', this)">컨센서스 있음</button>
+            </div>
+          </div>
+
+          <div class="data-card" style="margin-bottom:16px;">
+            <h3 style="color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-database"></i> 유니버스 정의</h3>
+            <div id="stock-universe-summary" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px,1fr)); gap:10px; margin-bottom:10px;"></div>
+            <div style="color:var(--text-sub); font-size:0.84rem; line-height:1.7;">
+              개발 우선순위는 <b>B 기본 유니버스 유지</b>입니다. A는 안정적 백테스트/기관 운용 관점의 별도 플래그로 제공하고, C는 전체 상장사 스크리닝용이며 재무·거래량·상폐/관리종목 필터가 필요합니다. D는 대형/중형/소형주 별도 비교 관점입니다.
             </div>
           </div>
 

@@ -1000,6 +1000,44 @@ function renderStockRankingInsights(filtered, scoreKey, rankInfo) {
   }
 }
 
+function passesUniverseFilter(row, market) {
+  if (market === "B_PROJECT_DEFAULT") return !!row.project_universe_b;
+  if (market === "A_KOSPI200_PROXY" || market === "KOSPI200_PROXY") return !!row.kospi200_proxy;
+  if (market === "C_SCREENABLE") return !!row.all_listed_screenable;
+  if (market === "KOSPI" || market === "KOSDAQ") return row.market === market;
+  return true;
+}
+
+function universeLabel(value) {
+  const labels = {
+    B_PROJECT_DEFAULT: "B 기본: KOSPI200+KOSDAQ150",
+    A_KOSPI200_PROXY: "A KOSPI200 proxy",
+    C_SCREENABLE: "C 전체상장 스크리닝",
+    all: "전체 상장사",
+    KOSPI: "KOSPI 전체",
+    KOSDAQ: "KOSDAQ 전체",
+  };
+  return labels[value] || value;
+}
+
+function renderStockUniverseSummary(rows, market) {
+  const el = document.getElementById("stock-universe-summary");
+  if (!el) return;
+  const payload = window.QUANT_DATA?.stock_attractiveness || {};
+  const counts = payload.universe?.counts || {};
+  const cards = [
+    ["B 기본", counts.b_project_default ?? rows.filter(r => r.project_universe_b).length, "KOSPI200 proxy + KOSDAQ150 proxy · 현재 프로젝트 기본"],
+    ["A 별도 플래그", counts.a_kospi200_proxy ?? rows.filter(r => r.kospi200_proxy).length, "KOSPI 시총 상위 200 proxy · 안정적 백테스팅"],
+    ["C 스크리닝", counts.c_screenable ?? rows.filter(r => r.all_listed_screenable).length, "전체 상장사 중 최소 시총/거래대금 필터 통과"],
+    ["현재 선택", rows.filter(r => passesUniverseFilter(r, market)).length, universeLabel(market)],
+  ];
+  el.innerHTML = cards.map(([title, value, desc]) => `<div style="padding:10px; border:1px solid var(--card-border); border-radius:8px; background:var(--btn-bg);">
+    <div style="font-size:0.72rem; color:var(--text-sub);">${html(title)}</div>
+    <div style="font-weight:900; color:var(--text-heading); margin-top:3px;">${Number(value || 0).toLocaleString("ko-KR")}개</div>
+    <div style="font-size:0.72rem; color:var(--text-sub); margin-top:4px; line-height:1.45;">${html(desc)}</div>
+  </div>`).join("");
+}
+
 function renderScenarioBacktestSummary(scoreKey, validCount, totalCount) {
   const el = document.getElementById("scenario-backtest-summary");
   if (!el) return;
@@ -1242,13 +1280,13 @@ function renderStockAttractiveness() {
   }
   renderScenarioToggles();
   const scoreKey = selectedScenarioKey();
-  const { ranks: scenarioRanks, sectorRanks: scenarioSectorRanks, validCount: scenarioValidCount } = buildScenarioRanks(rows, scoreKey);
-  renderScenarioBacktestSummary(scoreKey, scenarioValidCount, rows.length);
+  renderStockUniverseSummary(rows, market);
+  const universeRows = rows.filter(row => passesUniverseFilter(row, market));
+  const { ranks: scenarioRanks, sectorRanks: scenarioSectorRanks, validCount: scenarioValidCount } = buildScenarioRanks(universeRows, scoreKey);
+  renderScenarioBacktestSummary(scoreKey, scenarioValidCount, universeRows.length);
 
-  let filtered = rows.filter(row => {
+  let filtered = universeRows.filter(row => {
     if (term && !(`${row.name || ""} ${row.ticker || ""}`.toLowerCase().includes(term))) return false;
-    if (market === "KOSPI200_PROXY" && !row.kospi200_proxy) return false;
-    if (market !== "all" && market !== "KOSPI200_PROXY" && row.market !== market) return false;
     if (size !== "all" && row.size_bucket !== size) return false;
     if (sector !== "all" && row.sector !== sector) return false;
     return passesStockQuickFilters(row);
@@ -1257,7 +1295,7 @@ function renderStockAttractiveness() {
   filtered.sort((a, b) => (stockNum(b[sortKey]) ?? -Infinity) - (stockNum(a[sortKey]) ?? -Infinity));
   renderStockRankingInsights(filtered, scoreKey, { ranks: scenarioRanks, sectorRanks: scenarioSectorRanks });
   const sectorCounts = new Map();
-  rows.forEach(row => {
+  universeRows.forEach(row => {
     if (stockNum(row[scoreKey]) === null) return;
     const sectorName = row.sector || "업종 미분류";
     sectorCounts.set(sectorName, (sectorCounts.get(sectorName) || 0) + 1);
@@ -1275,7 +1313,8 @@ function renderStockAttractiveness() {
     const scoreColor = score == null ? "var(--text-sub)" : score >= 0.65 ? "#10b981" : score >= 0.5 ? "#f59e0b" : "#ef4444";
     const growthThis = fmtPctValue(row.this_year_op_growth_pct);
     const growthNext = fmtPctValue(row.next_year_op_growth_pct);
-    const badges = [row.market, row.size_bucket, row.kospi200_proxy ? "KOSPI200근사" : null].filter(Boolean).map(v => `<span class="tag">${html(v)}</span>`).join(" ");
+    const universeBadges = [row.kospi200_proxy ? "A K200" : null, row.project_universe_b ? "B 기본" : null, row.all_listed_screenable ? "C 스크리닝" : null];
+    const badges = [row.market, row.size_bucket, ...universeBadges].filter(Boolean).map(v => `<span class="tag">${html(v)}</span>`).join(" ");
     return `
       <tr onclick="openStockModal('${html(row.name || row.ticker)}')" style="cursor:pointer;" onmouseover="this.style.background='var(--tr-hover-bg)'" onmouseout="this.style.background=''">
         <td>
@@ -1324,7 +1363,7 @@ function renderStockAttractiveness() {
   }).join("") || '<tr><td colspan="8" style="text-align:center; padding:22px; color:var(--text-sub);">조건에 맞는 종목이 없습니다.</td></tr>';
 
   const count = document.getElementById("stock-attractiveness-count");
-  if (count) count.textContent = `검색 결과 ${filtered.length.toLocaleString("ko-KR")}개 / 화면 표시 ${display.length.toLocaleString("ko-KR")}개 · ${scenario.label} 산정 가능 ${scenarioValidCount.toLocaleString("ko-KR")}개`;
+  if (count) count.textContent = `${universeLabel(market)} · 검색 결과 ${filtered.length.toLocaleString("ko-KR")}개 / 화면 표시 ${display.length.toLocaleString("ko-KR")}개 · ${scenario.label} 산정 가능 ${scenarioValidCount.toLocaleString("ko-KR")}개`;
 }
 window.renderStockAttractiveness = renderStockAttractiveness;
 

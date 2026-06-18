@@ -170,6 +170,11 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
     base["market_cap_rank_all"] = range(1, len(base) + 1)
     base["market_cap_rank_market"] = base.groupby("market")["시가총액"].rank(method="first", ascending=False)
     base["kospi200_proxy"] = (base["market"].eq("KOSPI") & (base["market_cap_rank_market"] <= 200)).astype(int)
+    base["kosdaq150_proxy"] = (base["market"].eq("KOSDAQ") & (base["market_cap_rank_market"] <= 150)).astype(int)
+    # Project default universe: KOSPI200 proxy + KOSDAQ150 proxy.
+    # This preserves the current 395~432 stock monthly factor-panel character while making
+    # the narrower KOSPI200 proxy explicitly available as a separate institutional/backtest flag.
+    base["project_universe_b"] = ((base["kospi200_proxy"] == 1) | (base["kosdaq150_proxy"] == 1)).astype(int)
 
     def size_bucket(row):
         cap = row.get("시가총액")
@@ -315,6 +320,9 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
             "market_cap_rank_all": int(r.get("market_cap_rank_all")) if not pd.isna(r.get("market_cap_rank_all")) else None,
             "size_bucket": r.get("size_bucket"),
             "kospi200_proxy": int(r.get("kospi200_proxy") or 0),
+            "kosdaq150_proxy": int(r.get("kosdaq150_proxy") or 0),
+            "project_universe_b": int(r.get("project_universe_b") or 0),
+            "universe_primary": "B_KOSPI200_KOSDAQ150" if int(r.get("project_universe_b") or 0) else "C_ALL_LISTED_SCREENING",
             "per": _safe_number(r.get("PER")),
             "pbr": _safe_number(r.get("PBR")),
             "eps": _safe_number(r.get("EPS")),
@@ -423,12 +431,47 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
         rec["market_attractiveness_score"] = round(sum(score_vals) / len(score_vals), 4) if score_vals else None
         rec["factor_profile"] = compact_factor_profile(rec)
         rec["risk_flags"] = build_risk_flags(rec)
+        rec["all_listed_screenable"] = int(
+            (rec.get("market_cap") or 0) >= 100_000_000_000
+            and (rec.get("trading_value") or rec.get("turnover_value_avg") or 0) >= 1_000_000_000
+            and rec.get("price") is not None
+        )
+        universe_tags = ["C 전체상장 스크리닝"]
+        if rec.get("project_universe_b"):
+            universe_tags.insert(0, "B KOSPI200+KOSDAQ150")
+        if rec.get("kospi200_proxy"):
+            universe_tags.insert(0, "A KOSPI200 proxy")
+        if rec.get("size_bucket") in {"large", "mid", "small"}:
+            universe_tags.append(f"D {rec.get('size_bucket')}")
+        rec["universe_tags"] = universe_tags
         rows.append(rec)
 
     rows.sort(key=lambda x: (x.get("market_attractiveness_score") is None, -(x.get("market_attractiveness_score") or 0)))
+    universe_summary = {
+        "default": "B_KOSPI200_KOSDAQ150",
+        "priority": "B 유지 + A 별도 플래그",
+        "definitions": {
+            "A_KOSPI200_PROXY": "KOSPI 시가총액 상위 200개 proxy. 안정적 백테스팅/기관 운용 관점.",
+            "B_KOSPI200_KOSDAQ150": "KOSPI200 proxy + KOSDAQ 시가총액 상위 150개 proxy. 현재 프로젝트 기본/성장주 포함.",
+            "C_ALL_LISTED_SCREENING": "전체 상장사 스크리닝용. 재무·거래량·상폐/관리종목 필터를 전제로 참고.",
+            "D_SIZE_BUCKETS": "대형/중형/소형주 별도 비교. 팩터 효과가 시총별로 다를 수 있음.",
+        },
+        "counts": {
+            "all_listed": len(rows),
+            "a_kospi200_proxy": sum(1 for x in rows if x.get("kospi200_proxy")),
+            "b_project_default": sum(1 for x in rows if x.get("project_universe_b")),
+            "kosdaq150_proxy": sum(1 for x in rows if x.get("kosdaq150_proxy")),
+            "c_screenable": sum(1 for x in rows if x.get("all_listed_screenable")),
+            "large": sum(1 for x in rows if x.get("size_bucket") == "large"),
+            "mid": sum(1 for x in rows if x.get("size_bucket") == "mid"),
+            "small": sum(1 for x in rows if x.get("size_bucket") == "small"),
+        },
+        "screening_filters": ["시가총액 1,000억원 이상", "거래대금/평균거래대금 10억원 이상", "가격 데이터 존재"],
+    }
     return {
         "as_of": as_of,
-        "method": "latest KRX snapshot + earnings consensus + latest factor tables; KOSPI200 is approximated by KOSPI market-cap top 200 when official constituent file is unavailable",
+        "method": "latest KRX snapshot + earnings consensus + latest factor tables; project default universe is B(KOSPI200 proxy + KOSDAQ150 proxy); A(KOSPI200 proxy) is kept as a separate backtest/institutional flag",
+        "universe": universe_summary,
         "rows": rows,
     }
 

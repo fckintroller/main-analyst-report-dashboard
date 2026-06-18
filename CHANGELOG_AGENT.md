@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-06-18 21:29 - Hermes
+- Task: 종목 시장 매력도 데이터 유니버스를 명확화하고, 개발 우선순위 `B 유지 + A 별도 플래그`를 웹에 적용.
+- Modified:
+  - `scripts/03_analyze/export_web_data.py` — `stock_attractiveness.universe` 메타 추가; `kosdaq150_proxy`, `project_universe_b`, `all_listed_screenable`, `universe_tags` 필드 추가.
+  - `web/index.html` — 시장 필터를 유니버스 필터로 변경하고 기본값을 `B 기본: KOSPI200 + KOSDAQ150`으로 설정; 유니버스 정의 카드 추가.
+  - `web/quant_ui.js` — B/A/C 유니버스 필터 로직, 기본 B 기준 랭킹/섹터순위, 유니버스 요약 렌더링 추가.
+  - `web/quant_data.js` — 재생성; universe counts 포함.
+- Created:
+  - `scratch/verify_stock_universe_20260618.js` — Puppeteer 유니버스 필터/렌더링 검증 스크립트.
+- Verification:
+  - `python -m py_compile scripts/03_analyze/export_web_data.py` → 통과.
+  - `python scripts/03_analyze/export_web_data.py` → `stock_attractiveness: 2770 rows loaded`, `web/quant_data.js` 생성 완료.
+  - payload probe → `universe.default=B_KOSPI200_KOSDAQ150`, all 2,770 / A KOSPI200 proxy 200 / B default 350 / KOSDAQ150 proxy 150 / C screenable 898.
+  - `node --check web/quant_ui.js`, `node --check web/quant_data.js`, `node --check scratch/verify_stock_universe_20260618.js` → 통과.
+  - Puppeteer → 기본 선택 B, count `350개`, A 필터 `200개`, C 필터 `898개`, 유니버스 정의/개발 우선순위 문구/배지/삼성전자 검색/왜 선정됐나 유지, pageErrors 0.
+- Caveats:
+  - A/B는 공식 지수 구성원이 아니라 현재 snapshot의 시가총액 proxy 기준.
+  - C screenable은 1차 필터(시총 1,000억원 이상, 거래대금/평균거래대금 10억원 이상, 가격 데이터 존재)이며 상폐/관리종목 공식 플래그는 아직 별도 수집 필요.
+
 ## 2026-06-18 20:14 - Hermes
 - Task: 종목 시장 매력도 웹 대시보드에서 단순 랭킹보다 “왜 이 종목인가”를 설명하도록 UI/데이터를 개선.
 - Modified:
