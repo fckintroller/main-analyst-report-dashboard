@@ -669,6 +669,19 @@
             <div id="scenario-backtest-summary" style="margin-top:12px; padding:12px; border:1px solid var(--card-border); border-radius:8px; background:rgba(4, 120, 87, 0.04);"></div>
           </div>
 
+          <div class="data-card" style="margin-bottom:16px;">
+            <h3 style="color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-circle-question"></i> 랭킹 해석 가이드</h3>
+            <div id="stock-ranking-summary" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:10px; margin-bottom:10px;"></div>
+            <div style="color:var(--text-sub); font-size:0.84rem; line-height:1.7;">
+              점수만 보지 않고 <b>전체순위·시나리오별 순위·섹터 내 순위</b>와 함께 PER/PBR/ROE, 섹터 대비 저평가, 수급, 최근 3개월 움직임, 리스크 플래그를 같이 표시합니다.
+            </div>
+          </div>
+
+          <div class="data-card" style="margin-bottom:16px;">
+            <h3 style="color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-layer-group"></i> 섹터별 상위 종목</h3>
+            <div id="stock-sector-leaders" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:10px;"></div>
+          </div>
+
           <div class="table-responsive" style="max-height:620px; overflow:auto;">
             <table class="alerts-table" id="stock-attractiveness-table">
               <thead>

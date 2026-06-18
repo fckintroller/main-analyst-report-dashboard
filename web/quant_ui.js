@@ -896,8 +896,108 @@ function buildScenarioRanks(rows, scoreKey) {
     .filter(item => item.score !== null)
     .sort((a, b) => b.score - a.score);
   const ranks = new Map();
+  const sectorRanks = new Map();
   ranked.forEach((item, idx) => ranks.set(item.row.ticker, idx + 1));
-  return { ranks, validCount: ranked.length };
+  const groups = new Map();
+  ranked.forEach(item => {
+    const sector = item.row.sector || "업종 미분류";
+    if (!groups.has(sector)) groups.set(sector, []);
+    groups.get(sector).push(item);
+  });
+  groups.forEach(items => items.forEach((item, idx) => sectorRanks.set(item.row.ticker, idx + 1)));
+  return { ranks, sectorRanks, validCount: ranked.length, ranked };
+}
+
+function fmtRawMetric(label, value) {
+  const n = stockNum(value);
+  if (n === null) return `${html(label)} -`;
+  if (/성장/.test(label)) return `${html(label)} ${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
+  const isRatio = /ROE|수익률|외국인|FCF|부채/.test(label);
+  if (isRatio) return `${html(label)} ${(n * 100).toFixed(1)}%`;
+  if (/거래대금/.test(label)) return `${html(label)} ${fmtCompact(n)}`;
+  return `${html(label)} ${fmtNum(n, 2)}`;
+}
+
+function stockFactorByKey(row, key) {
+  const profile = Array.isArray(row.factor_profile) ? row.factor_profile : [];
+  return profile.find(p => p.key === key);
+}
+
+function scenarioFactorKeys(scoreKey) {
+  const map = {
+    market_attractiveness_score: ["valuation", "momentum", "flow", "roe", "liquidity"],
+    scenario_a_momentum: ["momentum", "flow", "liquidity", "earnings"],
+    scenario_b_value_quality: ["valuation", "sector_value", "roe", "bs_quality", "cf_quality", "earnings"],
+    scenario_c_reversal: ["reversal", "valuation", "sector_value", "flow"],
+    scenario_d_large_stable: ["liquidity", "roe", "valuation", "flow", "bs_quality"],
+    score_base_5factor: ["valuation", "momentum", "liquidity", "roe"],
+    score_value_quality: ["valuation", "roe", "bs_quality", "cf_quality", "earnings"],
+    score_momentum_flow: ["momentum", "flow", "liquidity"],
+    score_reversal_value_flow: ["reversal", "valuation", "flow"],
+    score_short_squeeze_addon: ["momentum", "flow"],
+    regime_adj_score: ["momentum", "flow", "valuation", "roe"]
+  };
+  return map[scoreKey] || map.market_attractiveness_score;
+}
+
+function buildWhyHtml(row, scoreKey, rank, sectorRank, sectorCount) {
+  const keys = scenarioFactorKeys(scoreKey);
+  const factors = keys.map(k => stockFactorByKey(row, k)).filter(Boolean)
+    .sort((a, b) => (stockNum(b.score) ?? -Infinity) - (stockNum(a.score) ?? -Infinity))
+    .slice(0, 4);
+  const reasons = factors.map(f => {
+    const s = f.score == null ? "-" : `${Number(f.score).toFixed(1)}점`;
+    return `<li><b>${html(f.label)}</b> ${s}<span style="color:var(--text-sub);"> · ${fmtRawMetric(f.raw_label || "원값", f.raw)}</span></li>`;
+  }).join("");
+  const riskFlags = Array.isArray(row.risk_flags) ? row.risk_flags : [];
+  const risks = riskFlags.length
+    ? riskFlags.map(v => `<span class="tag" style="border-color:rgba(239,68,68,0.45); color:#fca5a5;">${html(v)}</span>`).join(" ")
+    : '<span class="tag" style="border-color:rgba(16,185,129,0.35); color:#86efac;">주요 리스크 플래그 없음</span>';
+  const rankText = rank ? `전체 #${rank.toLocaleString("ko-KR")}` : "전체 순위 산정불가";
+  const sectorText = sectorRank ? `${html(row.sector || "업종 미분류")} 내 #${sectorRank.toLocaleString("ko-KR")}/${sectorCount.toLocaleString("ko-KR")}` : "섹터 순위 산정불가";
+  const ret3m = stockNum(row.ret_3m);
+  const retText = ret3m === null ? "3개월 변화 -" : `최근 3개월 ${ret3m >= 0 ? "+" : ""}${(ret3m * 100).toFixed(1)}%`;
+  return `
+    <div style="margin-top:8px; padding:8px; border:1px solid rgba(148,163,184,0.18); border-radius:8px; background:rgba(15,23,42,0.28);">
+      <div style="font-size:0.74rem; color:var(--text-sub); margin-bottom:5px;">${rankText} · ${sectorText} · ${retText}</div>
+      <div style="font-size:0.76rem; color:var(--text-heading); font-weight:800; margin-bottom:4px;">왜 선정됐나</div>
+      <ul style="margin:0 0 6px 16px; padding:0; color:var(--text-sub); font-size:0.74rem; line-height:1.55;">${reasons || "<li>표시 가능한 팩터 breakdown이 부족합니다.</li>"}</ul>
+      <div style="display:flex; gap:4px; flex-wrap:wrap;">${risks}</div>
+    </div>`;
+}
+
+function renderStockRankingInsights(filtered, scoreKey, rankInfo) {
+  const summary = document.getElementById("stock-ranking-summary");
+  const leaders = document.getElementById("stock-sector-leaders");
+  if (summary) {
+    const top = filtered.find(r => stockNum(r[scoreKey]) !== null);
+    const avg = filtered.map(r => stockNum(r[scoreKey])).filter(v => v !== null);
+    const avgScore = avg.length ? (avg.reduce((a,b) => a + b, 0) / avg.length * 100).toFixed(1) : "-";
+    summary.innerHTML = [
+      ["표시 종목", `${filtered.length.toLocaleString("ko-KR")}개`],
+      ["선택 기준", STOCK_SCENARIOS[scoreKey]?.label || scoreKey],
+      ["평균 점수", `${avgScore}${avgScore === "-" ? "" : "점"}`],
+      ["현재 1위", top ? `${html(top.name)} (${html(top.ticker)})` : "-"],
+    ].map(([k,v]) => `<div style="padding:10px; border:1px solid var(--card-border); border-radius:8px; background:var(--btn-bg);"><div style="font-size:0.72rem; color:var(--text-sub);">${k}</div><div style="font-weight:900; color:var(--text-heading); margin-top:3px;">${v}</div></div>`).join("");
+  }
+  if (leaders) {
+    const bySector = new Map();
+    filtered.forEach(row => {
+      const sector = row.sector || "업종 미분류";
+      const score = stockNum(row[scoreKey]);
+      if (score === null) return;
+      if (!bySector.has(sector) || score > bySector.get(sector).score) bySector.set(sector, { row, score });
+    });
+    const cards = [...bySector.entries()].sort((a,b) => b[1].score - a[1].score).slice(0, 12).map(([sector, item]) => {
+      const rank = rankInfo.ranks.get(item.row.ticker);
+      return `<div style="padding:10px; border:1px solid var(--card-border); border-radius:8px; background:var(--btn-bg);">
+        <div style="font-size:0.72rem; color:var(--text-sub);">${html(sector)}</div>
+        <div style="font-weight:900; color:var(--text-heading); margin-top:3px;">${html(item.row.name)} <span style="color:var(--text-sub); font-size:0.75rem;">${html(item.row.ticker)}</span></div>
+        <div style="font-size:0.76rem; color:#10b981; margin-top:4px;">${(item.score * 100).toFixed(1)}점 · 전체 #${rank || "-"}</div>
+      </div>`;
+    }).join("");
+    leaders.innerHTML = cards || '<div style="color:var(--text-sub); font-size:0.84rem;">조건에 맞는 섹터 상위 종목이 없습니다.</div>';
+  }
 }
 
 function renderScenarioBacktestSummary(scoreKey, validCount, totalCount) {
@@ -1142,7 +1242,7 @@ function renderStockAttractiveness() {
   }
   renderScenarioToggles();
   const scoreKey = selectedScenarioKey();
-  const { ranks: scenarioRanks, validCount: scenarioValidCount } = buildScenarioRanks(rows, scoreKey);
+  const { ranks: scenarioRanks, sectorRanks: scenarioSectorRanks, validCount: scenarioValidCount } = buildScenarioRanks(rows, scoreKey);
   renderScenarioBacktestSummary(scoreKey, scenarioValidCount, rows.length);
 
   let filtered = rows.filter(row => {
@@ -1155,12 +1255,22 @@ function renderStockAttractiveness() {
   });
 
   filtered.sort((a, b) => (stockNum(b[sortKey]) ?? -Infinity) - (stockNum(a[sortKey]) ?? -Infinity));
+  renderStockRankingInsights(filtered, scoreKey, { ranks: scenarioRanks, sectorRanks: scenarioSectorRanks });
+  const sectorCounts = new Map();
+  rows.forEach(row => {
+    if (stockNum(row[scoreKey]) === null) return;
+    const sectorName = row.sector || "업종 미분류";
+    sectorCounts.set(sectorName, (sectorCounts.get(sectorName) || 0) + 1);
+  });
   const display = filtered.slice(0, 300);
   const scenario = STOCK_SCENARIOS[window.activeStockScenario] || STOCK_SCENARIOS.market_attractiveness_score;
 
   tbody.innerHTML = display.map(row => {
     const score = scenarioScore(row);
     const rank = scenarioRanks.get(row.ticker);
+    const sectorRank = scenarioSectorRanks.get(row.ticker);
+    const sectorCount = sectorCounts.get(row.sector || "업종 미분류") || 0;
+    const whyHtml = buildWhyHtml(row, scoreKey, rank, sectorRank, sectorCount);
     const scorePct = score == null ? "-" : `${(score * 100).toFixed(1)}점`;
     const scoreColor = score == null ? "var(--text-sub)" : score >= 0.65 ? "#10b981" : score >= 0.5 ? "#f59e0b" : "#ef4444";
     const growthThis = fmtPctValue(row.this_year_op_growth_pct);
@@ -1207,6 +1317,7 @@ function renderStockAttractiveness() {
           <div style="font-size:0.75rem; color:var(--text-sub); margin-top:3px;">${html(scenario.label)}</div>
           <div style="font-size:0.72rem; color:var(--text-sub); margin-top:3px;">전체순위 ${rank ? `#${rank.toLocaleString("ko-KR")}/${scenarioValidCount.toLocaleString("ko-KR")}` : "산정불가"}</div>
           <div style="font-size:0.72rem; color:var(--text-sub); margin-top:3px;">종합 ${row.market_attractiveness_score == null ? "-" : (row.market_attractiveness_score * 100).toFixed(1)}</div>
+          ${whyHtml}
         </td>
       </tr>
     `;

@@ -261,6 +261,45 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
             weights.append(weight)
         return round(sum(vals) / sum(weights), 4) if weights else None
 
+    def compact_factor_profile(rec):
+        def pct_score(v):
+            n = _safe_number(v)
+            return round(n * 100, 1) if n is not None else None
+
+        profile = [
+            {"key": "valuation", "label": "밸류", "score": pct_score(rec.get("valuation_score")), "raw": rec.get("per"), "raw_label": "PER"},
+            {"key": "sector_value", "label": "섹터상대 가치", "score": pct_score(rec.get("sector_value_score")), "raw": rec.get("sector_value_zscore"), "raw_label": "섹터 value z"},
+            {"key": "roe", "label": "ROE", "score": pct_score(rec.get("roe_score")), "raw": rec.get("roe"), "raw_label": "ROE"},
+            {"key": "momentum", "label": "가격 모멘텀", "score": pct_score(rec.get("momentum_score")), "raw": rec.get("ret_3m"), "raw_label": "3M 수익률"},
+            {"key": "flow", "label": "수급", "score": pct_score(rec.get("flow_score")), "raw": rec.get("foreign_net_ratio_change"), "raw_label": "외국인 변화"},
+            {"key": "liquidity", "label": "유동성", "score": pct_score(rec.get("liquidity_score")), "raw": rec.get("turnover_value_avg"), "raw_label": "평균 거래대금"},
+            {"key": "bs_quality", "label": "재무건전성", "score": pct_score(rec.get("balance_sheet_quality_score")), "raw": rec.get("debt_ratio"), "raw_label": "부채비율"},
+            {"key": "cf_quality", "label": "현금흐름", "score": pct_score(rec.get("cashflow_quality_score")), "raw": rec.get("fcf_to_assets"), "raw_label": "FCF/자산"},
+            {"key": "earnings", "label": "실적", "score": pct_score(rec.get("earnings_momentum_score")), "raw": rec.get("this_year_op_growth_pct"), "raw_label": "올해 영익 성장"},
+            {"key": "reversal", "label": "반등 셋업", "score": pct_score(rec.get("meanrev_score")), "raw": rec.get("rsi_14"), "raw_label": "RSI"},
+        ]
+        return [p for p in profile if p.get("score") is not None or p.get("raw") is not None]
+
+    def build_risk_flags(rec):
+        flags = []
+        if _safe_number(rec.get("debt_ratio")) is not None and rec["debt_ratio"] > 2.0:
+            flags.append("부채비율 200% 초과")
+        if _safe_number(rec.get("fcf_to_assets")) is not None and rec["fcf_to_assets"] < 0:
+            flags.append("FCF/자산 음수")
+        if _safe_number(rec.get("ret_3m")) is not None and abs(rec["ret_3m"]) >= 0.25:
+            flags.append("최근 3개월 가격 변동성 큼")
+        if _safe_number(rec.get("turnover_value_avg")) is not None and rec["turnover_value_avg"] < 1_000_000_000:
+            flags.append("평균 거래대금 10억원 미만")
+        if rec.get("equity_impairment_flag"):
+            flags.append("자본잠식 플래그")
+        if _safe_number(rec.get("net_loss_count")) is not None and rec["net_loss_count"] >= 2:
+            flags.append("최근 적자 빈도 높음")
+        if _safe_number(rec.get("sector_value_zscore")) is not None and rec["sector_value_zscore"] < -1:
+            flags.append("섹터 자체가 과거 대비 저평가 구간")
+        if rec.get("short_squeeze_flag"):
+            flags.append("공매도/숏커버 이벤트성 변동 가능")
+        return flags[:5]
+
     rows = []
     for _, r in out.iterrows():
         t = str(r.get("ticker", "")).zfill(6)
@@ -313,12 +352,27 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
             "earnings_stability_score": _safe_number(r.get("sector_relative_value__earnings_stability_score")),
             "quality_source": r.get("sector_relative_value__quality_source"),
             "momentum_score": _safe_number(r.get("stock_price_momentum__momentum_score")),
+            "ret_1m": _safe_number(r.get("stock_price_momentum__ret_1m")),
+            "ret_3m": _safe_number(r.get("stock_price_momentum__ret_3m")),
+            "ret_6m": _safe_number(r.get("stock_price_momentum__ret_6m")),
+            "turnover_spike_flag": int(_safe_number(r.get("stock_price_momentum__turnover_spike_flag")) or 0),
             "liquidity_score": _safe_number(r.get("liquidity_turnover__liquidity_score")),
+            "turnover_value_avg": _safe_number(r.get("liquidity_turnover__turnover_value_avg")),
+            "turnover_ratio": _safe_number(r.get("liquidity_turnover__turnover_ratio")),
             "roe": _safe_number(r.get("roe_trend__roe")),
             "roe_score": _safe_number(r.get("roe_trend__roe_sector_pct_ts")),
             "flow_score": _safe_number(r.get("investor_flow_momentum__flow_score")),
+            "foreign_net_ratio": _safe_number(r.get("investor_flow_momentum__foreign_net_ratio")),
+            "inst_net_ratio": _safe_number(r.get("investor_flow_momentum__inst_net_ratio")),
+            "foreign_net_ratio_change": _safe_number(r.get("investor_flow_momentum__foreign_net_ratio_change")),
+            "inst_net_ratio_change": _safe_number(r.get("investor_flow_momentum__inst_net_ratio_change")),
             "meanrev_score": _safe_number(r.get("technical_meanrev__meanrev_score")),
+            "rsi_14": _safe_number(r.get("technical_meanrev__rsi_14")),
+            "bb_percent_b": _safe_number(r.get("technical_meanrev__bb_percent_b")),
+            "disparity_20": _safe_number(r.get("technical_meanrev__disparity_20")),
             "shorting_pressure_score": _safe_number(r.get("shorting__shorting_pressure_score")),
+            "balance_ratio": _safe_number(r.get("shorting__balance_ratio")),
+            "balance_ratio_1m_chg": _safe_number(r.get("shorting__balance_ratio_1m_chg")),
             "short_squeeze_flag": int(_safe_number(r.get("shorting__short_squeeze_flag")) or 0),
             "value_composite_score": _safe_number(r.get("value_composite__value_composite_score")),
             "forward_valuation_score": _safe_number(r.get("value_composite__forward_valuation_score")),
@@ -367,6 +421,8 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
         ])
         score_vals = [rec.get(k) for k in score_cols if rec.get(k) is not None]
         rec["market_attractiveness_score"] = round(sum(score_vals) / len(score_vals), 4) if score_vals else None
+        rec["factor_profile"] = compact_factor_profile(rec)
+        rec["risk_flags"] = build_risk_flags(rec)
         rows.append(rec)
 
     rows.sort(key=lambda x: (x.get("market_attractiveness_score") is None, -(x.get("market_attractiveness_score") or 0)))

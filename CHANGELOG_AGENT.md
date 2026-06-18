@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-06-18 20:14 - Hermes
+- Task: 종목 시장 매력도 웹 대시보드에서 단순 랭킹보다 “왜 이 종목인가”를 설명하도록 UI/데이터를 개선.
+- Modified:
+  - `scripts/03_analyze/export_web_data.py` — `stock_attractiveness.rows`에 1/3/6개월 수익률, 거래회전/평균거래대금, 외국인·기관 수급 변화, RSI/평균회귀, 공매도 잔고 변화, `factor_profile`, `risk_flags` 추가.
+  - `web/index.html` — 종목 시장 매력도 탭에 `랭킹 해석 가이드`, `섹터별 상위 종목` 섹션 추가.
+  - `web/quant_ui.js` — 전체 순위/섹터 내 순위, 시나리오별 핵심 팩터 breakdown, 최근 3개월 변화, 리스크 플래그, 섹터별 상위 카드 렌더링 추가.
+  - `web/quant_data.js` — 재생성; `stock_attractiveness` 2,770개 종목 중 `factor_profile` 2,742개, `risk_flags` 2,770개 포함.
+- Created:
+  - `scratch/verify_stock_ranking_explain_20260618.js` — Puppeteer 검증 스크립트.
+- Verification:
+  - `python -m py_compile scripts/03_analyze/export_web_data.py` → 통과.
+  - `python scripts/03_analyze/export_web_data.py` → `stock_attractiveness: 2770 rows loaded`, `web/quant_data.js` 생성 완료.
+  - payload probe → rows 2,770 / factor_profile 보유 2,742 / risk_flags 필드 2,770; 삼성전자 샘플에서 PER·섹터상대가치·ROE profile 및 최근 3개월 변동 리스크 확인.
+  - `node --check web/quant_ui.js`, `node --check web/quant_data.js`, `node --check scratch/verify_stock_ranking_explain_20260618.js` → 통과.
+  - Puppeteer → 종목시장매력도 rows 300, `왜 선정됐나`, 랭킹 해석 가이드, 섹터별 상위 종목, 섹터 내 순위, 최근 3개월 변화, 리스크 플래그 표시; B 가치+퀄리티 전환 및 삼성전자 검색 후 설명 유지; pageErrors 0.
+- Caveats:
+  - 최근 3개월 변화는 현재 payload 기준 3개월 가격수익률/모멘텀 맥락 표시이며, 월별 리밸런싱 NAV가 아님.
+  - `risk_flags`는 투자 경고가 아니라 데이터 기반 점검 포인트로 해석.
+
 ## 2026-06-18 19:22 - Hermes
 - Task: TopN/분위수 팩터 백테스트 결과를 웹 대시보드의 기존 팩터 심사표 탭에 통합.
 - Modified:
