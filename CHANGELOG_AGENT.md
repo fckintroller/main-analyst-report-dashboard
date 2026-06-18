@@ -19,6 +19,9 @@
   - payload probe → `universe.default=B_KOSPI200_KOSDAQ150`, all 2,770 / A KOSPI200 proxy 200 / B default 350 / KOSDAQ150 proxy 150 / C screenable 898.
   - `node --check web/quant_ui.js`, `node --check web/quant_data.js`, `node --check scratch/verify_stock_universe_20260618.js` → 통과.
   - Puppeteer → 기본 선택 B, count `350개`, A 필터 `200개`, C 필터 `898개`, 유니버스 정의/개발 우선순위 문구/배지/삼성전자 검색/왜 선정됐나 유지, pageErrors 0.
+  - Git commit/push: `31646f9` (`Add stock universe definitions`) → `main` push 완료.
+  - GitHub Actions: Deploy Web Dashboard run `27759567932` → success.
+  - Live Pages probe → root `유니버스 정의`/`B 기본: KOSPI200 + KOSDAQ150`/`개발 우선순위는`, `quant_data.js` universe counts, `quant_ui.js` 필터 함수 마커 확인.
 - Caveats:
   - A/B는 공식 지수 구성원이 아니라 현재 snapshot의 시가총액 proxy 기준.
   - C screenable은 1차 필터(시총 1,000억원 이상, 거래대금/평균거래대금 10억원 이상, 가격 데이터 존재)이며 상폐/관리종목 공식 플래그는 아직 별도 수집 필요.
