@@ -1758,6 +1758,7 @@ function renderFactorValidation() {
     factorSel.dataset.loaded = "1";
   }
   renderFactorValidationTopn();
+  renderFactorTopnQuintile();
   renderFactorValidationCurrent();
   renderFactorValidationCorr();
   renderFactorValidationCoverage();
@@ -1780,6 +1781,62 @@ function renderFactorValidationTopn() {
     ["max_drawdown", "MDD", fvFmtPct],
     ["avg_turnover", "회전율", fvFmtPct],
   ]);
+}
+function fvScoreLabel(score) {
+  const map = {
+    valuation: "밸류에이션",
+    momentum: "가격 모멘텀",
+    investor_flow: "수급 모멘텀",
+    reversal_setup: "반전 셋업",
+    roe_quality: "ROE 품질",
+    sector_pbr_cheap: "섹터 PBR 저평가",
+    value_quality: "가치+품질",
+    financial_quality: "재무 품질",
+    balance_sheet_quality: "BS 품질",
+    cash_flow_quality: "현금흐름 품질",
+    earnings_stability: "이익 안정성",
+  };
+  return map[score] || score || "—";
+}
+function renderFactorTopnQuintile() {
+  const payload = window.QUANT_DATA?.factor_validation?.topn_quintile || {};
+  const topn = Array.isArray(payload.topn_summary) ? payload.topn_summary : [];
+  const spread = Array.isArray(payload.quintile_spread) ? payload.quintile_spread : [];
+  const h = Number(document.getElementById("factor-topnq-horizon")?.value || 1);
+  const n = Number(document.getElementById("factor-topnq-topn")?.value || 30);
+  const asOf = document.getElementById("factor-topnq-as-of");
+  if (asOf) asOf.textContent = payload.as_of ? `최신 스냅샷: ${payload.as_of}` : "TopN/분위수 데이터 없음";
+
+  const topRows = topn
+    .filter((r) => Number(r.horizon_m) === h && Number(r.top_n) === n)
+    .sort((a, b) => Number(b.avg_excess_ret ?? -999) - Number(a.avg_excess_ret ?? -999));
+  const topEl = document.getElementById("factor-topnq-topn-table");
+  if (topEl) {
+    topEl.innerHTML = topRows.length ? fvTable(topRows.slice(0, 12), [
+      ["score", "팩터", (v) => html(fvScoreLabel(v))],
+      ["months", "개월", fvFmtInt],
+      ["avg_portfolio_ret", "TopN", fvFmtPct],
+      ["avg_benchmark_ret", "벤치", fvFmtPct],
+      ["avg_excess_ret", "초과", fvFmtPct],
+      ["hit_rate", "승률", fvFmtPct],
+      ["max_drawdown_path", "MDD", fvFmtPct],
+    ]) : "<p style='color:var(--text-sub);'>TopN 백테스트 데이터 없음</p>";
+  }
+
+  const spreadRows = spread
+    .filter((r) => Number(r.horizon_m) === h)
+    .sort((a, b) => Number(b.q1_minus_q5_avg_ret ?? -999) - Number(a.q1_minus_q5_avg_ret ?? -999));
+  const spreadEl = document.getElementById("factor-topnq-spread-table");
+  if (spreadEl) {
+    spreadEl.innerHTML = spreadRows.length ? fvTable(spreadRows.slice(0, 12), [
+      ["score", "팩터", (v) => html(fvScoreLabel(v))],
+      ["months", "개월", fvFmtInt],
+      ["q1_minus_q5_avg_ret", "Q1-Q5", fvFmtPct],
+      ["q1_avg_ret", "Q1", fvFmtPct],
+      ["q5_avg_ret", "Q5", fvFmtPct],
+      ["q1_excess", "Q1초과", fvFmtPct],
+    ]) : "<p style='color:var(--text-sub);'>분위수 스프레드 데이터 없음</p>";
+  }
 }
 function renderFactorValidationCurrent() {
   const payload = window.QUANT_DATA?.factor_validation || {};
@@ -1853,4 +1910,5 @@ function renderFactorValidationCoverage() {
 }
 window.renderFactorValidation = renderFactorValidation;
 window.renderFactorValidationTopn = renderFactorValidationTopn;
+window.renderFactorTopnQuintile = renderFactorTopnQuintile;
 window.renderFactorValidationCurrent = renderFactorValidationCurrent;

@@ -722,6 +722,7 @@
             <span style="font-size:0.75rem; color:var(--text-sub); font-weight:700; align-self:center;">바로가기:</span>
             <a href="#fv-summary" style="font-size:0.78rem; color:var(--primary); text-decoration:none; padding:3px 8px; border:1px solid rgba(16,185,129,0.3); border-radius:4px;">우수 팩터 요약</a>
             <a href="#fv-topn" style="font-size:0.78rem; color:var(--primary); text-decoration:none; padding:3px 8px; border:1px solid rgba(16,185,129,0.3); border-radius:4px;">TopN 초과수익</a>
+            <a href="#fv-practical" style="font-size:0.78rem; color:var(--primary); text-decoration:none; padding:3px 8px; border:1px solid rgba(16,185,129,0.3); border-radius:4px;">실전 TopN/분위수</a>
             <a href="#fv-current" style="font-size:0.78rem; color:var(--primary); text-decoration:none; padding:3px 8px; border:1px solid rgba(16,185,129,0.3); border-radius:4px;">현재 Top30</a>
             <a href="#fv-corr" style="font-size:0.78rem; color:var(--primary); text-decoration:none; padding:3px 8px; border:1px solid rgba(16,185,129,0.3); border-radius:4px;">팩터 상관관계</a>
             <a href="#fv-coverage" style="font-size:0.78rem; color:var(--primary); text-decoration:none; padding:3px 8px; border:1px solid rgba(16,185,129,0.3); border-radius:4px;">커버리지</a>
@@ -746,6 +747,39 @@
               </label>
             </div>
             <div id="factor-validation-topn-table" class="table-responsive"></div>
+          </div>
+          <div id="fv-practical" class="data-card" style="margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:flex-start; margin-bottom:12px;">
+              <div>
+                <h3 style="color:var(--primary); margin:0 0 6px;"><i class="fa-solid fa-chart-line"></i> 실전 TopN / 5분위 백테스트</h3>
+                <p style="color:var(--text-sub); font-size:0.78rem; margin:0;">
+                  월별 시가총액 상위 200개 프록시 유니버스 기준입니다. 3개월/6개월은 중첩 forward return이며 거래비용·세금·슬리피지는 미반영입니다.
+                </p>
+              </div>
+              <span id="factor-topnq-as-of" style="color:var(--text-sub); font-size:0.78rem;"></span>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin-bottom:12px;">
+              <label style="display:flex; flex-direction:column; gap:6px; color:var(--text-sub); font-size:0.78rem; font-weight:700;">수익기간
+                <select id="factor-topnq-horizon" onchange="renderFactorTopnQuintile()" style="background:var(--btn-bg); border:1px solid var(--card-border); color:var(--text-heading); padding:8px 10px; border-radius:6px;">
+                  <option value="1">1개월</option><option value="3">3개월</option><option value="6">6개월</option>
+                </select>
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px; color:var(--text-sub); font-size:0.78rem; font-weight:700;">TopN
+                <select id="factor-topnq-topn" onchange="renderFactorTopnQuintile()" style="background:var(--btn-bg); border:1px solid var(--card-border); color:var(--text-heading); padding:8px 10px; border-radius:6px;">
+                  <option value="20">Top20</option><option value="30" selected>Top30</option><option value="50">Top50</option>
+                </select>
+              </label>
+            </div>
+            <div style="display:grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap:12px; align-items:start;">
+              <div>
+                <h4 style="color:var(--text-heading); margin:0 0 8px; font-size:0.9rem;">TopN 상위 팩터</h4>
+                <div id="factor-topnq-topn-table" class="table-responsive"></div>
+              </div>
+              <div>
+                <h4 style="color:var(--text-heading); margin:0 0 8px; font-size:0.9rem;">Q1-Q5 5분위 스프레드</h4>
+                <div id="factor-topnq-spread-table" class="table-responsive"></div>
+              </div>
+            </div>
           </div>
           <div id="fv-current" class="data-card" style="margin-bottom:16px;">
             <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin-bottom:12px;">

@@ -708,6 +708,73 @@ def _build_factor_validation(raw_data_dir: Path) -> dict:
         return {"as_of": "", "summary": [], "current_top": [], "correlation": {}, "coverage": [], "source_dir": ""}
 
 
+def _build_factor_topn_quintile_backtest(raw_data_dir: Path) -> dict:
+    """TopN/분위수 백테스트 CSV 산출물을 웹용 payload로 축약."""
+    try:
+        project_dir = Path(__file__).resolve().parents[2]
+        workspace_dir = project_dir.parents[1]
+        outputs_root = workspace_dir / "02_outputs"
+        candidates = sorted(outputs_root.glob("*_factor_topn_quintile_backtest"))
+        if not candidates:
+            return {
+                "as_of": "",
+                "source_dir": "",
+                "method": "",
+                "topn_summary": [],
+                "quintile_summary": [],
+                "quintile_spread": [],
+                "current_top": [],
+                "coverage": [],
+            }
+        source_dir = candidates[-1]
+
+        def load_csv(name):
+            path = source_dir / name
+            if not path.exists():
+                logger.warning("factor_topn_quintile CSV 없음: %s", path)
+                return pd.DataFrame()
+            df = pd.read_csv(path)
+            return df.where(pd.notnull(df), None)
+
+        topn = load_csv("summary_topn_by_score.csv")
+        quintile = load_csv("summary_quintile_by_score.csv")
+        spread = load_csv("quintile_spread_summary.csv")
+        current = load_csv("current_top30_by_score.csv")
+        coverage = load_csv("coverage_by_period.csv")
+
+        as_of = ""
+        if not current.empty and "period" in current.columns:
+            vals = [str(v) for v in current["period"].dropna().tolist()]
+            as_of = max(vals) if vals else ""
+        if not as_of and not coverage.empty and "period" in coverage.columns:
+            vals = [str(v) for v in coverage["period"].dropna().tolist()]
+            as_of = max(vals) if vals else ""
+
+        return {
+            "as_of": as_of,
+            "source_dir": str(source_dir),
+            "method": "월별 시가총액 상위 200개 KOSPI200 프록시 기준 TopN/5분위 검증; 거래비용·세금·슬리피지 미반영; 3M/6M forward return은 중첩 표본",
+            "topn_summary": topn.to_dict(orient="records") if not topn.empty else [],
+            "quintile_summary": quintile.to_dict(orient="records") if not quintile.empty else [],
+            "quintile_spread": spread.to_dict(orient="records") if not spread.empty else [],
+            "current_top": current.to_dict(orient="records") if not current.empty else [],
+            "coverage": coverage.to_dict(orient="records") if not coverage.empty else [],
+        }
+    except Exception as e:
+        logger.warning("factor_topn_quintile payload 로드 실패: %s", e)
+        return {
+            "as_of": "",
+            "source_dir": "",
+            "method": "",
+            "topn_summary": [],
+            "quintile_summary": [],
+            "quintile_spread": [],
+            "current_top": [],
+            "coverage": [],
+        }
+
+
+
 def _build_regression_summary(raw_data_dir: Path) -> dict:
     """regression_* 테이블을 읽어 웹용 요약 딕셔너리 반환."""
     db_path = Path(raw_data_dir).parent / "database" / "quant_data.sqlite"
@@ -993,10 +1060,13 @@ def collect_quant_data(raw_data_dir, krx_dict=None, include_stock_detail=False):
                 quant_data["regression"].get("regime", {}).get("current_regime", "-"))
     # 6-2. 팩터 심사표 결과 (독립 검증 CSV → factor_validation 키)
     quant_data["factor_validation"] = _build_factor_validation(raw_data_dir)
+    quant_data["factor_validation"]["topn_quintile"] = _build_factor_topn_quintile_backtest(raw_data_dir)
     logger.info(
-        " - factor_validation: summary=%d / current_top=%d",
+        " - factor_validation: summary=%d / current_top=%d / topn_quintile=%d,%d",
         len(quant_data["factor_validation"].get("summary", [])),
         len(quant_data["factor_validation"].get("current_top", [])),
+        len(quant_data["factor_validation"].get("topn_quintile", {}).get("topn_summary", [])),
+        len(quant_data["factor_validation"].get("topn_quintile", {}).get("quintile_spread", [])),
     )
 
     # 7. 파생 거시지표 계산 (원본 CSV에서 직접 계산)

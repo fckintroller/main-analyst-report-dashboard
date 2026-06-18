@@ -4,6 +4,50 @@
 
 ---
 
+## 2026-06-18 19:22 - Hermes
+- Task: TopN/분위수 팩터 백테스트 결과를 웹 대시보드의 기존 팩터 심사표 탭에 통합.
+- Modified:
+  - `scripts/03_analyze/export_web_data.py` — 최신 `*_factor_topn_quintile_backtest` 산출물을 읽어 `window.QUANT_DATA.factor_validation.topn_quintile` payload로 export.
+  - `web/index.html` — 팩터 심사표에 `실전 TopN / 5분위 백테스트` 섹션, 수익기간/TopN 필터, 주의문구 추가.
+  - `web/quant_ui.js` — TopN 상위 팩터 및 Q1-Q5 스프레드 테이블 렌더러 추가.
+  - `web/quant_data.js` — 재생성; TopN/분위수 payload 포함.
+  - `00_context/index.md`, `00_context/work_state.md` — 웹/검증 스크립트 인덱스 및 작업 상태 갱신.
+- Created:
+  - `scratch/verify_factor_topn_quintile_dashboard_20260618.js` — Puppeteer payload/UI 검증 스크립트.
+- Verification:
+  - `python -m py_compile scripts/03_analyze/export_web_data.py` → 통과.
+  - `python scripts/03_analyze/export_web_data.py` → `factor_validation: summary=135 / current_top=450 / topn_quintile=216,72`, `web/quant_data.js` 생성 완료.
+  - payload probe → `topnSummary=216`, `quintileSummary=360`, `quintileSpread=72`, `tqCurrent=720`, `tqCoverage=888`, `tqAsOf=2026-06`.
+  - `node --check web/quant_ui.js` 및 `node --check scratch/verify_factor_topn_quintile_dashboard_20260618.js` → 통과.
+  - `node scratch/verify_factor_topn_quintile_dashboard_20260618.js` → TopN rows 12, Q1-Q5 rows 12, 필터 변경 후 rows 12/12, 주의문구 표시, pageErrors 0.
+- Caveats:
+  - 기존 백테스트와 동일하게 실제 KRX KOSPI200 구성종목이 아닌 월별 시가총액 상위 200개 프록시 기준.
+  - 3/6개월 forward return은 중첩 표본이며 거래비용·세금·슬리피지 미반영.
+
+## 2026-06-18 18:48 - Hermes
+- Task: OLS 대신 TopN/분위수 기반 팩터 검증 백테스트를 실행.
+- Created:
+  - `C:/claude cowork/02_outputs/2026-06-18_18-43-21_factor_topn_quintile_backtest/run_factor_topn_quintile_backtest.py`
+  - `C:/claude cowork/02_outputs/2026-06-18_18-43-21_factor_topn_quintile_backtest/summary_topn_by_score.csv`
+  - `C:\claude cowork\02_outputs\2026-06-18_18-43-21_factor_topn_quintile_backtest\monthly_portfolio_returns.csv`
+  - `C:\claude cowork\02_outputs\2026-06-18_18-43-21_factor_topn_quintile_backtest\monthly_topn_selections.csv`
+  - `C:\claude cowork\02_outputs\2026-06-18_18-43-21_factor_topn_quintile_backtest\summary_quintile_by_score.csv`
+  - `C:\claude cowork\02_outputs\2026-06-18_18-43-21_factor_topn_quintile_backtest\monthly_quintile_returns.csv`
+  - `C:\claude cowork\02_outputs\2026-06-18_18-43-21_factor_topn_quintile_backtest\quintile_spread_summary.csv`
+  - `C:\claude cowork\02_outputs\2026-06-18_18-43-21_factor_topn_quintile_backtest\coverage_by_period.csv`
+  - `C:\claude cowork\02_outputs\2026-06-18_18-43-21_factor_topn_quintile_backtest\current_top30_by_score.csv`
+  - `C:/claude cowork/02_outputs/2026-06-18_18-43-21_factor_topn_quintile_backtest/panel_snapshot_used.csv`
+  - `C:/claude cowork/02_outputs/2026-06-18_18-43-21_factor_topn_quintile_backtest/report.md`
+- Verification:
+  - `python C:/claude cowork/02_outputs/2026-06-18_18-43-21_factor_topn_quintile_backtest/run_factor_topn_quintile_backtest.py` → panel 15,374행, KOSPI200 프록시 7,400행(2023-06~2026-06), TopN summary 216행, monthly returns 6,966행, selections 232,200행, quintile summary 360행, monthly quintile 11,610행, current Top30 720행.
+  - `python -m py_compile ...run_factor_topn_quintile_backtest.py` → 통과.
+  - CSV 행수 검증: coverage 888행, current_top30 720행, monthly_portfolio_returns 6,966행, monthly_quintile_returns 11,610행, monthly_topn_selections 232,200행, panel_snapshot_used 7,400행, quintile_spread 72행, summary_quintile 360행, summary_topn 216행.
+- Caveats:
+  - 실제 KRX KOSPI200 구성종목이 아니라 월별 시가총액 상위 200개 프록시를 사용.
+  - 3/6개월 forward return은 중첩 수익률이라 실제 월간 리밸런싱 NAV로 해석하면 안 됨.
+  - 거래비용/세금/슬리피지 미반영.
+  - 2026-06 최신 `roe_quality`는 동일 점수 199개로 `current_top30_by_score.csv` 순위 해석력이 낮음.
+
 ## 2026-06-17 21:46 - Hermes
 - Task: ㊳ Balance Sheet Quality, ㊴ Cash Flow Quality, ㊵ Earnings Stability를 섹터 상대 가치품질 팩터와 B 가치+퀄리티 웹 시나리오에 추가.
 - Modified:
