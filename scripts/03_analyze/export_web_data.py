@@ -264,8 +264,11 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
             market_cap_map = dict(zip(out["ticker"].astype(str).str.zfill(6), pd.to_numeric(out.get("시가총액"), errors="coerce")))
             dart_quality = builder.build_dart_financial_quality_snapshot(raw_fin, sector_map, market_cap_map)
             if not dart_quality.empty:
+                dart_quality["dart_roe"] = dart_quality["net_income"] / dart_quality["total_equity"]
+                dart_quality.loc[dart_quality["total_equity"] <= 0, "dart_roe"] = pd.NA
+                dart_quality["dart_roe_score"] = dart_quality.groupby("sector", dropna=False)["dart_roe"].rank(pct=True)
                 keep_cols = [
-                    "ticker", "bsns_year", "debt_ratio", "debt_to_equity", "debt_to_assets", "net_debt_to_ebitda",
+                    "ticker", "bsns_year", "dart_roe", "dart_roe_score", "debt_ratio", "debt_to_equity", "debt_to_assets", "net_debt_to_ebitda",
                     "interest_coverage", "current_ratio", "equity_impairment_flag", "cfo", "capex", "fcf",
                     "fcf_to_assets", "operating_cashflow_positive", "fcf_margin", "fcf_yield", "accrual_ratio",
                     "cash_conversion", "revenue_yoy_stability", "op_margin_volatility", "net_loss_count",
@@ -413,8 +416,8 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
             "liquidity_score": _safe_number(r.get("liquidity_turnover__liquidity_score")),
             "turnover_value_avg": _safe_number(r.get("liquidity_turnover__turnover_value_avg")),
             "turnover_ratio": _safe_number(r.get("liquidity_turnover__turnover_ratio")),
-            "roe": _safe_number(r.get("roe_trend__roe")),
-            "roe_score": _safe_number(r.get("roe_trend__roe_sector_pct_ts")),
+            "roe": first_number(r, "roe_trend__roe", "dart_quality__dart_roe"),
+            "roe_score": first_number(r, "roe_trend__roe_sector_pct_ts", "dart_quality__dart_roe_score"),
             "flow_score": _safe_number(r.get("investor_flow_momentum__flow_score")),
             "foreign_net_ratio": _safe_number(r.get("investor_flow_momentum__foreign_net_ratio")),
             "inst_net_ratio": _safe_number(r.get("investor_flow_momentum__inst_net_ratio")),

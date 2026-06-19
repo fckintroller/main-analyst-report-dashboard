@@ -563,11 +563,11 @@ logger                               # 표준 로거 인스턴스 (모든 스크
   - non-null `sector_value_zscore`: 9,586
   - DART finstate raw: 2026-06-19 보강 후 71,906 rows / 1,856 tickers / `capex` 4,942 rows
   - DB 월간 팩터 패널은 기존 가치/ROE 월간 패널 기준이라 14,136 rows / 395 tickers 유지
-  - 웹 `stock_attractiveness`는 DART raw fallback을 추가 적용해 전체 2,770개 중 `fcf_to_assets` 1,544개, `balance_sheet_quality_score` 1,853개, `cashflow_quality_score` 1,758개, `earnings_stability_score` 1,850개 노출
-  - 기본 B 유니버스 350개 중 `fcf_to_assets` 278개, `balance_sheet_quality_score` 332개, `cashflow_quality_score` 299개, `earnings_stability_score` 331개 노출
+  - 웹 `stock_attractiveness`는 DART raw fallback을 추가 적용해 전체 2,770개 중 `roe`/`roe_score` 1,803개, `fcf_to_assets` 1,544개, `balance_sheet_quality_score` 1,853개, `cashflow_quality_score` 1,758개, `earnings_stability_score` 1,850개 노출
+  - 기본 B 유니버스 350개 중 `roe`/`roe_score` 331개, `fcf_to_assets` 278개, `balance_sheet_quality_score` 332개, `cashflow_quality_score` 299개, `earnings_stability_score` 331개 노출
   - `python -m py_compile scripts/01_collect/collect_dart_finstate_once.py scripts/03_analyze/build_sector_relative_value_factors.py scripts/03_analyze/export_web_data.py` → 통과
   - `pytest tests/test_sector_relative_value_factors.py tests/test_valuation_per_pbr_factors.py tests/test_roe_trend_factors.py tests/test_piotroski_factors.py -q` → 37 passed
-  - Puppeteer 로컬 검증 → stock_attractiveness 2,770 rows, B 350, FCF 1,544 / BS 1,853 / CF 1,758 / 이익안정 1,850, fallback 1,467, pageErrors 0
+  - Puppeteer 로컬 검증 → stock_attractiveness 2,770 rows, B 350, ROE 1,803/B ROE 331, FCF 1,544 / BS 1,853 / CF 1,758 / 이익안정 1,850, fallback 1,467, pageErrors 0
 - Caveats:
   - 섹터 내 표본 5종목 미만이면 섹터 상대/잔차 지표를 NaN 처리합니다.
   - ROE≤0 구간은 PBR/ROE 조정 지표를 NaN 처리합니다.

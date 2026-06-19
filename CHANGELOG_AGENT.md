@@ -4,6 +4,26 @@
 
 ---
 
+## 2026-06-19 20:49 - Hermes
+- Task: 사용자가 지적한 `ROE` 미반영 문제 확인 및 보강.
+- Cause:
+  - 웹 `stock_attractiveness`의 `roe`/`roe_score`는 기존 `factor_roe_trend_month` 최신 월간 패널만 참조해 전체 2,770개 중 387개, B 350개 중 304개만 노출되고 있었음.
+  - DART raw에는 `net_income`/`total_equity`로 최신 ROE 계산 가능한 종목이 1,777개 이상 있었지만 export fallback에 ROE가 포함되지 않았음.
+- Modified:
+  - `scripts/03_analyze/export_web_data.py` — DART 품질 fallback에서 `dart_roe = net_income / total_equity`, `dart_roe_score = sector 내 최신 DART ROE percentile` 계산 후 기존 ROE 패널 결측 시 fallback 적용.
+  - `web/quant_data.js` — 재생성.
+  - `data.md`, `00_context/index.md`, `00_context/work_state.md` — ROE 커버리지/검증 결과 반영.
+- Verification:
+  - `python -m py_compile scripts/03_analyze/export_web_data.py` → 통과.
+  - `python scripts/03_analyze/export_web_data.py` → 통과.
+  - Payload probe → 전체 2,770개 중 `roe`/`roe_score` 1,803개, B 350개 중 331개.
+  - 기존 B 결측 샘플 `322000`, `229640`, `267270`, `004800`, `103590`에서 ROE/ROE score 값 확인.
+  - `node --check web/quant_data.js` → 통과.
+  - Puppeteer 로컬 검증 → stock_attractiveness 2,770, B 350, ROE 1,803/B ROE 331, body ROE 표시, pageErrors 0.
+  - `pytest tests/test_sector_relative_value_factors.py tests/test_valuation_per_pbr_factors.py tests/test_roe_trend_factors.py -q` → 25 passed.
+- Caveat:
+  - DART fallback ROE는 최신 연간 snapshot 기반이고, 기존 `factor_roe_trend_month` ROE는 월간 패널 기반입니다. 기존 월간 ROE가 있으면 우선 사용하고, 없을 때만 DART 최신 ROE를 사용합니다.
+
 ## 2026-06-19 20:37 - Hermes
 - Task: Claude가 확장 수집한 DART 재무제표 산출물을 확인하고, 종목 시장 매력도 화면의 `FCF/자산`, `BS품질`, `CF품질`, `이익안정` 결측을 추가 보강.
 - Modified:
