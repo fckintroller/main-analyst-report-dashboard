@@ -4,6 +4,30 @@
 
 ---
 
+## 2026-06-19 20:37 - Hermes
+- Task: Claude가 확장 수집한 DART 재무제표 산출물을 확인하고, 종목 시장 매력도 화면의 `FCF/자산`, `BS품질`, `CF품질`, `이익안정` 결측을 추가 보강.
+- Modified:
+  - `data/raw/valuation/dart_finstate/finstate_all.csv` — Claude 수집분 + Hermes resume 결과 반영; 71,906 rows / 1,856 tickers / `capex` 4,942 rows.
+  - `scripts/01_collect/collect_dart_finstate_once.py` — Claude 변경 확인: 전체 상장 스냅샷 기반 유니버스, 기존 ticker skip, 중간 저장 빈도 10, socket timeout, corp_code 예외 처리.
+  - `scripts/03_analyze/export_web_data.py` — `stock_attractiveness` 생성 시 `factor_sector_relative_value_month` 결측 종목에 대해 DART raw 최신 품질 스냅샷을 fallback으로 병합.
+  - `web/quant_data.js` — 재생성; 품질 필드 커버리지 확대.
+  - `data.md`, `00_context/index.md`, `00_context/work_state.md` — 커버리지/백업/검증 결과 기록.
+- Created:
+  - `data/database/backups/quant_data_20260619_2038_before_quality_coverage_resume.sqlite` — 재가공 전 SQLite 백업.
+- Verification:
+  - `python -m py_compile scripts/01_collect/collect_dart_finstate_once.py scripts/03_analyze/build_sector_relative_value_factors.py scripts/03_analyze/export_web_data.py` → 통과.
+  - `python scripts/03_analyze/build_sector_relative_value_factors.py` → factor table 14,136 rows / 395 tickers / catalog 27 rows 유지; 기존 월간 가치/ROE 패널 기준 non-null 수치 유지.
+  - `python scripts/03_analyze/export_web_data.py` → `stock_attractiveness DART 품질 fallback: 1855 tickers`, `stock_attractiveness: 2770 rows loaded`.
+  - Payload probe → 전체 2,770개 중 `fcf_to_assets` 1,544 / `balance_sheet_quality_score` 1,853 / `cashflow_quality_score` 1,758 / `earnings_stability_score` 1,850 / `financial_quality_score` 1,808 / fallback 1,467.
+  - B 기본 유니버스 350개 중 FCF 278 / BS품질 332 / CF품질 299 / 이익안정 331.
+  - `node --check web/quant_ui.js`, `node --check web/quant_data.js` → 통과.
+  - `pytest tests/test_sector_relative_value_factors.py tests/test_valuation_per_pbr_factors.py tests/test_roe_trend_factors.py tests/test_piotroski_factors.py -q` → 37 passed.
+  - Puppeteer 로컬 검증 → stock_attractiveness 2,770 rows, B 350, FCF/BS/CF/이익안정 커버리지 확인, `FCF`/`왜 선정됐나` 표시, pageErrors 0.
+- Caveats:
+  - DART API 일부 종목에서 무응답/hang이 발생해 1차 추가 수집은 1,856 tickers까지 반영. 미수집/조회불가 종목은 임의 보간하지 않음.
+  - SQLite 월간 팩터 테이블은 가치/ROE 월간 패널 매칭 가능한 395 tickers 기준이라 행수는 유지되며, 웹 결측 보강은 `stock_attractiveness` export fallback으로 별도 적용.
+  - 로컬 export 중 pandas FutureWarning/날짜 parse UserWarning은 기존 경고이며 산출물 생성과 검증은 성공.
+
 ## 2026-06-18 21:54 - Hermes
 - Task: 종목 시장 매력도 표의 가로 스크롤/잘림 문제와 수치 표기 누락감을 개선.
 - Modified:

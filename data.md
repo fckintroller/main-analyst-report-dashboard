@@ -561,12 +561,15 @@ logger                               # 표준 로거 인스턴스 (모든 스크
   - non-null `earnings_stability_score`: 14,015
   - non-null `value_quality_score`: 14,124
   - non-null `sector_value_zscore`: 9,586
-  - DART finstate raw: 12,830 rows / 379 tickers / `capex` 1,091 rows
+  - DART finstate raw: 2026-06-19 보강 후 71,906 rows / 1,856 tickers / `capex` 4,942 rows
+  - DB 월간 팩터 패널은 기존 가치/ROE 월간 패널 기준이라 14,136 rows / 395 tickers 유지
+  - 웹 `stock_attractiveness`는 DART raw fallback을 추가 적용해 전체 2,770개 중 `fcf_to_assets` 1,544개, `balance_sheet_quality_score` 1,853개, `cashflow_quality_score` 1,758개, `earnings_stability_score` 1,850개 노출
+  - 기본 B 유니버스 350개 중 `fcf_to_assets` 278개, `balance_sheet_quality_score` 332개, `cashflow_quality_score` 299개, `earnings_stability_score` 331개 노출
   - `python -m py_compile scripts/01_collect/collect_dart_finstate_once.py scripts/03_analyze/build_sector_relative_value_factors.py scripts/03_analyze/export_web_data.py` → 통과
   - `pytest tests/test_sector_relative_value_factors.py tests/test_valuation_per_pbr_factors.py tests/test_roe_trend_factors.py tests/test_piotroski_factors.py -q` → 37 passed
-  - `node scratch/verify_debt_fcf_stock_scenarios_20260617.js` → stock_attractiveness 2,770 rows, debt/FCF enriched 315 rows, B 가치+퀄리티 UI 부채·FCF 표시 확인
-  - `node scratch/verify_quality_3840_stock_scenarios_20260617.js` → stock_attractiveness 2,770 rows, ㊳/㊴/㊵ enriched 353 rows, B 가치+퀄리티 UI `BS품질`/`CF품질`/`이익안정` 표시 확인
+  - Puppeteer 로컬 검증 → stock_attractiveness 2,770 rows, B 350, FCF 1,544 / BS 1,853 / CF 1,758 / 이익안정 1,850, fallback 1,467, pageErrors 0
 - Caveats:
   - 섹터 내 표본 5종목 미만이면 섹터 상대/잔차 지표를 NaN 처리합니다.
   - ROE≤0 구간은 PBR/ROE 조정 지표를 NaN 처리합니다.
-  - 부채비율·FCF 및 ㊳/㊴/㊵ 품질 점수는 DART 최신 연간 스냅샷을 월간 패널에 ticker 기준으로 붙입니다. 전체 2,770개 웹 종목 중 ㊳/㊴/㊵ 동시 노출은 DART 상세 수집·월간 팩터 매칭 가능한 353개로 제한됩니다.
+  - DART 수집은 일부 종목에서 API 무응답/hang이 발생해 1차 보강은 1,856종목까지 반영했습니다. 미수집/조회불가 종목은 임의 보간하지 않습니다.
+  - DB 월간 팩터 패널은 가치/ROE 월간 패널 매칭 가능한 395종목 기준이며, 웹 결측 보강은 DART raw fallback으로 별도 적용됩니다.

@@ -247,6 +247,38 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
     for ff in factor_frames:
         out = out.merge(ff, on="ticker", how="left")
 
+    # DART 최신 연간 재무제표는 stock_attractiveness 전체 상장 스냅샷까지 직접 보강한다.
+    # factor_sector_relative_value_month는 월간 가치/ROE 패널과 inner 성격으로 결합되어
+    # 웹 전체 2,770개 종목 중 일부만 품질 필드가 붙을 수 있다. 여기서는 결측 표시를 줄이기 위해
+    # raw DART long-form에서 동일 산식의 최신 품질 스냅샷을 다시 계산하고, 월간 팩터 결측 시 fallback으로 사용한다.
+    dart_finstate_path = raw_data_dir / "valuation" / "dart_finstate" / "finstate_all.csv"
+    if dart_finstate_path.exists():
+        try:
+            import importlib.util
+            builder_path = Path(__file__).resolve().parent / "build_sector_relative_value_factors.py"
+            spec = importlib.util.spec_from_file_location("sector_relative_value_builder", builder_path)
+            builder = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(builder)
+            raw_fin = pd.read_csv(dart_finstate_path, dtype={"ticker": str}, encoding="utf-8-sig")
+            sector_map = dict(zip(out["ticker"].astype(str).str.zfill(6), out.get("valuation_per_pbr__sector", "unknown")))
+            market_cap_map = dict(zip(out["ticker"].astype(str).str.zfill(6), pd.to_numeric(out.get("시가총액"), errors="coerce")))
+            dart_quality = builder.build_dart_financial_quality_snapshot(raw_fin, sector_map, market_cap_map)
+            if not dart_quality.empty:
+                keep_cols = [
+                    "ticker", "bsns_year", "debt_ratio", "debt_to_equity", "debt_to_assets", "net_debt_to_ebitda",
+                    "interest_coverage", "current_ratio", "equity_impairment_flag", "cfo", "capex", "fcf",
+                    "fcf_to_assets", "operating_cashflow_positive", "fcf_margin", "fcf_yield", "accrual_ratio",
+                    "cash_conversion", "revenue_yoy_stability", "op_margin_volatility", "net_loss_count",
+                    "roe_volatility", "debt_ratio_score", "fcf_to_assets_score", "financial_quality_score",
+                    "balance_sheet_quality_score", "cashflow_quality_score", "earnings_stability_score",
+                ]
+                dart_quality = dart_quality[[c for c in keep_cols if c in dart_quality.columns]].copy()
+                dart_quality.rename(columns={c: f"dart_quality__{c}" for c in dart_quality.columns if c != "ticker"}, inplace=True)
+                out = out.merge(dart_quality, on="ticker", how="left")
+                logger.info("stock_attractiveness DART 품질 fallback: %d tickers", dart_quality["ticker"].nunique())
+        except Exception as e:
+            logger.warning("stock_attractiveness DART 품질 fallback 실패: %s", e)
+
     score_cols = {
         "score_base_5factor": ["valuation_per_pbr__valuation_score", "stock_price_momentum__momentum_score", "size__size_percentile_cross", "liquidity_turnover__liquidity_score", "roe_trend__roe_sector_pct_ts"],
         "score_value_quality": ["valuation_per_pbr__valuation_score", "roe_trend__roe_sector_pct_ts", "value_composite__value_composite_score", "piotroski__f_score_norm", "earnings_momentum__earnings_momentum_score"],
@@ -305,6 +337,20 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
             flags.append("공매도/숏커버 이벤트성 변동 가능")
         return flags[:5]
 
+    def first_number(row, *cols):
+        for col in cols:
+            n = _safe_number(row.get(col))
+            if n is not None:
+                return n
+        return None
+
+    def first_text(row, *cols):
+        for col in cols:
+            v = row.get(col)
+            if isinstance(v, str) and v.strip():
+                return v.strip()
+        return None
+
     rows = []
     for _, r in out.iterrows():
         t = str(r.get("ticker", "")).zfill(6)
@@ -334,31 +380,31 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
             "sector_value_score": _safe_number(r.get("sector_relative_value__value_quality_score")),
             "sector_pbr_roe_score": _safe_number(r.get("sector_relative_value__pbr_roe_adjusted_score")),
             "sector_value_zscore": _safe_number(r.get("sector_relative_value__sector_value_zscore")),
-            "debt_ratio": _safe_number(r.get("sector_relative_value__debt_ratio")),
-            "debt_to_assets": _safe_number(r.get("sector_relative_value__debt_to_assets")),
-            "fcf": _safe_number(r.get("sector_relative_value__fcf")),
-            "fcf_to_assets": _safe_number(r.get("sector_relative_value__fcf_to_assets")),
-            "debt_ratio_score": _safe_number(r.get("sector_relative_value__debt_ratio_score")),
-            "fcf_to_assets_score": _safe_number(r.get("sector_relative_value__fcf_to_assets_score")),
-            "financial_quality_score": _safe_number(r.get("sector_relative_value__financial_quality_score")),
-            "debt_to_equity": _safe_number(r.get("sector_relative_value__debt_to_equity")),
-            "net_debt_to_ebitda": _safe_number(r.get("sector_relative_value__net_debt_to_ebitda")),
-            "interest_coverage": _safe_number(r.get("sector_relative_value__interest_coverage")),
-            "current_ratio": _safe_number(r.get("sector_relative_value__current_ratio")),
-            "equity_impairment_flag": int(_safe_number(r.get("sector_relative_value__equity_impairment_flag")) or 0),
-            "operating_cashflow_positive": _safe_number(r.get("sector_relative_value__operating_cashflow_positive")),
-            "fcf_margin": _safe_number(r.get("sector_relative_value__fcf_margin")),
-            "fcf_yield": _safe_number(r.get("sector_relative_value__fcf_yield")),
-            "accrual_ratio": _safe_number(r.get("sector_relative_value__accrual_ratio")),
-            "cash_conversion": _safe_number(r.get("sector_relative_value__cash_conversion")),
-            "revenue_yoy_stability": _safe_number(r.get("sector_relative_value__revenue_yoy_stability")),
-            "op_margin_volatility": _safe_number(r.get("sector_relative_value__op_margin_volatility")),
-            "net_loss_count": _safe_number(r.get("sector_relative_value__net_loss_count")),
-            "roe_volatility": _safe_number(r.get("sector_relative_value__roe_volatility")),
-            "balance_sheet_quality_score": _safe_number(r.get("sector_relative_value__balance_sheet_quality_score")),
-            "cashflow_quality_score": _safe_number(r.get("sector_relative_value__cashflow_quality_score")),
-            "earnings_stability_score": _safe_number(r.get("sector_relative_value__earnings_stability_score")),
-            "quality_source": r.get("sector_relative_value__quality_source"),
+            "debt_ratio": first_number(r, "sector_relative_value__debt_ratio", "dart_quality__debt_ratio"),
+            "debt_to_assets": first_number(r, "sector_relative_value__debt_to_assets", "dart_quality__debt_to_assets"),
+            "fcf": first_number(r, "sector_relative_value__fcf", "dart_quality__fcf"),
+            "fcf_to_assets": first_number(r, "sector_relative_value__fcf_to_assets", "dart_quality__fcf_to_assets"),
+            "debt_ratio_score": first_number(r, "sector_relative_value__debt_ratio_score", "dart_quality__debt_ratio_score"),
+            "fcf_to_assets_score": first_number(r, "sector_relative_value__fcf_to_assets_score", "dart_quality__fcf_to_assets_score"),
+            "financial_quality_score": first_number(r, "sector_relative_value__financial_quality_score", "dart_quality__financial_quality_score"),
+            "debt_to_equity": first_number(r, "sector_relative_value__debt_to_equity", "dart_quality__debt_to_equity"),
+            "net_debt_to_ebitda": first_number(r, "sector_relative_value__net_debt_to_ebitda", "dart_quality__net_debt_to_ebitda"),
+            "interest_coverage": first_number(r, "sector_relative_value__interest_coverage", "dart_quality__interest_coverage"),
+            "current_ratio": first_number(r, "sector_relative_value__current_ratio", "dart_quality__current_ratio"),
+            "equity_impairment_flag": int(first_number(r, "sector_relative_value__equity_impairment_flag", "dart_quality__equity_impairment_flag") or 0),
+            "operating_cashflow_positive": first_number(r, "sector_relative_value__operating_cashflow_positive", "dart_quality__operating_cashflow_positive"),
+            "fcf_margin": first_number(r, "sector_relative_value__fcf_margin", "dart_quality__fcf_margin"),
+            "fcf_yield": first_number(r, "sector_relative_value__fcf_yield", "dart_quality__fcf_yield"),
+            "accrual_ratio": first_number(r, "sector_relative_value__accrual_ratio", "dart_quality__accrual_ratio"),
+            "cash_conversion": first_number(r, "sector_relative_value__cash_conversion", "dart_quality__cash_conversion"),
+            "revenue_yoy_stability": first_number(r, "sector_relative_value__revenue_yoy_stability", "dart_quality__revenue_yoy_stability"),
+            "op_margin_volatility": first_number(r, "sector_relative_value__op_margin_volatility", "dart_quality__op_margin_volatility"),
+            "net_loss_count": first_number(r, "sector_relative_value__net_loss_count", "dart_quality__net_loss_count"),
+            "roe_volatility": first_number(r, "sector_relative_value__roe_volatility", "dart_quality__roe_volatility"),
+            "balance_sheet_quality_score": first_number(r, "sector_relative_value__balance_sheet_quality_score", "dart_quality__balance_sheet_quality_score"),
+            "cashflow_quality_score": first_number(r, "sector_relative_value__cashflow_quality_score", "dart_quality__cashflow_quality_score"),
+            "earnings_stability_score": first_number(r, "sector_relative_value__earnings_stability_score", "dart_quality__earnings_stability_score"),
+            "quality_source": first_text(r, "sector_relative_value__quality_source") or ("dart_finstate_fallback" if first_number(r, "dart_quality__balance_sheet_quality_score", "dart_quality__cashflow_quality_score", "dart_quality__earnings_stability_score") is not None else None),
             "momentum_score": _safe_number(r.get("stock_price_momentum__momentum_score")),
             "ret_1m": _safe_number(r.get("stock_price_momentum__ret_1m")),
             "ret_3m": _safe_number(r.get("stock_price_momentum__ret_3m")),

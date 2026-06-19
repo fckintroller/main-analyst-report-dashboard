@@ -16,12 +16,17 @@ DART 연간 재무제표 수집 (Piotroski F-Score 원천 데이터).
 import argparse
 import logging
 import os
+import socket
 import time
 from pathlib import Path
 
 import OpenDartReader
 import pandas as pd
 from dotenv import load_dotenv
+
+# DART API가 응답 없이 연결을 붙들고 있는 경우(hang) 전체 배치가 멈추는 것을 막기 위한
+# 소켓 레벨 기본 타임아웃. requests/urllib3가 명시적 timeout을 지정하지 않으면 이 값을 따른다.
+socket.setdefaulttimeout(20)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(PROJECT_ROOT / ".env")
@@ -31,7 +36,7 @@ DB_PATH  = PROJECT_ROOT / "data" / "database" / "quant_data.sqlite"
 
 RETRY      = 3
 DELAY      = 0.4   # 종목 간 딜레이(초)
-SAVE_EVERY = 30    # 중간 저장 빈도
+SAVE_EVERY = 10    # 중간 저장 빈도
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -92,7 +97,11 @@ def _extract_account(df: pd.DataFrame, sj_div: str, keywords: list[str],
 def _fetch_one(dart: "OpenDartReader", ticker: str,
                years: list[int]) -> list[dict]:
     """한 종목의 재무제표를 수집. 가장 최신 가용 연도 사용."""
-    corp_code = dart.find_corp_code(ticker)
+    try:
+        corp_code = dart.find_corp_code(ticker)
+    except Exception as e:
+        logger.debug("  %s corp_code 조회 실패: %s", ticker, e)
+        return []
     if not corp_code:
         return []
 
@@ -153,9 +162,20 @@ def _fetch_one(dart: "OpenDartReader", ticker: str,
 
 
 def _load_universe() -> list[str]:
+    """전체 상장 종목(2,770여개) 유니버스. 스냅샷 ticker_names 테이블 우선,
+    없으면 momentum 팩터 테이블로 폴백."""
     import sqlite3
     try:
         with sqlite3.connect(DB_PATH) as conn:
+            tabs = pd.read_sql(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name LIKE 'stock_market_snapshot_ticker_names_%' "
+                "ORDER BY name DESC LIMIT 1",
+                conn,
+            )
+            if len(tabs) > 0:
+                df = pd.read_sql(f"SELECT DISTINCT ticker FROM {tabs.iloc[0]['name']}", conn)
+                return df["ticker"].astype(str).str.zfill(6).tolist()
             df = pd.read_sql(
                 "SELECT DISTINCT ticker FROM factor_stock_price_momentum_month",
                 conn
@@ -165,23 +185,44 @@ def _load_universe() -> list[str]:
         return []
 
 
-def run(tickers: list[str] | None = None):
+def _load_existing() -> pd.DataFrame:
+    if OUT_PATH.exists():
+        try:
+            return pd.read_csv(OUT_PATH, dtype={"ticker": str})
+        except Exception:
+            return pd.DataFrame()
+    return pd.DataFrame()
+
+
+def run(tickers: list[str] | None = None, skip_existing: bool = True):
     dart = OpenDartReader(os.getenv("DART_API_KEY", ""))
     universe = tickers or _load_universe()
-    logger.info("수집 대상: %d종목", len(universe))
+
+    existing = _load_existing()
+    existing_tickers = set(existing["ticker"].astype(str).str.zfill(6)) if len(existing) > 0 else set()
+    if skip_existing and not tickers:
+        universe = [t for t in universe if t not in existing_tickers]
+
+    logger.info("수집 대상: %d종목 (기존 보유 %d종목 제외)", len(universe), len(existing_tickers))
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-    all_records: list[dict] = []
+    all_records: list[dict] = list(existing.to_dict("records"))
+    no_data_tickers: list[str] = []
     errors = 0
     total = len(universe)
 
     for i, ticker in enumerate(universe, 1):
-        recs = _fetch_one(dart, ticker, years=[2024, 2023])
+        try:
+            recs = _fetch_one(dart, ticker, years=[2024, 2023])
+        except Exception as e:
+            logger.debug("  %s 처리 중 예외: %s", ticker, e)
+            recs = []
         if recs:
             all_records.extend(recs)
         else:
             errors += 1
+            no_data_tickers.append(ticker)
         time.sleep(DELAY)
 
         if i % SAVE_EVERY == 0 or i == total:
@@ -190,8 +231,9 @@ def run(tickers: list[str] | None = None):
             if all_records:
                 pd.DataFrame(all_records).to_csv(OUT_PATH, index=False, encoding="utf-8-sig")
 
-    logger.info("완료: %s (%d행)", OUT_PATH.name, len(all_records))
-    return pd.DataFrame(all_records)
+    logger.info("완료: %s (%d행, 신규수집실패 %d종목)", OUT_PATH.name, len(all_records), len(no_data_tickers))
+    result_df = pd.DataFrame(all_records)
+    return result_df, no_data_tickers
 
 
 if __name__ == "__main__":
