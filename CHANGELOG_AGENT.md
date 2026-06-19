@@ -4,6 +4,26 @@
 
 ---
 
+## 2026-06-19 21:00 - Hermes
+- Task: 사용자의 추가 검증 요청에 따라 ROE/품질 fallback 변경분을 독립 리뷰·정적 점검·회귀 검증.
+- Findings/Fixes:
+  - 독립 리뷰에서 explicit ticker 재수집 시 기존 DART rows와 중복될 수 있는 위험을 지적해 `collect_dart_finstate_once.py`를 보강.
+  - `run(..., skip_existing=True)`가 명시 ticker에도 기존 보유 ticker를 skip하도록 수정하고, 저장 전 `_dedupe_records()`로 `(ticker, bsns_year, period, sj_div, account_id)` 중복을 마지막 수집값 기준 제거.
+  - SQLite snapshot table 동적 이름은 `[A-Za-z0-9_]` allowlist 검증 후 quoted identifier로 조회하도록 보강.
+  - `export_web_data.py`의 DART fallback map 생성은 결측 컬럼에서 scalar fallback이 아닌 `out.index` 정렬 Series fallback을 쓰도록 보강.
+- Verification:
+  - Static scan added lines → hardcoded secret/shell injection/eval/exec/pickle/obvious SQL injection 없음.
+  - Independent review 1차 → duplicate explicit ticker refresh, scalar fallback map 위험 지적.
+  - Independent review 2차/3차 → blocking issue 없음.
+  - `_dedupe_records([])` → `(0, 0)`, ticker 없는 partial row 유지, full-key duplicate는 마지막 값 유지 확인.
+  - `python -m py_compile scripts/01_collect/collect_dart_finstate_once.py scripts/03_analyze/export_web_data.py` → 통과.
+  - `python scripts/03_analyze/export_web_data.py` → 통과; `web/quant_data.js` 재생성.
+  - DART raw duplicate key check → 71,906 rows, duplicate keys 0, 1,856 tickers.
+  - Payload probe → stock_attractiveness 2,770 rows, ROE/roe_score 1,803, B 350/B ROE 331, FCF 1,544, BS품질 1,853.
+  - `node --check web/quant_data.js` → 통과.
+  - Puppeteer 로컬 검증 → rows 2,770, B 350, ROE 1,803, B ROE 331, FCF/BS/CF/이익안정 표시, 삼성전자 ROE 값, pageErrors 0.
+  - `pytest tests/test_sector_relative_value_factors.py tests/test_valuation_per_pbr_factors.py tests/test_roe_trend_factors.py tests/test_piotroski_factors.py -q` → 37 passed.
+
 ## 2026-06-19 20:49 - Hermes
 - Task: 사용자가 지적한 `ROE` 미반영 문제 확인 및 보강.
 - Cause:

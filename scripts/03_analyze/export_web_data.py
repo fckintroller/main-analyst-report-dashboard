@@ -257,11 +257,16 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
             import importlib.util
             builder_path = Path(__file__).resolve().parent / "build_sector_relative_value_factors.py"
             spec = importlib.util.spec_from_file_location("sector_relative_value_builder", builder_path)
+            if spec is None or spec.loader is None:
+                raise RuntimeError(f"builder module load failed: {builder_path}")
             builder = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(builder)
             raw_fin = pd.read_csv(dart_finstate_path, dtype={"ticker": str}, encoding="utf-8-sig")
-            sector_map = dict(zip(out["ticker"].astype(str).str.zfill(6), out.get("valuation_per_pbr__sector", "unknown")))
-            market_cap_map = dict(zip(out["ticker"].astype(str).str.zfill(6), pd.to_numeric(out.get("시가총액"), errors="coerce")))
+            tickers = out["ticker"].astype(str).str.zfill(6)
+            sector_series = out["valuation_per_pbr__sector"] if "valuation_per_pbr__sector" in out.columns else pd.Series("unknown", index=out.index)
+            market_cap_series = pd.to_numeric(out["시가총액"], errors="coerce") if "시가총액" in out.columns else pd.Series(pd.NA, index=out.index)
+            sector_map = dict(zip(tickers, sector_series.fillna("unknown")))
+            market_cap_map = dict(zip(tickers, market_cap_series))
             dart_quality = builder.build_dart_financial_quality_snapshot(raw_fin, sector_map, market_cap_map)
             if not dart_quality.empty:
                 dart_quality["dart_roe"] = dart_quality["net_income"] / dart_quality["total_equity"]

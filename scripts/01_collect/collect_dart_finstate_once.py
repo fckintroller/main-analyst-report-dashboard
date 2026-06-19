@@ -16,6 +16,7 @@ DART 연간 재무제표 수집 (Piotroski F-Score 원천 데이터).
 import argparse
 import logging
 import os
+import re
 import socket
 import time
 from pathlib import Path
@@ -174,8 +175,11 @@ def _load_universe() -> list[str]:
                 conn,
             )
             if len(tabs) > 0:
-                df = pd.read_sql(f"SELECT DISTINCT ticker FROM {tabs.iloc[0]['name']}", conn)
-                return df["ticker"].astype(str).str.zfill(6).tolist()
+                table_name = str(tabs.iloc[0]["name"])
+                if re.fullmatch(r"[A-Za-z0-9_]+", table_name):
+                    df = pd.read_sql(f'SELECT DISTINCT ticker FROM "{table_name}"', conn)
+                    return df["ticker"].astype(str).str.zfill(6).tolist()
+                logger.warning("ticker_names table name skipped due to unexpected format: %s", table_name)
             df = pd.read_sql(
                 "SELECT DISTINCT ticker FROM factor_stock_price_momentum_month",
                 conn
@@ -194,13 +198,26 @@ def _load_existing() -> pd.DataFrame:
     return pd.DataFrame()
 
 
+def _dedupe_records(records: list[dict]) -> pd.DataFrame:
+    """동일 ticker/year/period/account 중복은 마지막 수집값을 우선해 제거."""
+    df = pd.DataFrame(records)
+    if df.empty:
+        return df
+    expected_keys = ["ticker", "bsns_year", "period", "sj_div", "account_id"]
+    if "ticker" in df.columns:
+        df["ticker"] = df["ticker"].astype(str).str.zfill(6)
+    if all(c in df.columns for c in expected_keys):
+        df = df.drop_duplicates(subset=expected_keys, keep="last")
+    return df
+
+
 def run(tickers: list[str] | None = None, skip_existing: bool = True):
     dart = OpenDartReader(os.getenv("DART_API_KEY", ""))
-    universe = tickers or _load_universe()
+    universe = [str(t).zfill(6) for t in (tickers or _load_universe())]
 
     existing = _load_existing()
-    existing_tickers = set(existing["ticker"].astype(str).str.zfill(6)) if len(existing) > 0 else set()
-    if skip_existing and not tickers:
+    existing_tickers = set(existing["ticker"].astype(str).str.zfill(6)) if len(existing) > 0 and "ticker" in existing.columns else set()
+    if skip_existing:
         universe = [t for t in universe if t not in existing_tickers]
 
     logger.info("수집 대상: %d종목 (기존 보유 %d종목 제외)", len(universe), len(existing_tickers))
@@ -229,10 +246,10 @@ def run(tickers: list[str] | None = None, skip_existing: bool = True):
             logger.info("  %d/%d  수집: %d종목, 실패: %d", i, total,
                         len(set(r["ticker"] for r in all_records)), errors)
             if all_records:
-                pd.DataFrame(all_records).to_csv(OUT_PATH, index=False, encoding="utf-8-sig")
+                _dedupe_records(all_records).to_csv(OUT_PATH, index=False, encoding="utf-8-sig")
 
-    logger.info("완료: %s (%d행, 신규수집실패 %d종목)", OUT_PATH.name, len(all_records), len(no_data_tickers))
-    result_df = pd.DataFrame(all_records)
+    result_df = _dedupe_records(all_records)
+    logger.info("완료: %s (%d행, 신규수집실패 %d종목)", OUT_PATH.name, len(result_df), len(no_data_tickers))
     return result_df, no_data_tickers
 
 
