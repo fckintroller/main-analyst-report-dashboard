@@ -978,6 +978,130 @@ function buildWhyHtml(row, scoreKey, rank, sectorRank, sectorCount) {
     </div>`;
 }
 
+function hasRisk(row, pattern = null) {
+  const flags = Array.isArray(row.risk_flags) ? row.risk_flags : [];
+  if (!pattern) return flags.length > 0;
+  return flags.some(flag => pattern.test(String(flag)));
+}
+
+function stockActionScore(row, keys) {
+  const vals = keys.map(k => stockNum(row[k])).filter(v => v !== null);
+  if (!vals.length) return null;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+function buildActionCandidateBuckets(rows, scoreKey, rankInfo) {
+  const rankedRows = rows.filter(r => stockNum(r[scoreKey]) !== null);
+  const rankOf = row => rankInfo?.ranks?.get(row.ticker) || 999999;
+  const noSevereRisk = row => !hasRisk(row, /거래대금|유동성|과열|급등|공매도|데이터 부족|결측|변동성/i);
+  const enoughLiquidity = row => (stockNum(row.trading_value) ?? 0) >= 1_000_000_000 || (stockNum(row.liquidity_score) ?? 0) >= 0.55;
+  const positiveFlow = row => (stockNum(row.flow_score) ?? 0) >= 0.55 || (stockNum(row.foreign_net_ratio_change) ?? -999) > 0 || (stockNum(row.inst_net_ratio_change) ?? -999) > 0;
+
+  const candidateDefs = [
+    {
+      key: "buy",
+      title: "매수 후보",
+      icon: "fa-cart-shopping",
+      color: "#10b981",
+      desc: "가치+퀄리티·모멘텀/수급·유동성이 동시에 양호한 우선 점검군",
+      rows: rankedRows.filter(row => {
+        const blend = stockActionScore(row, ["scenario_b_value_quality", "score_momentum_flow", scoreKey]);
+        return blend !== null && blend >= 0.58 && enoughLiquidity(row) && positiveFlow(row) && noSevereRisk(row) && rankOf(row) <= 120;
+      }).sort((a, b) => (stockActionScore(b, ["scenario_b_value_quality", "score_momentum_flow", scoreKey]) ?? -1) - (stockActionScore(a, ["scenario_b_value_quality", "score_momentum_flow", scoreKey]) ?? -1))
+    },
+    {
+      key: "watch",
+      title: "관찰 후보",
+      icon: "fa-eye",
+      color: "#3b82f6",
+      desc: "점수는 높지만 리스크 플래그/품질 결측/추가 확인이 필요한 후보",
+      rows: rankedRows.filter(row => {
+        const s = stockNum(row[scoreKey]);
+        const qualityMissing = row.balance_sheet_quality_score == null || row.cashflow_quality_score == null || row.earnings_stability_score == null;
+        return s !== null && s >= 0.6 && (hasRisk(row) || qualityMissing) && rankOf(row) <= 160;
+      }).sort((a, b) => (stockNum(b[scoreKey]) ?? -1) - (stockNum(a[scoreKey]) ?? -1))
+    },
+    {
+      key: "chase_risk",
+      title: "급등 추격 주의",
+      icon: "fa-triangle-exclamation",
+      color: "#ef4444",
+      desc: "최근 상승/과열 신호가 강해 신규 진입 전 눌림·거래대금 확인 필요",
+      rows: rankedRows.filter(row => {
+        const ret3m = stockNum(row.ret_3m);
+        const ret6m = stockNum(row.ret_6m);
+        const rsi = stockNum(row.rsi_14);
+        const momentum = stockNum(row.momentum_score);
+        return (ret3m !== null && ret3m >= 0.3) || (ret6m !== null && ret6m >= 0.7) || (rsi !== null && rsi >= 70) || (momentum !== null && momentum >= 0.85 && hasRisk(row, /과열|급등|추격/i));
+      }).sort((a, b) => (stockNum(b.ret_3m) ?? stockNum(b.ret_6m) ?? -1) - (stockNum(a.ret_3m) ?? stockNum(a.ret_6m) ?? -1))
+    },
+    {
+      key: "recovery",
+      title: "저평가 회복 후보",
+      icon: "fa-seedling",
+      color: "#f59e0b",
+      desc: "저PBR/저PER·평균회귀·수급 개선이 함께 보이는 반등 후보",
+      rows: rankedRows.filter(row => {
+        const pbr = stockNum(row.pbr ?? row.consensus_pbr);
+        const per = stockNum(row.per ?? row.consensus_per);
+        const reversal = stockNum(row.score_reversal_value_flow ?? row.scenario_c_reversal);
+        const meanrev = stockNum(row.meanrev_score);
+        const value = stockNum(row.valuation_score ?? row.sector_value_score ?? row.value_composite_score);
+        return ((pbr !== null && pbr > 0 && pbr <= 1.2) || (per !== null && per > 0 && per <= 12) || (value !== null && value >= 0.6))
+          && ((reversal !== null && reversal >= 0.55) || (meanrev !== null && meanrev >= 0.55))
+          && positiveFlow(row);
+      }).sort((a, b) => (stockActionScore(b, ["score_reversal_value_flow", "scenario_c_reversal", "valuation_score", "flow_score"]) ?? -1) - (stockActionScore(a, ["score_reversal_value_flow", "scenario_c_reversal", "valuation_score", "flow_score"]) ?? -1))
+    }
+  ];
+  return candidateDefs.map(def => ({ ...def, rows: def.rows.slice(0, 5) }));
+}
+
+function renderActionCandidateCard(def, scoreKey, rankInfo) {
+  const items = def.rows.map((row, idx) => {
+    const rank = rankInfo?.ranks?.get(row.ticker);
+    const score = stockNum(row[scoreKey]);
+    const ret3m = stockNum(row.ret_3m);
+    const riskFlags = Array.isArray(row.risk_flags) ? row.risk_flags.slice(0, 2) : [];
+    const tags = [
+      row.sector || "업종 미분류",
+      rank ? `#${rank}` : null,
+      score !== null ? `${(score * 100).toFixed(1)}점` : null,
+      ret3m !== null ? `3M ${ret3m >= 0 ? "+" : ""}${(ret3m * 100).toFixed(1)}%` : null,
+    ].filter(Boolean);
+    const riskHtml = riskFlags.length ? `<div style="margin-top:5px; display:flex; gap:4px; flex-wrap:wrap;">${riskFlags.map(v => `<span class="tag" style="border-color:rgba(239,68,68,0.35); color:#fca5a5;">${html(v)}</span>`).join("")}</div>` : "";
+    return `<div style="padding:9px 0; border-top:${idx === 0 ? "0" : "1px solid var(--card-border)"};">
+      <div style="display:flex; justify-content:space-between; gap:8px; align-items:flex-start;">
+        <div>
+          <div style="font-weight:900; color:var(--text-heading);">${html(row.name || row.ticker)} <span style="font-size:0.72rem; color:var(--text-sub);">${html(row.ticker)}</span></div>
+          <div style="font-size:0.72rem; color:var(--text-sub); margin-top:3px;">${tags.map(html).join(" · ")}</div>
+        </div>
+        <button class="filter-btn" onclick="document.getElementById('stock-attractiveness-search').value='${html(row.ticker)}'; renderStockAttractiveness();" style="padding:4px 7px; font-size:0.7rem;">보기</button>
+      </div>
+      ${riskHtml}
+    </div>`;
+  }).join("");
+  return `<div style="border:1px solid ${def.color}55; border-radius:10px; padding:12px; background:${def.color}0f; min-height:190px;">
+    <div style="display:flex; justify-content:space-between; gap:8px; align-items:center; margin-bottom:7px;">
+      <div style="font-weight:900; color:${def.color};"><i class="fa-solid ${def.icon}"></i> ${html(def.title)}</div>
+      <span class="tag" style="border-color:${def.color}55; color:${def.color};">${def.rows.length}개</span>
+    </div>
+    <div style="font-size:0.74rem; color:var(--text-sub); line-height:1.45; margin-bottom:6px;">${html(def.desc)}</div>
+    ${items || `<div style="color:var(--text-sub); font-size:0.78rem; padding:14px 0;">현재 조건에 맞는 종목이 없습니다.</div>`}
+  </div>`;
+}
+
+function renderStockActionCandidates(filtered, scoreKey, rankInfo) {
+  const el = document.getElementById("stock-action-candidates");
+  const meta = document.getElementById("stock-action-candidates-meta");
+  if (!el) return;
+  const buckets = buildActionCandidateBuckets(filtered, scoreKey, rankInfo);
+  el.innerHTML = buckets.map(def => renderActionCandidateCard(def, scoreKey, rankInfo)).join("");
+  if (meta) {
+    const total = buckets.reduce((acc, def) => acc + def.rows.length, 0);
+    meta.textContent = `분류 후보 ${total.toLocaleString("ko-KR")}개 · 현재 필터 기준`;
+  }
+}
+
 function renderStockRankingInsights(filtered, scoreKey, rankInfo) {
   const summary = document.getElementById("stock-ranking-summary");
   const leaders = document.getElementById("stock-sector-leaders");
@@ -1305,7 +1429,9 @@ function renderStockAttractiveness() {
   });
 
   filtered.sort((a, b) => (stockNum(b[sortKey]) ?? -Infinity) - (stockNum(a[sortKey]) ?? -Infinity));
-  renderStockRankingInsights(filtered, scoreKey, { ranks: scenarioRanks, sectorRanks: scenarioSectorRanks });
+  const rankInfo = { ranks: scenarioRanks, sectorRanks: scenarioSectorRanks };
+  renderStockActionCandidates(filtered, scoreKey, rankInfo);
+  renderStockRankingInsights(filtered, scoreKey, rankInfo);
   const sectorCounts = new Map();
   universeRows.forEach(row => {
     if (stockNum(row[scoreKey]) === null) return;

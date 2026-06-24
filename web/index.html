@@ -702,6 +702,19 @@
           </div>
 
           <div class="data-card" style="margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
+              <div>
+                <h3 style="color:var(--primary); margin:0 0 6px;"><i class="fa-solid fa-bullseye"></i> 오늘의 후보군</h3>
+                <p style="color:var(--text-sub); font-size:0.82rem; margin:0; line-height:1.55;">
+                  현재 유니버스/필터 기준으로 매수 후보, 관찰 후보, 급등 추격 주의, 저평가 회복 후보를 자동 분류합니다. 매매 추천이 아니라 당일 점검 우선순위입니다.
+                </p>
+              </div>
+              <span id="stock-action-candidates-meta" style="color:var(--text-sub); font-size:0.78rem;"></span>
+            </div>
+            <div id="stock-action-candidates" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr)); gap:10px;"></div>
+          </div>
+
+          <div class="data-card" style="margin-bottom:16px;">
             <h3 style="color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-circle-question"></i> 랭킹 해석 가이드</h3>
             <div id="stock-ranking-summary" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:10px; margin-bottom:10px;"></div>
             <div style="color:var(--text-sub); font-size:0.84rem; line-height:1.7;">

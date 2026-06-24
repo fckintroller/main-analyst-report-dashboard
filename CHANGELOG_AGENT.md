@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-06-24 19:08 - Hermes
+- Task: 사용자 요청 `2번 진행`에 따라 종목 시장 매력도 화면을 실전 의사결정용 `오늘의 후보군` 섹션으로 확장.
+- Modified:
+  - `web/index.html` — 팩터 시나리오/TopN 백테스트 아래에 `오늘의 후보군` 카드 영역 추가.
+  - `web/quant_ui.js` — 현재 유니버스/검색/시총/업종/퀵필터 기준의 표시 종목을 `매수 후보`, `관찰 후보`, `급등 추격 주의`, `저평가 회복 후보`로 자동 분류하고 각 후보의 점수·순위·3M 수익률·리스크 플래그를 표시.
+- Verification:
+  - `node --check web/quant_ui.js` → 통과.
+  - `python -m py_compile scripts/03_analyze/export_web_data.py` → 통과.
+  - Puppeteer 로컬 검증(`http://127.0.0.1:8765/index.html`) → `#stock-action-candidates` 카드 4개, 분류 후보 20개, 종목 테이블 300행 렌더링 확인. Page error 없음.
+- Caveats:
+  - 이번 변경은 웹 UI 분류/표시 로직만 변경했으며 `web/quant_data.js` 재생성이나 SQLite/원천 데이터 변경은 수행하지 않음.
+
 ## 2026-06-24 19:05 - Hermes
 - Task: Git 작업상태 정리. 이전 작업에서 생성됐지만 미추적 상태였던 정식 팩터/테스트/raw 산출물은 커밋 대상으로 편입하고, 임시 로그/덤프 파일은 사용자 승인 후 삭제.
 - Changed:
