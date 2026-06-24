@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-06-24 19:18 - Hermes
+- Task: 사용자 요청에 따라 `오늘의 후보`를 `종목분석` 하위 독립 탭으로 분리.
+- Modified:
+  - `web/index.html` — `종목분석` 하위 메뉴에 `오늘의 후보` 탭을 추가하고, 기존 `종목 시장 매력도` 내부의 후보군 카드 섹션을 제거. 독립 탭에는 유니버스/시가총액/업종/기준 시나리오 필터와 후보 카드 영역을 배치.
+  - `web/quant_ui.js` — `renderStockActionCandidatesTab()` 독립 렌더러, 후보 탭 sector filter 초기화, 하위 탭 전환 시 렌더링, 후보 카드 `보기` 버튼의 종목 상세 탭 이동 로직 추가. 기존 종목 매력도 렌더링에서는 후보 카드 갱신 호출 제거.
+- Verification:
+  - `node --check web/quant_ui.js` → 통과.
+  - `python -m py_compile scripts/03_analyze/export_web_data.py` → 통과.
+  - `git diff --check` → 통과.
+  - Puppeteer 로컬 검증(`http://127.0.0.1:8765/index.html`) → 종목분석 하위 메뉴 2개(`종목 시장 매력도`, `오늘의 후보`), 후보 독립 탭 active, 후보 카드 4개/후보 20개, 업종 옵션 25개, 기존 종목 시장 매력도 탭 내 후보 컨테이너 없음, `보기` 클릭 시 종목 시장 매력도 탭으로 이동 및 검색 1행 렌더링, pageErrors 0.
+- Caveats:
+  - 이번 변경은 웹 UI 구조/렌더링 로직만 변경했으며 `web/quant_data.js` 재생성이나 SQLite/원천 데이터 변경은 수행하지 않음.
+
 ## 2026-06-24 19:08 - Hermes
 - Task: 사용자 요청 `2번 진행`에 따라 종목 시장 매력도 화면을 실전 의사결정용 `오늘의 후보군` 섹션으로 확장.
 - Modified:

@@ -258,6 +258,7 @@
         <button id="btn-tab-analysis" class="tab-btn"><i class="fa-solid fa-magnifying-glass-chart"></i> 종목분석</button>
         <div id="nav-sub-analysis" class="sidebar-sub-nav" style="display:none; flex-direction:column; padding-left: 20px; gap:8px;">
           <button class="sub-tab-btn active" onclick="switchSubTab('analysis-market-attractiveness', this)">종목 시장 매력도</button>
+          <button class="sub-tab-btn" onclick="switchSubTab('analysis-action-candidates', this)">오늘의 후보</button>
         </div>
         <button id="btn-tab-quant" class="tab-btn"><i class="fa-solid fa-calculator"></i> 퀀트</button>
         <div id="nav-sub-quant" class="sidebar-sub-nav" style="display:none; flex-direction:column; padding-left: 20px; gap:8px;">
@@ -702,19 +703,6 @@
           </div>
 
           <div class="data-card" style="margin-bottom:16px;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
-              <div>
-                <h3 style="color:var(--primary); margin:0 0 6px;"><i class="fa-solid fa-bullseye"></i> 오늘의 후보군</h3>
-                <p style="color:var(--text-sub); font-size:0.82rem; margin:0; line-height:1.55;">
-                  현재 유니버스/필터 기준으로 매수 후보, 관찰 후보, 급등 추격 주의, 저평가 회복 후보를 자동 분류합니다. 매매 추천이 아니라 당일 점검 우선순위입니다.
-                </p>
-              </div>
-              <span id="stock-action-candidates-meta" style="color:var(--text-sub); font-size:0.78rem;"></span>
-            </div>
-            <div id="stock-action-candidates" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr)); gap:10px;"></div>
-          </div>
-
-          <div class="data-card" style="margin-bottom:16px;">
             <h3 style="color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-circle-question"></i> 랭킹 해석 가이드</h3>
             <div id="stock-ranking-summary" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:10px; margin-bottom:10px;"></div>
             <div style="color:var(--text-sub); font-size:0.84rem; line-height:1.7;">
@@ -742,6 +730,65 @@
             </table>
           </div>
           <div id="stock-attractiveness-count" style="color:var(--text-sub); font-size:0.82rem; margin-top:10px;"></div>
+        </div>
+      </div>
+
+      <div id="sub-analysis-action-candidates" class="sub-tab-content">
+        <div class="reports-container">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:18px;">
+            <div>
+              <h2 style="font-size:1.4rem; font-weight:700; margin:0; display:flex; align-items:center; gap:10px; color:var(--primary);">
+                <i class="fa-solid fa-bullseye"></i> 오늘의 후보
+              </h2>
+              <p style="color:var(--text-sub); font-size:0.88rem; margin-top:8px; line-height:1.65;">
+                현재 유니버스와 필터 기준으로 매수 후보, 관찰 후보, 급등 추격 주의, 저평가 회복 후보를 독립 화면에서 분류합니다. 매매 추천이 아니라 당일 점검 우선순위입니다.
+              </p>
+            </div>
+            <div id="stock-action-candidates-meta" style="color:var(--text-sub); font-size:0.82rem; text-align:right;"></div>
+          </div>
+
+          <div class="data-card" style="margin-bottom:16px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:10px; align-items:end;">
+              <label style="display:flex; flex-direction:column; gap:6px; color:var(--text-sub); font-size:0.78rem; font-weight:700;">유니버스
+                <select id="action-candidate-market" onchange="renderStockActionCandidatesTab()" style="background:var(--btn-bg); border:1px solid var(--card-border); color:var(--text-heading); padding:10px 12px; border-radius:6px;">
+                  <option value="B_PROJECT_DEFAULT" selected>B 기본: KOSPI200 + KOSDAQ150</option>
+                  <option value="A_KOSPI200_PROXY">A KOSPI200 proxy</option>
+                  <option value="C_SCREENABLE">C 전체상장 스크리닝</option>
+                  <option value="all">전체 상장사</option>
+                  <option value="KOSPI">KOSPI 전체</option>
+                  <option value="KOSDAQ">KOSDAQ 전체</option>
+                </select>
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px; color:var(--text-sub); font-size:0.78rem; font-weight:700;">시가총액
+                <select id="action-candidate-size" onchange="renderStockActionCandidatesTab()" style="background:var(--btn-bg); border:1px solid var(--card-border); color:var(--text-heading); padding:10px 12px; border-radius:6px;">
+                  <option value="all">전체</option><option value="large">대형주</option><option value="mid">중형주</option><option value="small">소형주</option>
+                </select>
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px; color:var(--text-sub); font-size:0.78rem; font-weight:700;">업종
+                <select id="action-candidate-sector" onchange="renderStockActionCandidatesTab()" style="background:var(--btn-bg); border:1px solid var(--card-border); color:var(--text-heading); padding:10px 12px; border-radius:6px;"><option value="all">전체</option></select>
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px; color:var(--text-sub); font-size:0.78rem; font-weight:700;">기준 시나리오
+                <select id="action-candidate-sort" onchange="renderStockActionCandidatesTab()" style="background:var(--btn-bg); border:1px solid var(--card-border); color:var(--text-heading); padding:10px 12px; border-radius:6px;">
+                  <option value="market_attractiveness_score">종합 매력도</option>
+                  <option value="scenario_a_momentum">A 단기 모멘텀</option>
+                  <option value="scenario_b_value_quality">B 가치+퀄리티</option>
+                  <option value="scenario_c_reversal">C 저평가 반등</option>
+                  <option value="scenario_d_large_stable">D 대형 안정</option>
+                  <option value="score_momentum_flow">모멘텀+수급</option>
+                  <option value="score_value_quality">가치+퀄리티</option>
+                  <option value="score_base_5factor">기본 5팩터</option>
+                  <option value="score_reversal_value_flow">저평가 반등</option>
+                  <option value="score_short_squeeze_addon">숏커버 보조</option>
+                  <option value="regime_adj_score">레짐 조정 점수</option>
+                </select>
+              </label>
+            </div>
+            <div style="color:var(--text-sub); font-size:0.78rem; margin-top:10px; line-height:1.55;">
+              후보군은 위 조건을 먼저 적용한 뒤, 점수·수급·유동성·리스크 플래그로 자동 분류합니다. 개별 종목을 누르면 기존 `종목 시장 매력도` 탭에서 상세 표를 확인합니다.
+            </div>
+          </div>
+
+          <div id="stock-action-candidates" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:12px;"></div>
         </div>
       </div>
     </div>

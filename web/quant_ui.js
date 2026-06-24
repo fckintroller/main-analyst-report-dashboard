@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderMoneyFlowChart();
     renderBreadthCharts();
     renderStockAttractiveness();
+    renderStockActionCandidatesTab();
     renderSectorMap();
     renderRegimeCard();
     renderScorecard();
@@ -79,7 +80,7 @@ function switchSubTab(targetId, btn) {
   if (targetId === "macro-regression") { setTimeout(renderRegressionPanel, 50); }
   if (targetId === "quant-factor-validation") { setTimeout(renderFactorValidation, 50); }
   if (targetId === "analysis-market-attractiveness") { setTimeout(renderStockAttractiveness, 50); }
-
+  if (targetId === "analysis-action-candidates") { setTimeout(renderStockActionCandidatesTab, 50); }
   if (targetId === "macro-rates") {
     setTimeout(() => {
       if (window.bubbleCharts?.length) {
@@ -1075,7 +1076,7 @@ function renderActionCandidateCard(def, scoreKey, rankInfo) {
           <div style="font-weight:900; color:var(--text-heading);">${html(row.name || row.ticker)} <span style="font-size:0.72rem; color:var(--text-sub);">${html(row.ticker)}</span></div>
           <div style="font-size:0.72rem; color:var(--text-sub); margin-top:3px;">${tags.map(html).join(" · ")}</div>
         </div>
-        <button class="filter-btn" onclick="document.getElementById('stock-attractiveness-search').value='${html(row.ticker)}'; renderStockAttractiveness();" style="padding:4px 7px; font-size:0.7rem;">보기</button>
+        <button class="filter-btn" onclick="openStockFromCandidate('${html(row.ticker)}')" style="padding:4px 7px; font-size:0.7rem;">보기</button>
       </div>
       ${riskHtml}
     </div>`;
@@ -1101,6 +1102,56 @@ function renderStockActionCandidates(filtered, scoreKey, rankInfo) {
     meta.textContent = `분류 후보 ${total.toLocaleString("ko-KR")}개 · 현재 필터 기준`;
   }
 }
+
+function populateActionCandidateSectorFilter(rows) {
+  const select = document.getElementById("action-candidate-sector");
+  if (!select || select.dataset.ready === "1") return;
+  const sectors = [...new Set(rows.map(r => r.sector).filter(Boolean))].sort();
+  select.innerHTML = '<option value="all">전체</option>' + sectors.map(s => `<option value="${html(s)}">${html(s)}</option>`).join("");
+  select.dataset.ready = "1";
+}
+
+function renderStockActionCandidatesTab() {
+  const payload = window.QUANT_DATA?.stock_attractiveness || {};
+  const rows = Array.isArray(payload.rows) ? payload.rows : [];
+  const el = document.getElementById("stock-action-candidates");
+  if (!el) return;
+  populateActionCandidateSectorFilter(rows);
+
+  const market = document.getElementById("action-candidate-market")?.value || "B_PROJECT_DEFAULT";
+  const size = document.getElementById("action-candidate-size")?.value || "all";
+  const sector = document.getElementById("action-candidate-sector")?.value || "all";
+  const scoreKey = document.getElementById("action-candidate-sort")?.value || "market_attractiveness_score";
+
+  const universeRows = rows.filter(row => passesUniverseFilter(row, market));
+  const filtered = universeRows.filter(row => {
+    if (size !== "all" && row.size_bucket !== size) return false;
+    if (sector !== "all" && row.sector !== sector) return false;
+    return true;
+  }).sort((a, b) => (stockNum(b[scoreKey]) ?? -Infinity) - (stockNum(a[scoreKey]) ?? -Infinity));
+
+  const rankInfo = buildScenarioRanks(universeRows, scoreKey);
+  renderStockActionCandidates(filtered, scoreKey, rankInfo);
+
+  const meta = document.getElementById("stock-action-candidates-meta");
+  if (meta) {
+    const label = STOCK_SCENARIOS[scoreKey]?.label || scoreKey;
+    meta.innerHTML = `기준일 ${html(payload.as_of || "-")}<br>${universeLabel(market)} · ${filtered.length.toLocaleString("ko-KR")}개 · ${html(label)}`;
+  }
+}
+window.renderStockActionCandidatesTab = renderStockActionCandidatesTab;
+
+function openStockFromCandidate(ticker) {
+  document.getElementById("btn-tab-analysis")?.click();
+  const btn = document.querySelector("#nav-sub-analysis .sub-tab-btn[onclick*=\"analysis-market-attractiveness\"]");
+  btn?.click();
+  setTimeout(() => {
+    const search = document.getElementById("stock-attractiveness-search");
+    if (search) search.value = ticker;
+    renderStockAttractiveness();
+  }, 60);
+}
+window.openStockFromCandidate = openStockFromCandidate;
 
 function renderStockRankingInsights(filtered, scoreKey, rankInfo) {
   const summary = document.getElementById("stock-ranking-summary");
@@ -1430,7 +1481,6 @@ function renderStockAttractiveness() {
 
   filtered.sort((a, b) => (stockNum(b[sortKey]) ?? -Infinity) - (stockNum(a[sortKey]) ?? -Infinity));
   const rankInfo = { ranks: scenarioRanks, sectorRanks: scenarioSectorRanks };
-  renderStockActionCandidates(filtered, scoreKey, rankInfo);
   renderStockRankingInsights(filtered, scoreKey, rankInfo);
   const sectorCounts = new Map();
   universeRows.forEach(row => {
