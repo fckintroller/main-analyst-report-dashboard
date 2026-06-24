@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderScorecard();
     renderRegressionPanel();
     renderFactorValidation();
+    renderPracticalBacktest();
   }, 200);
 });
 
@@ -79,6 +80,7 @@ function switchSubTab(targetId, btn) {
   if (targetId === "macro-scorecard") { setTimeout(() => { renderRegimeCard(); renderScorecard(); }, 50); }
   if (targetId === "macro-regression") { setTimeout(renderRegressionPanel, 50); }
   if (targetId === "quant-factor-validation") { setTimeout(renderFactorValidation, 50); }
+  if (targetId === "quant-practical-backtest") { setTimeout(renderPracticalBacktest, 50); }
   if (targetId === "analysis-market-attractiveness") { setTimeout(renderStockAttractiveness, 50); }
   if (targetId === "analysis-action-candidates") { setTimeout(renderStockActionCandidatesTab, 50); }
   if (targetId === "macro-rates") {
@@ -2248,6 +2250,123 @@ function renderFactorValidationCoverage() {
   const cols = preferred.filter((k) => k in rows[0]).map((k) => [k, k, (v) => k === "period" ? html(v) : fvFmtInt(v)]);
   el.innerHTML = fvTable(rows, cols);
 }
+function pbLabelUniverse(v) {
+  const map = {
+    A_KOSPI200_PROXY: "A KOSPI200 proxy",
+    B_PROJECT_DEFAULT: "B 기본(350 proxy)",
+    C_SCREENABLE: "C 전체 스크리닝",
+    D_LARGE: "D 대형",
+    D_MID: "D 중형",
+    D_SMALL: "D 소형",
+  };
+  return map[v] || v || "—";
+}
+function pbEnsureOptions(selectId, values, labelFn, preferred) {
+  const el = document.getElementById(selectId);
+  if (!el) return "";
+  const current = el.value || preferred || values[0] || "";
+  const next = values.includes(current) ? current : (values.includes(preferred) ? preferred : values[0] || "");
+  el.innerHTML = values.map((v) => `<option value="${html(v)}">${html(labelFn(v))}</option>`).join("");
+  el.value = next;
+  return next;
+}
+function pbSummaryRows() {
+  return Array.isArray(window.QUANT_DATA?.practical_topn_backtest?.summary) ? window.QUANT_DATA.practical_topn_backtest.summary : [];
+}
+function pbMonthlyRows() {
+  return Array.isArray(window.QUANT_DATA?.practical_topn_backtest?.monthly) ? window.QUANT_DATA.practical_topn_backtest.monthly : [];
+}
+function pbSelectionRows() {
+  return Array.isArray(window.QUANT_DATA?.practical_topn_backtest?.latest_selections) ? window.QUANT_DATA.practical_topn_backtest.latest_selections : [];
+}
+function renderPracticalBacktest() {
+  const payload = window.QUANT_DATA?.practical_topn_backtest || {};
+  const summary = pbSummaryRows();
+  const monthly = pbMonthlyRows();
+  const asOf = document.getElementById("practical-backtest-as-of");
+  if (asOf) asOf.textContent = payload.as_of ? `검증 기준: ${payload.as_of}` : "백테스트 데이터 없음";
+  const cards = document.getElementById("practical-backtest-cards");
+  if (!cards) return;
+  if (!summary.length) {
+    cards.innerHTML = fvCard("상태", "데이터 없음", "practical_topn_backtest payload를 확인하세요.");
+    return;
+  }
+  const universes = [...new Set(summary.map((r) => r.universe).filter(Boolean))];
+  const scenarios = [...new Set(summary.map((r) => r.scenario).filter(Boolean))];
+  const universe = pbEnsureOptions("practical-backtest-universe", universes, pbLabelUniverse, "B_PROJECT_DEFAULT");
+  const scenario = pbEnsureOptions("practical-backtest-scenario", scenarios, (v) => (summary.find((r) => r.scenario === v)?.scenario_label || v), "market_attractiveness_score");
+  const topn = Number(document.getElementById("practical-backtest-topn")?.value || 30);
+  const cost = Number(document.getElementById("practical-backtest-cost")?.value || 0.003);
+  const row = summary.find((r) => r.universe === universe && r.scenario === scenario && Number(r.topn) === topn && Math.abs(Number(r.cost_rate) - cost) < 0.000001) || {};
+  const pos = Number(row.total_return) >= 0;
+  cards.innerHTML = [
+    fvCard("누적수익률", `<span style="color:${pos ? '#10b981' : '#ef4444'}">${fvFmtPct(row.total_return)}</span>`, `벤치 ${fvFmtPct(row.benchmark_total_return)}`),
+    fvCard("초과수익률", `<span style="color:${Number(row.excess_total_return) >= 0 ? '#10b981' : '#ef4444'}">${fvFmtPct(row.excess_total_return)}</span>`, `${fvFmtInt(row.months)}개월 / ${html(row.start_period || '')}~${html(row.end_period || '')}`),
+    fvCard("MDD", `<span style="color:#ef4444">${fvFmtPct(row.mdd)}</span>`, `벤치 MDD ${fvFmtPct(row.benchmark_mdd)}`),
+    fvCard("월간 승률", fvFmtPct(row.monthly_win_rate), `Hit ${fvFmtPct(row.hit_ratio)} · 회전율 ${fvFmtPct(row.avg_turnover)}`),
+  ].join("");
+  renderPracticalBacktestChart(universe, scenario, topn, cost);
+  renderPracticalBacktestSummary(universe, cost);
+  renderPracticalBacktestSelections(universe, scenario, topn, cost);
+}
+function renderPracticalBacktestChart(universe, scenario, topn, cost) {
+  const canvas = document.getElementById("practical-backtest-nav-chart");
+  if (!canvas || typeof Chart === "undefined") return;
+  const rows = pbMonthlyRows()
+    .filter((r) => r.universe === universe && r.scenario === scenario && Number(r.topn) === topn && Math.abs(Number(r.cost_rate) - cost) < 0.000001)
+    .sort((a, b) => String(a.period).localeCompare(String(b.period)));
+  if (window.practicalBacktestChart) {
+    try { window.practicalBacktestChart.destroy(); } catch (_) {}
+  }
+  window.practicalBacktestChart = new Chart(canvas.getContext("2d"), {
+    type: "line",
+    data: {
+      labels: rows.map((r) => r.period),
+      datasets: [
+        { label: "TopN NAV", data: rows.map((r) => Number(r.nav)), borderColor: "#10b981", backgroundColor: "rgba(16,185,129,0.12)", tension: 0.25, pointRadius: 1.5 },
+        { label: "Benchmark NAV", data: rows.map((r) => Number(r.benchmark_nav)), borderColor: "#94a3b8", backgroundColor: "rgba(148,163,184,0.10)", tension: 0.25, pointRadius: 1.5 },
+      ],
+    },
+    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false }, plugins: { legend: { labels: { color: "#cbd5e1" } } }, scales: { x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.15)" } }, y: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.15)" } } } },
+  });
+}
+function renderPracticalBacktestSummary(universe, cost) {
+  const el = document.getElementById("practical-backtest-summary-table");
+  if (!el) return;
+  const rows = pbSummaryRows()
+    .filter((r) => r.universe === universe && Math.abs(Number(r.cost_rate) - cost) < 0.000001)
+    .sort((a, b) => Number(b.excess_total_return ?? -999) - Number(a.excess_total_return ?? -999));
+  el.innerHTML = rows.length ? fvTable(rows, [
+    ["scenario_label", "시나리오", (v) => html(v)],
+    ["topn", "TopN", fvFmtInt],
+    ["months", "개월", fvFmtInt],
+    ["total_return", "누적", fvFmtPct],
+    ["benchmark_total_return", "벤치", fvFmtPct],
+    ["excess_total_return", "초과", fvFmtPct],
+    ["cagr", "CAGR", fvFmtPct],
+    ["mdd", "MDD", fvFmtPct],
+    ["monthly_win_rate", "승률", fvFmtPct],
+    ["avg_turnover", "회전율", fvFmtPct],
+  ]) : "<p style='color:var(--text-sub);'>성과표 데이터 없음</p>";
+}
+function renderPracticalBacktestSelections(universe, scenario, topn, cost) {
+  const el = document.getElementById("practical-backtest-selection-table");
+  if (!el) return;
+  const rows = pbSelectionRows()
+    .filter((r) => r.universe === universe && r.scenario === scenario && Number(r.topn) === topn && Math.abs(Number(r.cost_rate) - cost) < 0.000001)
+    .sort((a, b) => Number(a.rank) - Number(b.rank))
+    .slice(0, topn);
+  el.innerHTML = rows.length ? fvTable(rows, [
+    ["rank", "순위", fvFmtInt],
+    ["ticker", "코드", (v) => html(String(v ?? "").replace(/\.0$/, "").padStart(6, "0"))],
+    ["name", "종목명", (v) => html(v || "")],
+    ["sector", "섹터", (v) => html(v || "")],
+    ["score", "점수", fvFmtScore],
+    ["fwd_1m_ret", "다음월", fvFmtPct],
+    ["market_cap", "시총", (v) => fvFmtInt(Number(v) / 100000000)],
+  ]) : "<p style='color:var(--text-sub);'>최근 리밸런싱 종목 데이터 없음</p>";
+}
+window.renderPracticalBacktest = renderPracticalBacktest;
 window.renderFactorValidation = renderFactorValidation;
 window.renderFactorValidationTopn = renderFactorValidationTopn;
 window.renderFactorTopnQuintile = renderFactorTopnQuintile;

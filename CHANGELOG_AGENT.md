@@ -4,6 +4,29 @@
 
 ---
 
+## 2026-06-24 19:32 - Hermes
+- Task: 사용자 요청에 따라 `3번` 실전형 월간 리밸런싱 TopN 백테스트를 구축하고 웹 대시보드에 `실전 백테스트` 탭으로 연결.
+- Created:
+  - `scripts/03_analyze/build_practical_topn_backtest.py` — 월말 신호 → 다음 달 수익률 구조의 동일가중 Top20/30/50 월간 리밸런싱 NAV 백테스트. A/B/C/D 유니버스, 0%/0.3%/0.6% 비용률, turnover, hit ratio, MDD, CAGR, 벤치마크 대비 초과수익률 산출.
+  - `tests/test_practical_topn_backtest.py` — NAV/MDD/CAGR, turnover 비용 차감, summary metric, universe label 테스트.
+  - `C:\claude cowork\02_outputs\2026-06-24_19-36-46_practical_topn_backtest\` — `summary_practical_topn.csv` 270 rows, `monthly_practical_topn_returns.csv` 9,720 rows, `monthly_practical_topn_selections.csv` 323,994 rows, `coverage_by_period.csv` 37 rows, `panel_snapshot_used.csv`, `metadata.json`, `report.md`.
+- Modified:
+  - `scripts/03_analyze/export_web_data.py` — 최신 `_practical_topn_backtest` 산출물을 `window.QUANT_DATA.practical_topn_backtest` payload로 export. summary/monthly/latest selections/coverage 포함.
+  - `web/index.html` — `퀀트 분석` 하위 메뉴에 `실전 백테스트` 독립 탭 추가. 유니버스/시나리오/TopN/비용률 필터, NAV 차트, 성과표, 최근 리밸런싱 종목 영역 배치.
+  - `web/quant_ui.js` — `renderPracticalBacktest()` 및 NAV Chart.js 렌더링, 필터 연동, 성과 카드/표/최근 종목 렌더링 추가.
+  - `web/quant_data.js` — `practical_topn_backtest` payload 반영(summary 270, monthly 9,720, latest selections 3,000, coverage 37, as_of 2026-06).
+- Verification:
+  - `python -m py_compile scripts/03_analyze/build_practical_topn_backtest.py scripts/03_analyze/export_web_data.py` → 통과.
+  - `pytest tests/test_practical_topn_backtest.py -q` → 4 passed.
+  - `python scripts/03_analyze/build_practical_topn_backtest.py` → output rows: summary 270 / monthly 9,720 / selections 323,994 / coverage 37 / period 2023-06~2026-06.
+  - `python scripts/03_analyze/export_web_data.py` → `practical_topn=270,9720` 확인 및 `web/quant_data.js` 재생성.
+  - Node payload probe → summary 270 / monthly 9,720 / latest 3,000 / coverage 37 / as_of 2026-06 / B 유니버스와 0.3% 비용 payload 존재.
+  - `node --check web/quant_ui.js`, `git diff --check` → 통과.
+  - Puppeteer 로컬 검증(`http://127.0.0.1:8765/`) → 실전 백테스트 탭 active, 카드 4개, 성과표 15행, 최근 리밸런싱 30행, 유니버스 옵션 6개, 시나리오 옵션 5개, NAV 차트 dataset 2개, pageErrors 0.
+- Caveats:
+  - 공식 KOSPI200/KOSDAQ150 구성 이력이 아니라 월별 시총 proxy를 사용합니다. 일부 재무/컨센서스 팩터의 실제 공시 가능 시차는 아직 보수 조정되지 않았으므로 결과는 실전 검증용 1차 근사치입니다.
+  - 거래비용은 단순 `turnover × cost_rate` 모델이며, 호가충격/거래정지/체결 가능성은 아직 반영하지 않았습니다.
+
 ## 2026-06-24 19:18 - Hermes
 - Task: 사용자 요청에 따라 `오늘의 후보`를 `종목분석` 하위 독립 탭으로 분리.
 - Modified:

@@ -926,6 +926,58 @@ def _build_factor_topn_quintile_backtest(raw_data_dir: Path) -> dict:
             "coverage": [],
         }
 
+def _build_practical_topn_backtest(raw_data_dir: Path) -> dict:
+    """실전형 월간 리밸런싱 TopN NAV 백테스트 CSV 산출물을 웹용 payload로 축약."""
+    try:
+        project_dir = Path(__file__).resolve().parents[2]
+        workspace_dir = project_dir.parents[1]
+        outputs_root = workspace_dir / "02_outputs"
+        candidates = sorted(outputs_root.glob("*_practical_topn_backtest"))
+        if not candidates:
+            return {"as_of": "", "source_dir": "", "method": "", "summary": [], "monthly": [], "latest_selections": [], "coverage": []}
+        source_dir = candidates[-1]
+
+        def load_csv(name):
+            path = source_dir / name
+            if not path.exists():
+                logger.warning("practical_topn CSV 없음: %s", path)
+                return pd.DataFrame()
+            df = pd.read_csv(path)
+            return df.where(pd.notnull(df), None)
+
+        summary = load_csv("summary_practical_topn.csv")
+        monthly = load_csv("monthly_practical_topn_returns.csv")
+        selections = load_csv("monthly_practical_topn_selections.csv")
+        coverage = load_csv("coverage_by_period.csv")
+
+        as_of = ""
+        if not coverage.empty and "period" in coverage.columns:
+            vals = [str(v) for v in coverage["period"].dropna().tolist()]
+            as_of = max(vals) if vals else ""
+
+        # 웹 payload 크기 제한: 월간 NAV는 전부 싣고, selections는 최신월/기본 비용/주요 TopN만 제공.
+        latest_selections = pd.DataFrame()
+        if not selections.empty and "period" in selections.columns:
+            latest_period = max(str(v) for v in selections["period"].dropna().tolist())
+            latest_selections = selections[
+                (selections["period"].astype(str) == latest_period)
+                & (selections["cost_rate"].astype(float).round(6) == 0.003)
+                & (selections["topn"].astype(int).isin([20, 30, 50]))
+            ].copy()
+
+        return {
+            "as_of": as_of,
+            "source_dir": str(source_dir),
+            "method": "월말 신호 TopN 동일가중 월간 리밸런싱 NAV; fwd_1m_ret 사용; 비용=turnover*cost_rate; 공식 지수 구성 이력 대신 월별 시총 proxy 사용",
+            "summary": summary.to_dict(orient="records") if not summary.empty else [],
+            "monthly": monthly.to_dict(orient="records") if not monthly.empty else [],
+            "latest_selections": latest_selections.to_dict(orient="records") if not latest_selections.empty else [],
+            "coverage": coverage.to_dict(orient="records") if not coverage.empty else [],
+        }
+    except Exception as e:
+        logger.warning("practical_topn_backtest payload 로드 실패: %s", e)
+        return {"as_of": "", "source_dir": "", "method": "", "summary": [], "monthly": [], "latest_selections": [], "coverage": []}
+
 
 
 def _build_regression_summary(raw_data_dir: Path) -> dict:
@@ -1214,12 +1266,15 @@ def collect_quant_data(raw_data_dir, krx_dict=None, include_stock_detail=False):
     # 6-2. 팩터 심사표 결과 (독립 검증 CSV → factor_validation 키)
     quant_data["factor_validation"] = _build_factor_validation(raw_data_dir)
     quant_data["factor_validation"]["topn_quintile"] = _build_factor_topn_quintile_backtest(raw_data_dir)
+    quant_data["practical_topn_backtest"] = _build_practical_topn_backtest(raw_data_dir)
     logger.info(
-        " - factor_validation: summary=%d / current_top=%d / topn_quintile=%d,%d",
+        " - factor_validation: summary=%d / current_top=%d / topn_quintile=%d,%d / practical_topn=%d,%d",
         len(quant_data["factor_validation"].get("summary", [])),
         len(quant_data["factor_validation"].get("current_top", [])),
         len(quant_data["factor_validation"].get("topn_quintile", {}).get("topn_summary", [])),
         len(quant_data["factor_validation"].get("topn_quintile", {}).get("quintile_spread", [])),
+        len(quant_data["practical_topn_backtest"].get("summary", [])),
+        len(quant_data["practical_topn_backtest"].get("monthly", [])),
     )
 
     # 7. 파생 거시지표 계산 (원본 CSV에서 직접 계산)

@@ -264,6 +264,7 @@
         <div id="nav-sub-quant" class="sidebar-sub-nav" style="display:none; flex-direction:column; padding-left: 20px; gap:8px;">
           <button class="sub-tab-btn active" onclick="switchSubTab('quant-sector', this)">업종 순환맵</button>
           <button class="sub-tab-btn" onclick="switchSubTab('quant-factor-validation', this)">팩터 심사표</button>
+          <button class="sub-tab-btn" onclick="switchSubTab('quant-practical-backtest', this)">실전 백테스트</button>
         </div>
 
         <button id="btn-tab-macro" class="tab-btn"><i class="fa-solid fa-globe"></i> 매크로 & 시장</button>
@@ -915,6 +916,51 @@
           <div id="fv-coverage" class="data-card">
             <h3 style="color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-database"></i> 최근 커버리지</h3>
             <div id="factor-validation-coverage-table" class="table-responsive"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sub-quant-practical-backtest" class="sub-tab-content">
+        <div class="reports-container">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+            <div>
+              <h2 style="font-size:1.4rem; font-weight:700; margin:0 0 8px; display:flex; align-items:center; gap:10px; color:var(--primary);">
+                <i class="fa-solid fa-chart-line"></i> 실전 백테스트
+              </h2>
+              <p style="color:var(--text-sub); font-size:0.88rem; margin:0; line-height:1.65;">
+                월말 신호 → 다음 달 수익률 구조의 TopN 월간 리밸런싱 NAV입니다. 거래비용은 turnover × 비용률로 차감하며, 공식 지수 구성 이력 대신 월별 시총 proxy를 사용합니다.
+              </p>
+            </div>
+            <span id="practical-backtest-as-of" style="color:var(--text-sub); font-size:0.8rem;"></span>
+          </div>
+          <div class="data-card" style="margin-bottom:16px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; align-items:end;">
+              <label style="display:flex; flex-direction:column; gap:6px; color:var(--text-sub); font-size:0.78rem; font-weight:700;">유니버스
+                <select id="practical-backtest-universe" onchange="renderPracticalBacktest()" style="background:var(--btn-bg); border:1px solid var(--card-border); color:var(--text-heading); padding:8px 10px; border-radius:6px;"></select>
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px; color:var(--text-sub); font-size:0.78rem; font-weight:700;">시나리오
+                <select id="practical-backtest-scenario" onchange="renderPracticalBacktest()" style="background:var(--btn-bg); border:1px solid var(--card-border); color:var(--text-heading); padding:8px 10px; border-radius:6px;"></select>
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px; color:var(--text-sub); font-size:0.78rem; font-weight:700;">TopN
+                <select id="practical-backtest-topn" onchange="renderPracticalBacktest()" style="background:var(--btn-bg); border:1px solid var(--card-border); color:var(--text-heading); padding:8px 10px; border-radius:6px;"><option value="20">Top20</option><option value="30" selected>Top30</option><option value="50">Top50</option></select>
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px; color:var(--text-sub); font-size:0.78rem; font-weight:700;">비용률
+                <select id="practical-backtest-cost" onchange="renderPracticalBacktest()" style="background:var(--btn-bg); border:1px solid var(--card-border); color:var(--text-heading); padding:8px 10px; border-radius:6px;"><option value="0">0%</option><option value="0.003" selected>0.3%</option><option value="0.006">0.6%</option></select>
+              </label>
+            </div>
+          </div>
+          <div id="practical-backtest-cards" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px,1fr)); gap:12px; margin-bottom:16px;"></div>
+          <div class="data-card" style="margin-bottom:16px;">
+            <h3 style="color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-chart-area"></i> NAV 경로</h3>
+            <div class="chart-wrapper" style="height:320px;"><canvas id="practical-backtest-nav-chart"></canvas></div>
+          </div>
+          <div class="data-card" style="margin-bottom:16px;">
+            <h3 style="color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-table"></i> 조합별 성과표</h3>
+            <div id="practical-backtest-summary-table" class="table-responsive"></div>
+          </div>
+          <div class="data-card">
+            <h3 style="color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-list-check"></i> 최근 리밸런싱 종목</h3>
+            <div id="practical-backtest-selection-table" class="table-responsive"></div>
           </div>
         </div>
       </div>
