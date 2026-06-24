@@ -1,0 +1,121 @@
+{
+  "downloaded_at": "2026-06-10T21:41:00+09:00",
+  "database": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\database\\quant_data.sqlite",
+  "backup": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\database\\quant_data.sqlite.backup_trade_stats_20260610_214100",
+  "raw_dir": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\trade_stats",
+  "long_csv": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\trade_stats\\us_korea_trade_fred_long.csv",
+  "monthly_csv": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\trade_stats\\us_korea_trade_fred_monthly.csv",
+  "quarterly_csv": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\trade_stats\\us_trade_fred_quarterly_nipa.csv",
+  "metadata_csv": "C:\\claude cowork\\01_projects\\Anal_reports\\data\\raw\\macro\\trade_stats\\us_korea_trade_fred_metadata.csv",
+  "series_count": 8,
+  "success_count": 8,
+  "failed": [],
+  "verification": [
+    {
+      "table": "macro_trade_us_korea_fred",
+      "rows": 4112
+    },
+    {
+      "table": "macro_trade_us_korea_monthly",
+      "rows": 3478
+    },
+    {
+      "table": "macro_trade_us_quarterly_nipa",
+      "rows": 634
+    },
+    {
+      "table": "macro_trade_us_korea_metadata",
+      "rows": 8
+    }
+  ],
+  "latest": [
+    [
+      "XTEXVA01KRM667S",
+      "South Korea",
+      "exports",
+      "World",
+      "merchandise_commodities",
+      "monthly",
+      "2026-03-01",
+      84245570000.0,
+      "USD, exchange-rate converted"
+    ],
+    [
+      "XTIMVA01KRM667S",
+      "South Korea",
+      "imports",
+      "World",
+      "merchandise_commodities",
+      "monthly",
+      "2026-03-01",
+      58307200000.0,
+      "USD, exchange-rate converted"
+    ],
+    [
+      "EXPKR",
+      "United States",
+      "exports",
+      "South Korea",
+      "goods",
+      "monthly",
+      "2026-04-01",
+      8131.6903,
+      "Millions of USD"
+    ],
+    [
+      "IMPKR",
+      "United States",
+      "imports",
+      "South Korea",
+      "goods",
+      "monthly",
+      "2026-04-01",
+      13563.9803,
+      "Millions of USD"
+    ],
+    [
+      "BOPTEXP",
+      "United States",
+      "exports",
+      "World",
+      "goods_and_services",
+      "monthly",
+      "2026-04-01",
+      327101.0,
+      "Millions of USD"
+    ],
+    [
+      "EXPGS",
+      "United States",
+      "exports",
+      "World",
+      "goods_and_services",
+      "quarterly",
+      "2026-01-01",
+      3526.176,
+      "Billions of USD, SAAR"
+    ],
+    [
+      "BOPTIMP",
+      "United States",
+      "imports",
+      "World",
+      "goods_and_services",
+      "monthly",
+      "2026-04-01",
+      382982.0,
+      "Millions of USD"
+    ],
+    [
+      "IMPGS",
+      "United States",
+      "imports",
+      "World",
+      "goods_and_services",
+      "quarterly",
+      "2026-01-01",
+      4421.218,
+      "Billions of USD, SAAR"
+    ]
+  ]
+}

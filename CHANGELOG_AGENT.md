@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-06-24 19:05 - Hermes
+- Task: Git 작업상태 정리. 이전 작업에서 생성됐지만 미추적 상태였던 정식 팩터/테스트/raw 산출물은 커밋 대상으로 편입하고, 임시 로그/덤프 파일은 사용자 승인 후 삭제.
+- Changed:
+  - `scripts/01_collect/collect_us_korea_trade_once.py` — 프로젝트 `.env`의 `FRED_API_KEY`를 안전 로드해 FRED API observations를 우선 사용하고 graph CSV를 fallback으로 사용하는 변경분 정식 반영.
+  - `docs_cache/opendartreader_corp_codes_20260609.pkl` → `docs_cache/opendartreader_corp_codes_20260619.pkl` 교체 반영.
+- Created/Staged:
+  - 신규 팩터 builder 14개: ADR gap, commodity momentum, KR credit spread, foreign exhaustion, USD/KRW FX, macro search sentiment, market breadth, market money flow, market valuation level, KR PPI inflation cycle, SOXX semicyle, KR/US trade balance, KR yield curve, regression analysis.
+  - 신규 테스트 13개: 위 팩터군별 테스트 파일.
+  - `data/raw/macro/trade_stats/` FRED 원천 CSV/요약/metadata 13개.
+- Removed:
+  - 임시/로그 파일 `error.log`, `logs_investor_trend_collect.out`, `scratch_dart_collect_log2.txt`, 잘못 생성된 `CUsersfckinAppDataLocalTempcatalogs_dump.txt`.
+- Verification:
+  - `python -m py_compile ...` 신규/변경 분석 스크립트 전체 통과.
+  - `pytest tests/test_adr_gap_signal_factors.py ... tests/test_yield_curve_kr_factors.py -q` → 123 passed.
+  - raw `trade_stats`: long 4,112 rows(1947-01-01~2026-04-01), monthly 3,478 rows(1957-01-01~2026-04-01), quarterly 634 rows(1947-01-01~2026-01-01), metadata 8 rows 확인.
+  - SQLite 주요 테이블 확인: `macro_trade_us_korea_fred` 4,112 rows, `factor_trade_balance_kr_us_month` 832 rows, `factor_yield_curve_kr_month` 198 rows, `factor_soxx_semicycle_month` 121 rows 등.
+- Caveats:
+  - 이번 작업은 기존 미정리 산출물의 Git 정리/커밋 편입이며 신규 데이터 수집 또는 DB 재적재는 수행하지 않음.
+
 ## 2026-06-19 21:00 - Hermes
 - Task: 사용자의 추가 검증 요청에 따라 ROE/품질 fallback 변경분을 독립 리뷰·정적 점검·회귀 검증.
 - Findings/Fixes:

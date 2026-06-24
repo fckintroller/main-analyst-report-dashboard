@@ -2,6 +2,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 from io import StringIO
 import json
+import os
 import shutil
 import sqlite3
 import time
@@ -13,8 +14,25 @@ ROOT = Path(r'C:\claude cowork\01_projects\Anal_reports')
 RAW_DIR = ROOT / 'data' / 'raw' / 'macro' / 'trade_stats'
 DB_DIR = ROOT / 'data' / 'database'
 DB_PATH = DB_DIR / 'quant_data.sqlite'
+ENV_PATH = ROOT / '.env'
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 DB_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def load_project_env():
+    """Load project .env keys into process env without printing secret values."""
+    if not ENV_PATH.exists():
+        return
+    for line in ENV_PATH.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, value = line.split('=', 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+load_project_env()
+FRED_API_KEY = os.environ.get('FRED_API_KEY')
 
 now = datetime.now(timezone.utc).astimezone()
 ts = now.strftime('%Y%m%d_%H%M%S')
@@ -76,7 +94,8 @@ SERIES = {
 }
 
 
-def download_text(url, attempts=4, timeout=90):
+def download_text(url, attempts=2, timeout=20):
+    """Download FRED graph CSV; kept as no-key fallback, but this endpoint can timeout."""
     last_error = None
     for attempt in range(1, attempts + 1):
         try:
@@ -84,12 +103,54 @@ def download_text(url, attempts=4, timeout=90):
             r.raise_for_status()
             if len(r.text) < 20:
                 raise RuntimeError(f'response too small: {len(r.text)} chars')
-            return r.text
+            return r.text, 'FRED graph CSV'
         except Exception as exc:
             last_error = exc
             if attempt < attempts:
                 time.sleep(2 * attempt)
     raise RuntimeError(f'failed to download {url}: {last_error}')
+
+
+def download_api_csv(series_id, attempts=3, timeout=30):
+    """Download FRED observations via API and convert to graph-CSV-compatible text."""
+    if not FRED_API_KEY:
+        raise RuntimeError('FRED_API_KEY is not configured')
+    url = 'https://api.stlouisfed.org/fred/series/observations'
+    params = {
+        'series_id': series_id,
+        'api_key': FRED_API_KEY,
+        'file_type': 'json',
+        'observation_start': '1900-01-01',
+    }
+    last_error = None
+    for attempt in range(1, attempts + 1):
+        try:
+            r = requests.get(url, params=params, headers={'User-Agent': 'Mozilla/5.0'}, timeout=timeout)
+            r.raise_for_status()
+            payload = r.json()
+            observations = payload.get('observations', [])
+            if not observations:
+                raise RuntimeError('FRED API returned no observations')
+            df = pd.DataFrame(observations)[['date', 'value']].rename(columns={'date': 'observation_date', 'value': series_id})
+            return df.to_csv(index=False), 'FRED API observations'
+        except Exception as exc:
+            last_error = exc
+            if attempt < attempts:
+                time.sleep(2 * attempt)
+    raise RuntimeError(f'failed to download FRED API series {series_id}: {last_error}')
+
+
+def download_series_csv(series_id):
+    """Prefer FRED API when a project key exists; fallback to public graph CSV."""
+    if FRED_API_KEY:
+        try:
+            return download_api_csv(series_id)
+        except Exception as api_exc:
+            try:
+                return download_text(f'https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}')
+            except Exception as graph_exc:
+                raise RuntimeError(f'api failed: {api_exc}; graph csv failed: {graph_exc}')
+    return download_text(f'https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}')
 
 
 backup_path = None
@@ -102,7 +163,7 @@ metadata = []
 for series_id, spec in SERIES.items():
     url = f'https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}'
     try:
-        text = download_text(url)
+        text, source_name = download_series_csv(series_id)
         raw_path = RAW_DIR / f'fred_{series_id}.csv'
         raw_path.write_text(text, encoding='utf-8')
         df = pd.read_csv(StringIO(text))
@@ -124,7 +185,7 @@ for series_id, spec in SERIES.items():
                 'seasonal_adjustment': spec['seasonal_adjustment'],
                 'series_id': series_id,
                 'series_title': spec['title'],
-                'source': 'FRED graph CSV',
+                'source': source_name,
                 'source_url': f'https://fred.stlouisfed.org/series/{series_id}',
                 'downloaded_at': downloaded_at,
             })
