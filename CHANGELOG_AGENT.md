@@ -4,6 +4,27 @@
 
 ---
 
+## 2026-07-04 (10차) - Claude
+- Task: Discord 종목 추천 일별 팩터 혼합 (A방식)
+- 배경: score_base_5factor가 월간 팩터 5종 평균이라 한 달 내내 순위 불변 → 사용자 피드백
+- Changed:
+  - `scripts/05_notify/notify_discord.py` 전면 재작성
+    - `load_daily_factors()`: 3개 일별 스냅샷 CSV 로드
+      - `minute_tick_snapshot.csv` → `minute_tick_score` (당일 체결강도)
+      - `target_price_snapshot.csv` → `target_price_score` (타겟가격 괴리)
+      - `news_sentiment_snapshot.csv` → `news_sentiment_score` (뉴스 감성)
+    - `compute_daily_score()`: 가중 합산 산식
+      - score_daily_adjusted = 0.60×base + 0.15×tick + 0.15×tp + 0.10×news
+      - 일별 팩터 없는 종목은 해당 가중치를 base에 재배분 (정규화)
+    - `get_top_candidates()`: score_daily_adjusted 기준 Top N 정렬
+    - `build_stock_embed()`: "⚡ 오늘 일별 팩터" 필드 추가 (체결강도/타겟가격 표시)
+    - `build_header_embed()`: 일별 반영 종목 수 표시
+- Verified:
+  - py_compile OK
+  - 2766종목 로드, 체결강도 397종 · 타겟가격 613종 · 뉴스감성 432종 반영
+  - 기존 순위(삼성전자우>롯데에너지>가온전선) → 조정 후(삼성전자우>가온전선>롯데에너지) 변동 확인
+- 주의: 체결강도는 당일 장중 수집(08:55~15:45)이 선행되어야 정확. 미수집 시 해당 가중치 base에 재배분
+
 ## 2026-07-04 (9차) - Claude
 - Task: 브라우저 빈 데이터 전체 점검 및 WTI/Gold 차트 복원
 - Changed:
