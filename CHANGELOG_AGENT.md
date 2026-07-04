@@ -4,6 +4,33 @@
 
 ---
 
+## 2026-07-04 (9차) - Claude
+- Task: 브라우저 빈 데이터 전체 점검 및 WTI/Gold 차트 복원
+- Changed:
+  - `scripts/03_analyze/export_web_data.py`
+    - `_records_from_csv()` 수정: `Unnamed: 0` 컬럼을 `Date`로 표준화
+      - WTI.csv / Gold.csv 등 pandas 인덱스 컬럼이 없는 CSV에서 발생하던 문제
+      - quant_ui.js가 `createLineChart(..., "Date", "Close")` 로 날짜키 "Date"를 기대하는데 실제 컬럼이 "Unnamed: 0"이어서 차트 빈 상태
+    - `_compute_derived_macro()` 섹션 12: worldbank 비철금속 데이터 → `stooq_nonferrous_metals_latest` 생성 (Aluminum/Copper/Lead/Nickel/Tin/Zinc 6종, MoM 변화율 포함)
+    - `_compute_derived_macro()` 섹션 13: 글로벌 지수 일별 90일 → `global_indices_daily` 생성 (1656 rows)
+- Re-ran: `python scripts/03_analyze/export_web_data.py`
+- Verified (JS 직접 확인):
+  - macro.WTI: 4151행, 날짜키 "Date" ✓
+  - macro.Gold: 4150행, 날짜키 "Date" ✓
+  - macro.DXY: 2514행 ✓
+  - 차트 컨테이너별 canvas 수:
+    - macro-commodity-charts: 3 (DXY/WTI/Gold)
+    - macro-leading-cli-charts: 9, sentiment: 3, derived: 4, naver: 6
+    - macro-rates-kor-charts: 9, dynamic: 1
+    - macro-global-charts: 2 (M2/WALCL)
+    - macro-industry-trends-charts: 5, monthly: 5
+    - quant-sector-momentum-charts: 4
+    - trade-trend-charts: 2
+  - 비철금속 테이블: Aluminum 3,439$/t -6.19%, Copper 13,552$/t +0.07% 등 6종 ✓
+  - 경제 지표 캘린더: 2026-07 FOMC/CPI 일정 표시 ✓
+  - 회귀 분석 신호: 테이블 정상, 신뢰도 경고 표시 ✓
+- 주의: 스크린샷이 chart.js 렌더링 중 timeout 발생 (JS 응답은 정상, 렌더러 busy 현상)
+
 ## 2026-07-03 (8차) - Claude
 - Task: 품목별 수출 단가/물량 분해 테이블 — sub-item MoM 추가 (7차 YoY에 이어)
 - Changed:

@@ -1,4 +1,4 @@
-﻿import glob
+import glob
 import json
 import logging
 import os
@@ -10,9 +10,266 @@ logger = logging.getLogger(__name__)
 
 
 def _records_from_csv(file_path, **read_csv_kwargs):
+    read_csv_kwargs.setdefault("encoding", "utf-8-sig")
     df = pd.read_csv(file_path, **read_csv_kwargs)
+    # pandas가 인덱스 컬럼을 "Unnamed: 0"으로 저장한 경우 "Date"로 표준화
+    if "Unnamed: 0" in df.columns:
+        df.rename(columns={"Unnamed: 0": "Date"}, inplace=True)
+    # 날짜 인덱스 컬럼을 제외한 수치 컬럼이 모두 NaN인 빈 행 제거
+    date_cols = {"Date", "date", "DATE"}
+    numeric_cols = [c for c in df.columns if c not in date_cols]
+    if numeric_cols:
+        df.dropna(subset=numeric_cols, how="all", inplace=True)
     df.fillna("", inplace=True)
     return df.to_dict(orient="records")
+
+
+def _is_yfinance_v2_csv(file_path) -> bool:
+    """yfinance v2가 생성하는 3행 멀티헤더 CSV 여부 감지."""
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            return f.readline().strip().startswith("Price,")
+    except Exception:
+        return False
+
+
+def _records_from_yfinance_v2_csv(file_path) -> list[dict]:
+    """yfinance v2 3행 헤더 CSV → {Date, Close, High, Low, Open, Volume} 레코드.
+
+    행1: Price,Close,High,Low,Open,Volume  ← 실제 컬럼명
+    행2: Ticker,XXXXX,...                  ← ticker 이름 (무시)
+    행3: Date,,,,,                          ← 날짜 인덱스 선언 (무시)
+    행4+: 2016-06-27,96.54,...             ← 실제 데이터
+    """
+    df_raw = pd.read_csv(file_path, header=None)
+    col_names = df_raw.iloc[0].tolist()   # ['Price', 'Close', ...]
+    col_names[0] = "Date"                  # Price → Date
+    df = df_raw.iloc[3:].copy()           # 행1~3 건너뜀, 데이터만
+    df.columns = col_names
+    df = df.dropna(how="all")
+    df.fillna("", inplace=True)
+    return df.to_dict(orient="records")
+
+
+def _normalize_market_funds_records(file_path: Path) -> list[dict]:
+    """Naver 고객예탁금/신용잔고 표를 웹 차트용 표준 컬럼으로 정리.
+
+    원본은 MultiIndex HTML 컬럼이 `고객예탁금_고객예탁금`,
+    `고객예탁금_고객예탁금.1`처럼 저장된다. UI가 위치 기반 키를 쓰면 컬럼 순서가
+    바뀌거나 결측/문자열이 섞일 때 빈 차트가 되므로 표준 영문 alias를 추가한다.
+    금액 단위는 원본 그대로 유지하고, 차트에서 억원으로 변환한다.
+    """
+    df = pd.read_csv(file_path)
+    if df.empty:
+        return []
+    df = df.dropna(how="all").copy()
+    colmap = {
+        "날짜_날짜": "date_raw",
+        "고객예탁금_고객예탁금": "customer_deposit",
+        "고객예탁금_고객예탁금.1": "customer_deposit_change",
+        "신용잔고_신용잔고": "credit_balance",
+        "신용잔고_신용잔고.1": "credit_balance_change",
+        "펀드_주식형": "equity_fund",
+        "펀드_주식형.1": "equity_fund_change",
+        "펀드_혼합형": "mixed_fund",
+        "펀드_혼합형.1": "mixed_fund_change",
+        "펀드_채권형": "bond_fund",
+        "펀드_채권형.1": "bond_fund_change",
+    }
+    for src, dst in colmap.items():
+        if src in df.columns and dst not in df.columns:
+            df[dst] = df[src]
+    if "date_raw" not in df.columns:
+        df["date_raw"] = df.iloc[:, 0]
+    parsed = pd.to_datetime(df["date_raw"].astype(str), format="%y.%m.%d", errors="coerce")
+    df["date"] = parsed.dt.strftime("%Y-%m-%d").fillna(df["date_raw"].astype(str))
+    numeric_cols = [c for c in colmap.values() if c != "date_raw"]
+    for col in numeric_cols:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+    df = df[df["date"].astype(str).ne("")]
+    df = df.sort_values("date")
+    preferred = [
+        "date", "date_raw", "customer_deposit", "customer_deposit_change",
+        "credit_balance", "credit_balance_change", "equity_fund", "equity_fund_change",
+        "mixed_fund", "mixed_fund_change", "bond_fund", "bond_fund_change",
+    ]
+    keep = [c for c in preferred if c in df.columns]
+    out = df[keep].copy()
+    out.fillna("", inplace=True)
+    return out.to_dict(orient="records")
+
+
+def _build_factor_master_payload(raw_data_dir: Path) -> dict:
+    """Factor Data Mart 산출물을 웹 payload로 적재.
+
+    `build_factor_master_panel.py`가 생성한 CSV를 그대로 읽어 월간 전체 패널과
+    최신월 랭킹/품질/헬스 리포트를 함께 노출한다. CSV가 아직 없으면 빈 payload를
+    반환해 기존 export 흐름을 깨지 않되, logger로 원인을 남긴다.
+    """
+    factors_dir = Path(raw_data_dir) / "factors"
+    panel_path = factors_dir / "factor_master_month.csv"
+    health_path = factors_dir / "factor_health_report.csv"
+    quality_path = factors_dir / "factor_data_quality_month.csv"
+    source_staleness_path = factors_dir / "factor_source_staleness.csv"
+    catalog_path = factors_dir / "factor_master_catalog.csv"
+
+    empty_payload = {
+        "as_of": "",
+        "rows": [],
+        "latest_rows": [],
+        "health": [],
+        "quality_latest": [],
+        "source_staleness": [],
+        "catalog": [],
+        "summary": {"row_count": 0, "ticker_count": 0, "period_count": 0},
+    }
+    if not panel_path.exists():
+        logger.warning("factor_master_month.csv 없음: %s", panel_path)
+        return empty_payload
+
+    try:
+        panel = pd.read_csv(panel_path, dtype={"ticker": str})
+        if panel.empty or "period" not in panel.columns or "ticker" not in panel.columns:
+            logger.warning("factor_master_month.csv 비어있거나 필수 컬럼 없음: %s", panel_path)
+            return empty_payload
+
+        panel["ticker"] = panel["ticker"].astype(str).str.zfill(6)
+        panel.fillna("", inplace=True)
+        latest_period = str(panel["period"].max())
+        latest = panel[panel["period"].astype(str) == latest_period].copy()
+        if "composite_score" in latest.columns:
+            latest["_sort_score"] = pd.to_numeric(latest["composite_score"], errors="coerce")
+            latest = latest.sort_values(["_sort_score", "ticker"], ascending=[False, True]).drop(columns=["_sort_score"])
+
+        quality_latest = []
+        if quality_path.exists():
+            quality = pd.read_csv(quality_path, dtype={"ticker": str})
+            if not quality.empty and "period" in quality.columns:
+                quality["ticker"] = quality["ticker"].astype(str).str.zfill(6)
+                quality.fillna("", inplace=True)
+                quality_latest = quality[quality["period"].astype(str) == latest_period].to_dict(orient="records")
+
+        health = _records_from_csv(health_path) if health_path.exists() else []
+        source_staleness = _records_from_csv(source_staleness_path) if source_staleness_path.exists() else []
+        catalog = _records_from_csv(catalog_path) if catalog_path.exists() else []
+        ic_summary_path = factors_dir / "factor_ic_summary.csv"
+        ic_monthly_path = factors_dir / "factor_ic_monthly.csv"
+        ic_summary = _records_from_csv(ic_summary_path) if ic_summary_path.exists() else []
+        ic_monthly = _records_from_csv(ic_monthly_path) if ic_monthly_path.exists() else []
+        summary = {
+            "row_count": int(len(panel)),
+            "ticker_count": int(panel["ticker"].nunique()),
+            "period_count": int(panel["period"].nunique()),
+            "latest_period": latest_period,
+            "latest_row_count": int(len(latest)),
+            "avg_confidence_score": _safe_number(pd.to_numeric(latest.get("confidence_score"), errors="coerce").mean()) if len(latest) else None,
+            "avg_coverage_count": _safe_number(pd.to_numeric(latest.get("coverage_count"), errors="coerce").mean()) if len(latest) else None,
+            "avg_data_quality_penalty": _safe_number(pd.to_numeric(latest.get("data_quality_penalty"), errors="coerce").mean()) if len(latest) else None,
+            "usable_for_trading_count": int(pd.to_numeric(latest.get("usable_for_trading_flag", pd.Series(dtype=float)), errors="coerce").fillna(0).sum()) if len(latest) else 0,
+            "source_failure_rows": int(pd.to_numeric(latest.get("source_failure_flag", pd.Series(dtype=float)), errors="coerce").fillna(0).sum()) if len(latest) else 0,
+            "stale_factor_rows": int(pd.to_numeric(latest.get("stale_factor_flag", pd.Series(dtype=float)), errors="coerce").fillna(0).sum()) if len(latest) else 0,
+        }
+
+        return {
+            "as_of": latest_period,
+            "rows": panel.to_dict(orient="records"),
+            "latest_rows": latest.to_dict(orient="records"),
+            "health": health,
+            "quality_latest": quality_latest,
+            "source_staleness": source_staleness,
+            "catalog": catalog,
+            "summary": summary,
+            "ic_summary": ic_summary,
+            "ic_monthly": ic_monthly,
+        }
+    except Exception as e:
+        logger.warning("factor_master payload 로드 실패: %s", e)
+        return empty_payload
+
+
+
+def _build_macro_factor_payload(raw_data_dir: Path) -> dict:
+    """Build dashboard payload for macro factor panel freshness and latest signals."""
+    factors_dir = raw_data_dir / "factors"
+    quant_dir = raw_data_dir / "macro" / "quant_macro_indicators"
+
+    def read_csv(path: Path) -> pd.DataFrame:
+        if not path.exists():
+            return pd.DataFrame()
+        df = pd.read_csv(path)
+        df.fillna("", inplace=True)
+        return df
+
+    def latest_by_key(df: pd.DataFrame, date_col: str, key_col: str, value_col: str, limit: int = 20) -> list[dict]:
+        if df.empty or not {date_col, key_col, value_col}.issubset(df.columns):
+            return []
+        work = df.copy()
+        work[date_col] = pd.to_datetime(work[date_col], errors="coerce")
+        work = work.dropna(subset=[date_col]).sort_values([key_col, date_col])
+        latest = work.groupby(key_col, as_index=False).tail(1).sort_values(key_col)
+        latest[date_col] = latest[date_col].dt.strftime("%Y-%m-%d")
+        return latest.head(limit).to_dict(orient="records")
+
+    macro_spread = read_csv(factors_dir / "macro_spread_month.csv")
+    macro_spread_catalog = read_csv(factors_dir / "macro_spread_catalog.csv")
+    regime = read_csv(factors_dir / "market_macro_regime_month.csv")
+    quant_daily = read_csv(quant_dir / "quant_macro_factors_daily.csv")
+    quant_monthly = read_csv(quant_dir / "quant_macro_factors_monthly.csv")
+    quant_meta = read_csv(quant_dir / "quant_macro_metadata.csv")
+
+    latest_spread = []
+    if not macro_spread.empty and "period" in macro_spread.columns:
+        latest_spread = macro_spread.sort_values("period").tail(24).to_dict(orient="records")
+    latest_regime = []
+    if not regime.empty and "period" in regime.columns:
+        latest_regime = regime.sort_values("period").tail(24).to_dict(orient="records")
+
+    meta_summary = []
+    if not quant_meta.empty:
+        cols = [c for c in ["indicator", "name", "status", "rows", "start_date", "end_date", "message"] if c in quant_meta.columns]
+        meta_summary = quant_meta[cols].sort_values(cols[0] if cols else quant_meta.columns[0]).to_dict(orient="records")
+
+    payload = {
+        "macro_spread_month": latest_spread,
+        "macro_spread_catalog": macro_spread_catalog.to_dict(orient="records") if not macro_spread_catalog.empty else [],
+        "market_macro_regime_month": latest_regime,
+        "quant_daily_latest": latest_by_key(quant_daily, "date", "factor", "value", limit=30),
+        "quant_monthly_latest": latest_by_key(quant_monthly, "date", "factor", "value", limit=30),
+        "metadata_status": meta_summary,
+        "summary": {
+            "macro_spread_rows": int(len(macro_spread)),
+            "macro_spread_latest": str(macro_spread["period"].max()) if not macro_spread.empty and "period" in macro_spread.columns else "",
+            "regime_rows": int(len(regime)),
+            "regime_latest": str(regime["period"].max()) if not regime.empty and "period" in regime.columns else "",
+            "quant_daily_rows": int(len(quant_daily)),
+            "quant_daily_latest": str(quant_daily["date"].max()) if not quant_daily.empty and "date" in quant_daily.columns else "",
+            "quant_monthly_rows": int(len(quant_monthly)),
+            "quant_monthly_latest": str(quant_monthly["date"].max()) if not quant_monthly.empty and "date" in quant_monthly.columns else "",
+        },
+    }
+    return payload
+
+
+def _build_paper_trading_payload(raw_data_dir: Path) -> dict:
+    paper_dir = Path(raw_data_dir) / "paper_trading"
+    empty = {"summary": {}, "account": [], "positions": [], "orders": [], "decisions": [], "trades": []}
+    if not paper_dir.exists():
+        return empty
+    try:
+        summary_path = paper_dir / "paper_summary.json"
+        summary = json.loads(summary_path.read_text(encoding="utf-8")) if summary_path.exists() else {}
+        return {
+            "summary": summary,
+            "account": _records_from_csv(paper_dir / "paper_account_daily.csv") if (paper_dir / "paper_account_daily.csv").exists() else [],
+            "positions": _records_from_csv(paper_dir / "paper_positions.csv") if (paper_dir / "paper_positions.csv").exists() else [],
+            "orders": _records_from_csv(paper_dir / "paper_orders.csv") if (paper_dir / "paper_orders.csv").exists() else [],
+            "decisions": _records_from_csv(paper_dir / "paper_decisions.csv") if (paper_dir / "paper_decisions.csv").exists() else [],
+            "trades": _records_from_csv(paper_dir / "paper_trades.csv") if (paper_dir / "paper_trades.csv").exists() else [],
+        }
+    except Exception as e:
+        logger.warning("paper_trading payload 로드 실패: %s", e)
+        return empty
 
 
 def _load_krx_names():
@@ -39,17 +296,31 @@ def _safe_number(value):
         return None
 
 
+def _dedupe_latest_by_ticker(df: pd.DataFrame, ticker_col: str = "ticker", date_col: str | None = None) -> pd.DataFrame:
+    """Return one latest row per ticker to prevent web payload duplicate cards.
+
+    Several raw/fallback factor sources can contain multiple statement rows for the same
+    ticker. Merging those directly into the stock-attractiveness base multiplies rows and
+    renders duplicate entries in "오늘의 후보". Keep the last row after ticker/date sort.
+    """
+    if df is None or df.empty or ticker_col not in df.columns:
+        return pd.DataFrame()
+    out = df.copy()
+    out[ticker_col] = out[ticker_col].astype(str).str.zfill(6)
+    sort_cols = [ticker_col]
+    if date_col and date_col in out.columns:
+        sort_cols.append(date_col)
+    out = out.sort_values(sort_cols)
+    return out.groupby(ticker_col, as_index=False).tail(1).sort_values(ticker_col).reset_index(drop=True)
+
+
 def _latest_table_rows(conn, table_name, ticker_col="ticker", date_col="period"):
     """테이블별 최신 행을 ticker 기준 1건으로 축약."""
     try:
         df = pd.read_sql_query(f'SELECT * FROM "{table_name}"', conn)
     except Exception:
         return pd.DataFrame()
-    if df.empty or ticker_col not in df.columns:
-        return pd.DataFrame()
-    if date_col in df.columns:
-        df = df.sort_values([ticker_col, date_col])
-    return df.groupby(ticker_col, as_index=False).tail(1)
+    return _dedupe_latest_by_ticker(df, ticker_col=ticker_col, date_col=date_col)
 
 
 def _parse_earnings_consensus_record(item):
@@ -216,7 +487,7 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
                     "debt_ratio_score", "fcf_to_assets_score", "financial_quality_score",
                     "balance_sheet_quality_score", "cashflow_quality_score", "earnings_stability_score", "quality_source",
                 ]),
-                ("factor_stock_price_momentum_month", "period", ["close", "ret_1m", "ret_3m", "ret_6m", "momentum_score", "turnover_spike_flag"]),
+                ("factor_stock_price_momentum_month", "period", ["close", "ret_1m", "ret_3m", "ret_6m", "momentum_score", "turnover_spike_flag", "month_volatility"]),
                 ("factor_size_month", "period", ["market_cap", "size_percentile_cross", "small_cap_score"]),
                 ("factor_liquidity_turnover_month", "period", ["turnover_value_avg", "turnover_ratio", "liquidity_score"]),
                 ("factor_roe_trend_month", "period", ["roe", "roe_sector_pct_ts"]),
@@ -227,7 +498,32 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
                 ("factor_forward_per_snapshot", "snapshot_date", ["eps_growth_expected"]),
                 ("factor_earnings_momentum_snapshot", "snapshot_date", ["earnings_momentum_score", "op_profit_yoy", "latest_quarter"]),
                 ("factor_piotroski_snapshot", "bsns_year", ["f_score", "f_score_norm"]),
+                ("factor_consensus_revision_snapshot", "snapshot_date", [
+                    "target_price_score", "revision_acceleration_score",
+                    "eps_revision_1m", "eps_revision_3m",
+                    "target_price_revision_1m", "target_price_revision_3m",
+                    "strong_swing_candidate_flag",
+                ]),
+                ("factor_minute_tick_snapshot", "trade_date", [
+                    "minute_tick_score", "buy_print_ratio_30m", "buy_volume_ratio_30m",
+                    "intraday_momentum_30m", "volume_accel_5_25",
+                ]),
+                ("factor_news_sentiment_snapshot", "latest_headline_date", [
+                    "news_sentiment_score", "net_sentiment_ratio",
+                ]),
+                ("factor_insider_trading_month", "period", [
+                    "insider_signal_score", "net_shares_pct_cross",
+                ]),
+                ("factor_disclosure_event_snapshot", "period", [
+                    "shareholder_return_event_score", "dilution_risk_score",
+                    "capex_growth_event_score", "contract_win_event_score", "governance_risk_score",
+                ]),
+                ("model_stock_signals", "period", [
+                    "model_rank", "model_score", "model_decision", "model_pred_fwd_1m",
+                    "model_confidence", "model_reason",
+                ]),
             ]
+
             for table, date_col, cols in table_specs:
                 df = _latest_table_rows(conn, table, date_col=date_col)
                 if df.empty:
@@ -269,6 +565,7 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
             market_cap_map = dict(zip(tickers, market_cap_series))
             dart_quality = builder.build_dart_financial_quality_snapshot(raw_fin, sector_map, market_cap_map)
             if not dart_quality.empty:
+                dart_quality = _dedupe_latest_by_ticker(dart_quality, date_col="bsns_year")
                 dart_quality["dart_roe"] = dart_quality["net_income"] / dart_quality["total_equity"]
                 dart_quality.loc[dart_quality["total_equity"] <= 0, "dart_roe"] = pd.NA
                 dart_quality["dart_roe_score"] = dart_quality.groupby("sector", dropna=False)["dart_roe"].rank(pct=True)
@@ -322,6 +619,12 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
             {"key": "cf_quality", "label": "현금흐름", "score": pct_score(rec.get("cashflow_quality_score")), "raw": rec.get("fcf_to_assets"), "raw_label": "FCF/자산"},
             {"key": "earnings", "label": "실적", "score": pct_score(rec.get("earnings_momentum_score")), "raw": rec.get("this_year_op_growth_pct"), "raw_label": "올해 영익 성장"},
             {"key": "reversal", "label": "반등 셋업", "score": pct_score(rec.get("meanrev_score")), "raw": rec.get("rsi_14"), "raw_label": "RSI"},
+            {"key": "news_sentiment", "label": "뉴스 감성", "score": pct_score(rec.get("news_sentiment_score")), "raw": None, "raw_label": None},
+            {"key": "minute_tick", "label": "분봉 체결강도", "score": pct_score(rec.get("minute_tick_score")), "raw": rec.get("buy_print_ratio_30m"), "raw_label": "매수체결비율"},
+            {"key": "insider_signal", "label": "내부자 신호", "score": pct_score(rec.get("insider_signal_score")), "raw": None, "raw_label": None},
+            {"key": "target_price", "label": "목표주가 상향", "score": pct_score(rec.get("target_price_score")), "raw": None, "raw_label": None},
+            {"key": "shorting_pressure", "label": "공매도 압력", "score": pct_score(rec.get("shorting_pressure_score")), "raw": rec.get("short_balance_ratio"), "raw_label": "공매도 잔고율"},
+            {"key": "shareholder_return_event", "label": "주주환원 공시", "score": pct_score(rec.get("shareholder_return_event_score")), "raw": None, "raw_label": None},
         ]
         return [p for p in profile if p.get("score") is not None or p.get("raw") is not None]
 
@@ -443,8 +746,27 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
             "earnings_momentum_score": _safe_number(r.get("earnings_momentum__earnings_momentum_score")),
             "op_profit_yoy": _safe_number(r.get("earnings_momentum__op_profit_yoy")),
             "f_score_norm": _safe_number(r.get("piotroski__f_score_norm")),
+            # ── 진입 타이밍 시나리오용 신규 팩터 필드 ──
+            "news_sentiment_score": _safe_number(r.get("news_sentiment__news_sentiment_score")),
+            "minute_tick_score": _safe_number(r.get("minute_tick__minute_tick_score")),
+            "buy_print_ratio_30m": _safe_number(r.get("minute_tick__buy_print_ratio_30m")),
+            "insider_signal_score": _safe_number(r.get("insider_trading__insider_signal_score")),
+            "target_price_score": _safe_number(r.get("consensus_revision__target_price_score")),
+            "strong_swing_candidate_flag": int(_safe_number(r.get("consensus_revision__strong_swing_candidate_flag")) or 0),
+            "shareholder_return_event_score": _safe_number(r.get("disclosure_event__shareholder_return_event_score")),
+            "dilution_risk_score": _safe_number(r.get("disclosure_event__dilution_risk_score")),
+            "governance_risk_score": _safe_number(r.get("disclosure_event__governance_risk_score")),
+            "model_rank": int(_safe_number(r.get("model_stock_signals__model_rank")) or 0) or None,
+            "model_score": _safe_number(r.get("model_stock_signals__model_score")),
+            "model_decision": first_text(r, "model_stock_signals__model_decision"),
+            "model_pred_fwd_1m": _safe_number(r.get("model_stock_signals__model_pred_fwd_1m")),
+            "model_confidence": _safe_number(r.get("model_stock_signals__model_confidence")),
+            "model_reason": first_text(r, "model_stock_signals__model_reason"),
+            "month_volatility": _safe_number(r.get("stock_price_momentum__month_volatility")),
+            "short_balance_ratio": _safe_number(r.get("shorting__balance_ratio")),
         }
         rec.update(consensus_map.get(t, {}))
+
         for score_name, cols in score_cols.items():
             vals = [_safe_number(r.get(c)) for c in cols]
             vals = [v for v in vals if v is not None]
@@ -480,6 +802,35 @@ def _build_stock_attractiveness(raw_data_dir, krx_dict):
             (rec.get("valuation_score"), 0.15),
             (rec.get("flow_score"), 0.10),
             (rec.get("f_score_norm"), 0.10),
+        ])
+        # ── 단타/스윙 진입 타이밍 시나리오 ──
+        rec["pullback_rebound_score"] = weighted_score([
+            (rec.get("momentum_score"),       0.30),  # 중기 모멘텀 양호
+            (rec.get("meanrev_score"),        0.30),  # 단기 RSI/볼린저 과매도 → 반등 기회
+            (rec.get("flow_score"),           0.20),  # 외국인/기관 수급 유지
+            (rec.get("news_sentiment_score"), 0.10),  # 뉴스 부정 없음
+            (rec.get("minute_tick_score"),    0.10),  # 분봉 매수체결강도 회복
+        ])
+        rec["breakout_continuation_score"] = weighted_score([
+            (rec.get("momentum_score"),       0.35),  # 52주 고가 근접(중기 추세 강)
+            (rec.get("flow_score"),           0.25),  # 외국인/기관+섹터 ETF 수급 유입
+            (rec.get("liquidity_score"),      0.15),  # 거래량 20일 대비 급증 근사
+            (rec.get("minute_tick_score"),    0.15),  # 분봉 매수강도(거래량 가속)
+            (rec.get("news_sentiment_score"), 0.10),  # 뉴스/공시 이벤트 긍정
+        ])
+        rec["short_squeeze_candidate_score"] = weighted_score([
+            (rec.get("shorting_pressure_score"), 0.35),  # 공매도 잔고율 높음
+            (rec.get("momentum_score"),          0.25),  # 주가 강세(커버링 진행)
+            (rec.get("news_sentiment_score"),    0.15),  # 긍정 뉴스
+            (rec.get("short_squeeze_flag"),      0.15),  # 스퀴즈 감지 플래그
+            (rec.get("minute_tick_score"),       0.10),  # 거래량 급증
+        ])
+        rec["turnaround_recovery_score"] = weighted_score([
+            (rec.get("earnings_momentum_score"),        0.30),  # 영업이익 흑자전환
+            (rec.get("target_price_score"),             0.25),  # EPS 컨센서스 상향(TP 상승여력)
+            (rec.get("valuation_score"),                0.20),  # 밸류 아직 저평가
+            (rec.get("insider_signal_score"),           0.15),  # 내부자 순매수
+            (rec.get("shareholder_return_event_score"), 0.10),  # 자사주 취득 이벤트
         ])
         score_vals = [rec.get(k) for k in score_cols if rec.get(k) is not None]
         rec["market_attractiveness_score"] = round(sum(score_vals) / len(score_vals), 4) if score_vals else None
@@ -540,15 +891,34 @@ def _compute_derived_macro(quant_data, raw_data_dir, include_stock_detail=False)
         if not path.exists():
             return {}
         try:
-            df = pd.read_csv(path, index_col=0, parse_dates=True).sort_index()
+            if _is_yfinance_v2_csv(path):
+                df_raw = pd.read_csv(path, header=None)
+                col_names = df_raw.iloc[0].tolist()
+                col_names[0] = "Date"
+                df = df_raw.iloc[3:].copy()
+                df.columns = col_names
+                date_vals = df["Date"].values
+                df = df.drop(columns=["Date"]).apply(pd.to_numeric, errors="coerce")
+                df.index = pd.to_datetime(date_vals, errors="coerce")
+            else:
+                df = pd.read_csv(path, index_col=0, parse_dates=True)
+            df = df.sort_index()
             for col in ["Close", "close", "Adj Close"]:
                 if col in df.columns:
                     s = df[col].dropna()
-                    return {d.strftime("%Y-%m-%d"): float(v) for d, v in s.items()}
+                    return {
+                        d.strftime("%Y-%m-%d"): float(v)
+                        for d, v in s.items()
+                        if hasattr(d, "strftime")
+                    }
             num = df.select_dtypes(include="number")
             if not num.empty:
                 s = num.iloc[:, 0].dropna()
-                return {d.strftime("%Y-%m-%d"): float(v) for d, v in s.items()}
+                return {
+                    d.strftime("%Y-%m-%d"): float(v)
+                    for d, v in s.items()
+                    if hasattr(d, "strftime")
+                }
         except Exception:
             pass
         return {}
@@ -711,7 +1081,55 @@ def _compute_derived_macro(quant_data, raw_data_dir, include_stock_detail=False)
             quant_data["macro"]["us_indpro_yoy"] = _records(res)
             logger.info(" - 파생: 미국 산업생산 YoY (%d rows)", len(res))
 
-    # ── 11. KOSPI 시총가중 PBR (개별 종목 fundamental에서 계산)
+    # ── 12. 비철금속 현재가 (worldbank 월간 기준 — 최신월 + MoM 변화율)
+    wb_nf_path = Path(raw_data_dir) / "macro" / "nonferrous_metals" / "worldbank_nonferrous_metals_monthly_long.csv"
+    if wb_nf_path.exists():
+        try:
+            wb_df = pd.read_csv(wb_nf_path)
+            if not wb_df.empty and "metal_name" in wb_df.columns:
+                wb_df["date"] = pd.to_datetime(wb_df["date"])
+                rows = []
+                for metal, grp in wb_df.groupby("metal_name"):
+                    grp = grp.sort_values("date")
+                    if len(grp) < 2:
+                        continue
+                    latest = grp.iloc[-1]
+                    prev = grp.iloc[-2]
+                    cur_price = latest["price_usd"]
+                    prev_price = prev["price_usd"]
+                    if prev_price and prev_price != 0:
+                        chg = round((cur_price - prev_price) / prev_price * 100, 2)
+                        chg_str = f"+{chg}%" if chg >= 0 else f"{chg}%"
+                    else:
+                        chg_str = ""
+                    unit = str(latest.get("unit", "")).strip("() ").replace("/mt", "/t")
+                    rows.append({
+                        "metal": metal,
+                        "last": f"{cur_price:,.0f} {unit}" if cur_price else "--",
+                        "change_pct": chg_str,
+                        "period": str(latest.get("period", "")),
+                    })
+                if rows:
+                    quant_data["macro"]["stooq_nonferrous_metals_latest"] = rows
+                    logger.info(" - 비철금속 현재가 worldbank (%d 종)", len(rows))
+        except Exception as e:
+            logger.warning(" - 비철금속 로드 실패: %s", e)
+
+    # ── 13. 글로벌 주요 지수 (최근 90일)
+    gi_path = Path(raw_data_dir) / "macro" / "global_indices" / "global_indices_daily_long.csv"
+    if gi_path.exists():
+        try:
+            gi_df = pd.read_csv(gi_path, parse_dates=["date"])
+            if not gi_df.empty:
+                cutoff = gi_df["date"].max() - pd.Timedelta(days=90)
+                gi_recent = gi_df[gi_df["date"] >= cutoff].copy()
+                gi_recent["date"] = gi_recent["date"].dt.strftime("%Y-%m-%d")
+                quant_data["macro"]["global_indices_daily"] = gi_recent.to_dict(orient="records")
+                logger.info(" - 글로벌 지수 (%d rows)", len(gi_recent))
+        except Exception as e:
+            logger.warning(" - 글로벌 지수 로드 실패: %s", e)
+
+    # ── 14. KOSPI 시총가중 PBR (개별 종목 fundamental에서 계산)
     # pykrx KRX 인증 없이 사용 가능한 폴백: stock_detail 수집 데이터 활용
     # 기본 웹 export는 stock_detail 대용량 로드를 피하고 raw 파일 부작용도 만들지 않는다.
     if include_stock_detail:
@@ -1002,6 +1420,12 @@ def _build_regression_summary(raw_data_dir: Path) -> dict:
         timing_summary = {
             "signal":       base_mt.get("signal", "neutral"),
             "pred_pct":     base_mt.get("pred_pct", 0),
+            "raw_pred_pct": base_mt.get("raw_pred_pct"),
+            "stale_penalty": base_mt.get("stale_penalty", 0),
+            "signal_confidence": base_mt.get("signal_confidence", "high"),
+            "uses_forward_fill": base_mt.get("uses_forward_fill", False),
+            "stale_inputs": base_mt.get("stale_inputs", []),
+            "complete_period": base_mt.get("complete_period", ""),
             "r2":           base_mt.get("r2", 0),
             "adj_r2":       base_mt.get("adj_r2", 0),
             "periods":      base_mt.get("periods", 0),
@@ -1064,9 +1488,12 @@ def collect_quant_data(raw_data_dir, krx_dict=None, include_stock_detail=False):
     quant_data = {
         "macro": {},
         "money_flow": {},
+        "kiwoom_flow": {},
+        "trade_import_export": {},
         "sentiment": {},
         "valuation": {},
         "stock_attractiveness": {},
+        "paper_trading": {},
     }
 
     if include_stock_detail:
@@ -1086,7 +1513,7 @@ def collect_quant_data(raw_data_dir, krx_dict=None, include_stock_detail=False):
         "DEU_CLI", "DGS10", "DGS2", "DXY", "FRA_CLI", "GBR_CLI", "Gold",
         "IND_CLI", "JPN_CLI", "KOR_BASE_RATE", "KOR_CALL_RATE", "KOR_CD91",
         "KOR_CLI", "KOR_CORP_AA", "KOR_EXPORTS", "KOR_GOV10Y", "KOR_GOV3Y",
-        "KOR_GOV5Y", "M2SL", "NFCI", "STLFSI4", "TNX", "UMCSENT",
+        "KOR_GOV5Y", "KOR_PPI", "M2SL", "NFCI", "STLFSI4", "TNX", "UMCSENT",
         "UNRATE", "USA_CLI", "USD_KRW", "VIX", "WALCL", "WTI",
         # 파생지표 계산용 소스
         "Copper", "WTREGEN", "RRPONTSYD", "AAIIBULL", "AAIIBEAR", "EEM", "SOXX",
@@ -1104,7 +1531,10 @@ def collect_quant_data(raw_data_dir, krx_dict=None, include_stock_detail=False):
                     file,
                 )
                 continue
-            quant_data["macro"][name] = _records_from_csv(file)
+            if _is_yfinance_v2_csv(file):
+                quant_data["macro"][name] = _records_from_yfinance_v2_csv(file)
+            else:
+                quant_data["macro"][name] = _records_from_csv(file)
         except Exception as e:
             logger.warning("Error reading %s: %s", file, e)
 
@@ -1112,9 +1542,46 @@ def collect_quant_data(raw_data_dir, krx_dict=None, include_stock_detail=False):
     for file in glob.glob(str(raw_data_dir / "money_flow" / "*.csv")):
         name = Path(file).stem
         try:
-            quant_data["money_flow"][name] = _records_from_csv(file)
+            if name == "market_funds_trend":
+                quant_data["money_flow"][name] = _normalize_market_funds_records(Path(file))
+            else:
+                quant_data["money_flow"][name] = _records_from_csv(file)
         except Exception as e:
             logger.warning("Error reading %s: %s", file, e)
+
+    # 2-b. Kiwoom intraday flow snapshots (bounded latest payloads)
+    kiwoom_flow_files = {
+        "intraday_market_flow": raw_data_dir / "kiwoom" / "intraday_market_flow" / "latest_market_flow.json",
+        "candidate_stock_flow": raw_data_dir / "kiwoom" / "candidate_stock_flow" / "latest_candidate_flow.json",
+        "market_permission": raw_data_dir / "kiwoom" / "market_permission" / "latest_market_permission.json",
+        "candidate_flow_score": raw_data_dir / "kiwoom" / "candidate_flow_score" / "latest_candidate_flow_score.json",
+        "entry_timing": raw_data_dir / "kiwoom" / "entry_timing" / "latest_entry_timing.json",
+        "paper_decisions": raw_data_dir / "kiwoom" / "paper_decisions" / "latest_paper_decisions.json",
+        "portfolio_state": raw_data_dir / "kiwoom" / "portfolio_state" / "latest_portfolio_state.json",
+        "realtime_conditions": raw_data_dir / "kiwoom" / "realtime_conditions" / "latest_realtime_conditions.json",
+    }
+
+    for key, filepath in kiwoom_flow_files.items():
+        if filepath.exists():
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    quant_data["kiwoom_flow"][key] = json.load(f)
+                rows = quant_data["kiwoom_flow"][key].get("rows", [])
+                row_count = len(rows) if isinstance(rows, list) else 1
+                logger.info(" - kiwoom_flow/%s: %d rows loaded", key, row_count)
+            except Exception as e:
+                logger.warning("Error reading %s: %s", filepath, e)
+
+    # 2-c. ECOS + Korea Customs import/export analysis
+    trade_payload = raw_data_dir / "trade_import_export" / "latest_trade_import_export_analysis.json"
+    if trade_payload.exists():
+        try:
+            with open(trade_payload, "r", encoding="utf-8") as f:
+                quant_data["trade_import_export"] = json.load(f)
+            customs_rows = quant_data["trade_import_export"].get("customs", {}).get("summary", [])
+            logger.info(" - trade_import_export: customs_summary=%d", len(customs_rows) if isinstance(customs_rows, list) else 0)
+        except Exception as e:
+            logger.warning("Error reading %s: %s", trade_payload, e)
 
     # 3. Sentiment JSON/CSV 추출
     sentiment_json = raw_data_dir / "sentiment" / "fear_greed.json"
@@ -1255,6 +1722,32 @@ def collect_quant_data(raw_data_dir, krx_dict=None, include_stock_detail=False):
     logger.info(
         " - stock_attractiveness: %d rows loaded",
         len(quant_data["stock_attractiveness"].get("rows", [])),
+    )
+
+    # 6-0. 종합 팩터 마스터 패널 / Factor Data Mart
+    quant_data["factor_master"] = _build_factor_master_payload(raw_data_dir)
+    logger.info(
+        " - factor_master: rows=%d / latest=%d / as_of=%s",
+        len(quant_data["factor_master"].get("rows", [])),
+        len(quant_data["factor_master"].get("latest_rows", [])),
+        quant_data["factor_master"].get("as_of", ""),
+    )
+
+    quant_data["macro_factors"] = _build_macro_factor_payload(raw_data_dir)
+    logger.info(
+        " - macro_factors: daily=%s / monthly=%s / spread=%s / regime=%s",
+        quant_data["macro_factors"].get("summary", {}).get("quant_daily_latest", ""),
+        quant_data["macro_factors"].get("summary", {}).get("quant_monthly_latest", ""),
+        quant_data["macro_factors"].get("summary", {}).get("macro_spread_latest", ""),
+        quant_data["macro_factors"].get("summary", {}).get("regime_latest", ""),
+    )
+
+    quant_data["paper_trading"] = _build_paper_trading_payload(raw_data_dir)
+    logger.info(
+        " - paper_trading: account=%d / positions=%d / orders=%d",
+        len(quant_data["paper_trading"].get("account", [])),
+        len(quant_data["paper_trading"].get("positions", [])),
+        len(quant_data["paper_trading"].get("orders", [])),
     )
 
     # 6-1. 회귀 분석 결과 (regression_* 테이블 → regression 키)
