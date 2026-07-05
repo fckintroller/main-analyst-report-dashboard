@@ -4,6 +4,55 @@
 
 ---
 
+## 2026-07-05 (13차) - Claude
+- Task: run_monthly.bat 신규 스크립트 3종 추가
+- Changed:
+  - `run_monthly.bat` — [7/13] 블록에 `build_futures_flow_factors.py` 추가; [7e/13] 신규 단계로 `collect_china_macro.py` + `build_china_macro_factors.py` 추가
+- Verification:
+  - 파일 내용 확인: [7e/13] 단계 및 [7] 내 선물 팩터 라인 정상 삽입 확인
+- Note:
+  - `build_futures_flow_factors.py`: money_flow_futures_trend 데이터가 누적될수록 z-score 의미 있어짐 (현재 10행, MIN_ZSCORE_OBS=20 미충족 → NaN 정상)
+  - `collect_china_macro.py`: FRED China exports는 약 2개월 lag (최신 2026-04), CSI300은 당일 데이터
+
+## 2026-07-05 (12차) - Claude
+- Task: 신규 데이터 3종 구축 (공매도 통합/선물수급 팩터/중국 경기 팩터)
+- Changed:
+  - **신규** `scripts/01_collect/collect_china_macro.py`
+    - FRED XTEXVA01CNM667S(중국수출) + XTIMVA01CNM667S(중국수입) 수집, max=2026-04-01
+    - yfinance 000300.SS(CSI300) 수집, max=2026-07-03
+    - DB: macro_china_exports(196행), macro_china_imports(196행), macro_csi300_daily(1288행)
+  - **신규** `scripts/03_analyze/build_china_macro_factors.py`
+    - 중국 수출 YoY 12M z-score → china_export_score
+    - CSI300 월간수익률 6M z-score → csi300_momentum_score
+    - 평균 → china_growth_score (현재 max=2026-07-01, 수출은 2026-04까지)
+    - DB: factor_china_macro_month(199행)
+  - **신규** `scripts/03_analyze/build_futures_flow_factors.py`
+    - money_flow_futures_trend에서 외국인 선물 순매수 20일 누적 → 60일 z-score → flow_score
+    - DB: factor_futures_flow_daily(10행), factor_futures_flow_month(2행)
+    - ⚠️ money_flow_futures_trend 현재 11행 (초기 상태) — 데이터 쌓이면 자동 작동
+  - **수정** `scripts/03_analyze/build_factor_master_panel.py`
+    - TABLE_SPECS에 "shorting"(factor_shorting_month) 추가
+    - _base_monthly_panel() / _merge_monthly()에 "shorting" 추가
+    - build_factor_master_panel()에 short_score = 1 - shorting_pressure_score 계산 추가
+    - build_source_staleness_report() specs에 shorting 추가 (allowed_lag_days=45)
+    - ordered 컬럼에 short_score, shorting_pressure_score, balance_ratio 등 추가
+    - 재실행: factor_master_month 15374행 정상 (공매도 통합 확인)
+  - **수정** `scripts/03_analyze/export_web_data.py`
+    - _build_macro_factor_payload()에 china_macro_month / futures_flow_daily 추가
+  - `web/quant_data.js` 재생성 완료
+- Verified:
+  - collect_china_macro.py: FRED 2종 + yfinance CSI300 정상 수집
+  - build_china_macro_factors.py: 199행 적재, china_growth_score max=2026-07-01
+  - build_futures_flow_factors.py: 10행 (초기 데이터 부족으로 z-score NaN — 정상)
+  - build_factor_master_panel.py: 15374행, source_staleness 8행(shorting 포함)
+  - export_web_data.py: quant_data.js 정상 생성 (macro_factors.china_macro_month 포함)
+- 주의:
+  - 선물 수급 z-score: money_flow_futures_trend가 현재 11행 (최소 20행 필요)
+    → 배치가 쌓이면 자동 계산됨
+  - 중국 수출 데이터: FRED XTEXVA01CNM667S max=2026-04-01 (2개월 lag)
+    → 2026-05~07 기간은 CSI300 단독으로 china_growth_score 계산 중
+  - factor_master_panel의 short_score는 composite_score에 미반영 (별도 참조 컬럼)
+
 ## 2026-07-05 (11차) - Claude
 - Task: 회귀분석 신뢰도 개선 A~C (stale 3→0, signal_confidence low→high)
 - 배경: build_regression_analysis.py의 3개 입력(credit/export/inflation)이 최신 기간에 NaN → stale_penalty 15%, confidence=low

@@ -230,6 +230,40 @@ def _build_macro_factor_payload(raw_data_dir: Path) -> dict:
         cols = [c for c in ["indicator", "name", "status", "rows", "start_date", "end_date", "message"] if c in quant_meta.columns]
         meta_summary = quant_meta[cols].sort_values(cols[0] if cols else quant_meta.columns[0]).to_dict(orient="records")
 
+    # 중국 경기 팩터 (factor_china_macro_month)
+    china_macro_latest = []
+    china_growth_score_latest = None
+    try:
+        import sqlite3 as _sqlite3
+        _db = raw_data_dir.parent / "database" / "quant_data.sqlite"
+        if _db.exists():
+            _conn = _sqlite3.connect(_db)
+            _df_china = pd.read_sql("SELECT * FROM factor_china_macro_month ORDER BY period", _conn)
+            _conn.close()
+            if not _df_china.empty:
+                _df_china.fillna("", inplace=True)
+                china_macro_latest = _df_china.tail(24).to_dict(orient="records")
+                _last = _df_china.iloc[-1]
+                china_growth_score_latest = _safe_number(_last.get("china_growth_score"))
+    except Exception as _e:
+        logger.warning("china_macro 로드 실패: %s", _e)
+
+    # 외국인 선물 수급 팩터 (factor_futures_flow_daily, 최근 60일)
+    futures_flow_latest = []
+    try:
+        _db = raw_data_dir.parent / "database" / "quant_data.sqlite"
+        if _db.exists():
+            _conn = _sqlite3.connect(_db)
+            _df_fut = pd.read_sql(
+                "SELECT * FROM factor_futures_flow_daily ORDER BY date DESC LIMIT 60", _conn
+            )
+            _conn.close()
+            if not _df_fut.empty:
+                _df_fut.fillna("", inplace=True)
+                futures_flow_latest = _df_fut.iloc[::-1].to_dict(orient="records")
+    except Exception as _e:
+        logger.warning("futures_flow 로드 실패: %s", _e)
+
     payload = {
         "macro_spread_month": latest_spread,
         "macro_spread_catalog": macro_spread_catalog.to_dict(orient="records") if not macro_spread_catalog.empty else [],
@@ -237,6 +271,8 @@ def _build_macro_factor_payload(raw_data_dir: Path) -> dict:
         "quant_daily_latest": latest_by_key(quant_daily, "date", "factor", "value", limit=30),
         "quant_monthly_latest": latest_by_key(quant_monthly, "date", "factor", "value", limit=30),
         "metadata_status": meta_summary,
+        "china_macro_month": china_macro_latest,
+        "futures_flow_daily": futures_flow_latest,
         "summary": {
             "macro_spread_rows": int(len(macro_spread)),
             "macro_spread_latest": str(macro_spread["period"].max()) if not macro_spread.empty and "period" in macro_spread.columns else "",
@@ -246,6 +282,9 @@ def _build_macro_factor_payload(raw_data_dir: Path) -> dict:
             "quant_daily_latest": str(quant_daily["date"].max()) if not quant_daily.empty and "date" in quant_daily.columns else "",
             "quant_monthly_rows": int(len(quant_monthly)),
             "quant_monthly_latest": str(quant_monthly["date"].max()) if not quant_monthly.empty and "date" in quant_monthly.columns else "",
+            "china_macro_latest": str(_df_china["period"].max()) if china_macro_latest and not _df_china.empty else "",
+            "china_growth_score_latest": china_growth_score_latest,
+            "futures_flow_rows": len(futures_flow_latest),
         },
     }
     return payload
