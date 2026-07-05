@@ -4,6 +4,32 @@
 
 ---
 
+## 2026-07-05 (11차) - Claude
+- Task: 회귀분석 신뢰도 개선 A~C (stale 3→0, signal_confidence low→high)
+- 배경: build_regression_analysis.py의 3개 입력(credit/export/inflation)이 최신 기간에 NaN → stale_penalty 15%, confidence=low
+- Changed:
+  - `scripts/03_analyze/build_credit_spread_kr_factors.py`
+    - [A] credit_score: BBB 데이터 lag 기간에 AA z-score fallback 적용
+    - 결과: credit_score 2026-07-01 = 0.287 (기존 NULL)
+  - `scripts/03_analyze/build_ppi_inflation_cycle_kr_factors.py`
+    - [C] T5YIFR_PATH 상수 추가 (data/raw/macro/macro_indices/T5YIFR.csv)
+    - PPI max(2026-05-01) 이후 2개월 → T5YIFR(미국 5년 기대인플레이션) 월말값으로 행 확장
+    - 결과: inflation_momentum_score 2026-06-01=0.500, 2026-07-01=0.518 추가
+  - `scripts/03_analyze/build_trade_balance_kr_us_factors.py`
+    - [B] KOSIS max(2026-05-01) 이후 → fx/soxx proxy 평균으로 행 확장
+      - proxy = 0.5*(1-won_strength_score) + 0.5*semi_momentum_score
+      - factor_fx_usdkrw_month + factor_soxx_semicycle_month 사용
+    - 결과: export_momentum_score 2026-06-01=0.610, 2026-07-01=0.470 추가
+- Verified:
+  - py_compile OK (3개 파일)
+  - build_regression_analysis.py 재실행: stale_inputs=[] / stale_penalty=0.0 / signal_confidence="high"
+  - export_web_data.py 재실행: quant_data.js 정상 생성
+  - quant_data.js market_timing: signal_confidence="high", stale_penalty=0.0, pred_period=2026-07-01
+- 주의:
+  - B/C는 proxy 기반(대리변수)이므로 실제 KOSIS/ECOS 공표 시 정확도 향상
+  - T5YIFR은 미국 기대인플레이션 → 한국 PPI와 방향 일치하나 레벨 차이 있음 (trend 방향 참고용)
+  - 수출 proxy는 원화강세+SOXX 평균 → KOSIS 공표(7월 말)로 자동 교체됨
+
 ## 2026-07-04 (10차) - Claude
 - Task: Discord 종목 추천 일별 팩터 혼합 (A방식)
 - 배경: score_base_5factor가 월간 팩터 5종 평균이라 한 달 내내 순위 불변 → 사용자 피드백

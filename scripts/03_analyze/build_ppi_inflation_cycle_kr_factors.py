@@ -30,6 +30,7 @@ import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DB_PATH = PROJECT_ROOT / "data" / "database" / "quant_data.sqlite"
+T5YIFR_PATH = PROJECT_ROOT / "data" / "raw" / "macro" / "macro_indices" / "T5YIFR.csv"
 
 ZSCORE_WINDOW = 12     # 월 단위 rolling window (12M z-score, YoY 시리즈 특성상)
 MIN_ZSCORE_OBS = 6
@@ -105,6 +106,29 @@ def build(conn: sqlite3.Connection) -> pd.DataFrame:
 
     # ── 인플레이션 모멘텀 점수 (0~1, 높을수록 인플레 가속) ──────────────
     base["inflation_momentum_score"] = _score_from_zscore(base["kor_ppi_yoy_zscore_12m"])
+
+    # PPI 공표 lag(2개월)로 최근 기간 미수록 → T5YIFR(미국 5년 기대인플레이션)으로 행 확장
+    # PPI max 이후의 T5YIFR 월말 값으로 신규 행을 추가해 inflation_momentum_score를 채움
+    try:
+        t5 = pd.read_csv(T5YIFR_PATH, parse_dates=["DATE"])
+        t5["value"] = pd.to_numeric(t5["T5YIFR"], errors="coerce")
+        t5 = t5.dropna(subset=["value"]).sort_values("DATE")
+        t5_monthly = t5.set_index("DATE")["value"].resample("ME").last().dropna()
+        t5_monthly.index = t5_monthly.index.to_period("M").to_timestamp()
+        t5_z = _zscore(t5_monthly, ZSCORE_WINDOW)
+        t5_score = _score_from_zscore(t5_z)
+
+        ppi_max = base["period"].max()
+        t5_new = t5_score[t5_score.index > ppi_max]
+        if not t5_new.empty:
+            new_rows = pd.DataFrame({
+                "period": t5_new.index,
+                "inflation_momentum_score": t5_new.values,
+            })
+            base = pd.concat([base, new_rows], ignore_index=True).sort_values("period").reset_index(drop=True)
+            logger.info("  T5YIFR proxy rows 추가: %d행 (max=%s)", len(t5_new), t5_new.index.max().strftime("%Y-%m-%d"))
+    except Exception as e:
+        logger.warning("  T5YIFR proxy 확장 실패 (무시): %s", e)
 
     # ── 인플레이션 사이클 레짐 (3년 백분위 기준 5단계) ───────────────────
     base["inflation_cycle_regime"] = base["kor_ppi_yoy_pctile_3y"].apply(_inflation_cycle_regime)

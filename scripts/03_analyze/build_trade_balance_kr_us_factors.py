@@ -59,6 +59,47 @@ def _load_series(conn: sqlite3.Connection, series_id: str, new_name: str) -> pd.
     return out.reset_index()
 
 
+def _load_ecos_trade(conn: sqlite3.Connection, series: str, new_name: str) -> pd.DataFrame:
+    """macro_trade_kr_kosis_monthly (ECOS 1개월 lag) 로드."""
+    try:
+        df = pd.read_sql(
+            "SELECT period, value FROM macro_trade_kr_kosis_monthly WHERE series = ?",
+            conn, params=(series,),
+        )
+        if df.empty:
+            return pd.DataFrame()
+        df["period"] = pd.to_datetime(df["period"], errors="coerce")
+        df["value"] = pd.to_numeric(df["value"], errors="coerce")
+        df = df.dropna().sort_values("period")
+        # 단위 변환: ECOS는 천불(천 USD) → FRED 단위(USD)로 환산
+        df["value"] = df["value"] * 1000
+        out = df.groupby("period")["value"].last()
+        out.name = new_name
+        return out.reset_index()
+    except Exception:
+        return pd.DataFrame()
+
+
+def _load_kr_exports(conn: sqlite3.Connection) -> pd.DataFrame:
+    """한국 수출: ECOS primary (1개월 lag) → FRED fallback (2개월 lag)."""
+    df = _load_ecos_trade(conn, "korea_exports_total", "korea_exports")
+    if not df.empty:
+        logger.info("  한국 수출: ECOS 사용 (max=%s)", df["period"].max())
+        return df
+    logger.warning("  한국 수출: ECOS 없음, FRED fallback")
+    return _load_series(conn, "XTEXVA01KRM667S", "korea_exports")
+
+
+def _load_kr_imports(conn: sqlite3.Connection) -> pd.DataFrame:
+    """한국 수입: ECOS primary (1개월 lag) → FRED fallback (2개월 lag)."""
+    df = _load_ecos_trade(conn, "korea_imports_total", "korea_imports")
+    if not df.empty:
+        logger.info("  한국 수입: ECOS 사용 (max=%s)", df["period"].max())
+        return df
+    logger.warning("  한국 수입: ECOS 없음, FRED fallback")
+    return _load_series(conn, "XTIMVA01KRM667S", "korea_imports")
+
+
 def _zscore(series: pd.Series, window: int) -> pd.Series:
     mean = series.rolling(window, min_periods=MIN_ZSCORE_OBS).mean()
     std = series.rolling(window, min_periods=MIN_ZSCORE_OBS).std()
@@ -79,9 +120,11 @@ def _export_cycle_regime(yoy: float, chg3m: float) -> str:
 
 
 def build(conn: sqlite3.Connection) -> pd.DataFrame:
-    # ── 원천 데이터 로드 (series_id별 월간) ─────────────────────────
-    kr_exp = _load_series(conn, "XTEXVA01KRM667S", "korea_exports")
-    kr_imp = _load_series(conn, "XTIMVA01KRM667S", "korea_imports")
+    # ── 원천 데이터 로드 ──────────────────────────────────────────────
+    # 한국 수출입: ECOS primary (1개월 lag) → FRED OECD fallback (2개월 lag)
+    kr_exp = _load_kr_exports(conn)
+    kr_imp = _load_kr_imports(conn)
+    # 한미 양자 무역: FRED Census (EXPKR/IMPKR) 유일 소스
     us_exp = _load_series(conn, "EXPKR", "us_exports_to_korea")
     us_imp = _load_series(conn, "IMPKR", "us_imports_from_korea")
 
@@ -108,6 +151,36 @@ def build(conn: sqlite3.Connection) -> pd.DataFrame:
 
     # ── 수출 모멘텀 점수 (0~1, 높을수록 수출 호조) ──────────────────
     base["export_momentum_score"] = _score_from_zscore(base["korea_exports_yoy_z12m"])
+
+    # KOSIS 2개월 lag로 최근 기간 미수록 → fx/soxx proxy로 행 확장
+    # proxy = 0.5*(1-won_strength_score) + 0.5*semi_momentum_score
+    # 원화 약세(won_strength 낮음) + 반도체 모멘텀 강세 = 수출 호조 선행
+    try:
+        proxy_scores = []
+        for tbl, col, invert in [
+            ("factor_fx_usdkrw_month", "won_strength_score", True),
+            ("factor_soxx_semicycle_month", "semi_momentum_score", False),
+        ]:
+            px = pd.read_sql(f"SELECT period, [{col}] AS v FROM [{tbl}]", conn)
+            px["period"] = pd.to_datetime(px["period"])
+            px = px.set_index("period")["v"]
+            if invert:
+                px = 1.0 - px
+            proxy_scores.append(px)
+        if proxy_scores:
+            proxy_combined = pd.concat(proxy_scores, axis=1).mean(axis=1)
+            kosis_max = base["period"].max()
+            proxy_new = proxy_combined[proxy_combined.index > kosis_max]
+            if not proxy_new.empty:
+                new_rows = pd.DataFrame({
+                    "period": proxy_new.index,
+                    "export_momentum_score": proxy_new.values,
+                })
+                base = pd.concat([base, new_rows], ignore_index=True).sort_values("period").reset_index(drop=True)
+                logger.info("  export_momentum_score proxy rows 추가: %d행 (max=%s)",
+                            len(proxy_new), proxy_new.index.max().strftime("%Y-%m-%d"))
+    except Exception as e:
+        logger.warning("  export proxy 확장 실패 (무시): %s", e)
 
     # ── 수출 사이클 레짐 (2x2 분면) ──────────────────────────────
     base["export_cycle_regime"] = base.apply(

@@ -113,7 +113,10 @@ def build(conn: sqlite3.Connection) -> pd.DataFrame:
     )
 
     # ── 신용 환경 점수 (0~1, 높을수록 risk-on=스프레드 축소) ────────
-    base["credit_score"] = _score_from_zscore(-base["bbb_aa_spread_z6m"])
+    # BBB 데이터가 없는 기간(월중 lag)은 AA 스프레드 z-score로 fallback
+    z_bbb_aa = _score_from_zscore(-base["bbb_aa_spread_z6m"])
+    z_aa     = _score_from_zscore(-base["aa_spread_z6m"])
+    base["credit_score"] = z_bbb_aa.fillna(z_aa)
 
     # ── 신용 레짐 (3년 백분위 기준 5단계) ───────────────────────────
     base["credit_regime"] = base["bbb_aa_spread_pctile_3y"].apply(_credit_regime)
