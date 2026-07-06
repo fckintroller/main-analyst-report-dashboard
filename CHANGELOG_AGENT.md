@@ -4,6 +4,20 @@
 
 ---
 
+## 2026-07-07 (14차) - Claude
+- Task: ADR 갭 팩터 수집 버그 수정 + 자동화 검증
+- Root cause: `data/raw/valuation/adrs/*.csv`가 2026-06-26에서 멈춰 있고, `load_to_db.py`(if_exists="replace")가 매일 DB를 구 CSV로 덮어씀. `run_macro_indicators_update.bat`에서 수집(5a) → DB 적재(5b) 순서였기 때문에 신규 데이터가 매번 삭제됨.
+- Changed:
+  - `scripts/01_collect/collect_adr_daily.py` — DB 업데이트 후 CSV도 항상 동기화 (`_sync_csv`); CSV가 DB보다 오래됐으면 신규 데이터 없어도 sync 실행
+  - `run_macro_indicators_update.bat` — [5a/9] DB 적재(load_to_db.py) → [5b/9] ADR 수집(collect_adr_daily.py) 순서로 재배치
+- Verification:
+  - CSV 전종목 2026-07-06 동기화 확인 (9건 sync 완료)
+  - factor_adr_gap_signal_daily max=2026-07-06 정상
+- Note:
+  - 매일 08:05 QuantMacroIndicatorsDaily_0805가 run_macro_indicators_update.bat 실행 → 이후 DB 적재 먼저, ADR 수집+sync 후에 실행되므로 재발 없음
+
+---
+
 ## 2026-07-05 (13차) - Claude
 - Task: run_monthly.bat 신규 스크립트 3종 추가
 - Changed:
