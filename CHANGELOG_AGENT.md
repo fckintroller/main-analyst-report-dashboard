@@ -2912,3 +2912,17 @@
 - Secondary issue: FRED/Stooq 결과가 비어 있으면 CSV가 header 없는 5-byte 파일로 남아 `load_to_db.py`에서 empty/headerless skip을 유발.
 - Changes: FRED 보완 timeout을 15초 × 1회로 제한, 빈 FRED/Stooq 결과도 schema 있는 CSV로 저장, `run_macro_indicators_update.bat`에 grains 단계 포함, `package.json` py_compile 대상에 collector 추가.
 - Verification: focused collector run exit 0, Task Scheduler `QuantMacroIndicatorsDaily_0805` Start-ScheduledTask LastTaskResult=0.
+
+## 2026-07-07 19:25 - Codex
+- Task: 자동화 상태 점검 및 종목 리포트/뉴스 수집 상태 확인.
+- Changed:
+  - `CHANGELOG_AGENT.md`
+- Created:
+  - `docs/automation_check_20260707.md`
+- Verification:
+  - Task Scheduler 점검: `QuantDailyNews_1700`, `QuantDailyMarket_1610`, `QuantAllFactorsDaily`, `QuantConsensusRevisionDaily`, `QuantMacroIndicatorsDaily_0805`, `QuantRegressionSignalDaily` 등 핵심 작업 Last Result=0 확인.
+  - 종목 리포트 수집: `data/analyst_database.json` 2026-07-07 17:30:02 갱신, report 98건, 최신 2026-07-07 리포트 확인.
+  - 로그 점검: `all_factor_update_20260707_182141.log` OK 및 33 passed, `daily_market_20260707_161002.log` OK 확인.
+- Caveats:
+  - `QuantInvestorMinuteCollector` Last Result=255이나 `logs/investor_minute_*.log`가 없어 다음 장중 실행 때 별도 확인 필요.
+  - Kiwoom 일부 작업은 미접속/스케줄러 코드(`2`, `-2147024703`, `-1073741510`)가 남아 있어 Kiwoom 자동화를 계속 쓸 경우 후속 점검 필요.
