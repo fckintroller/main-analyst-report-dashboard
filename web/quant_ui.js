@@ -1,4 +1,4 @@
-﻿document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
   initTabs();
   setTimeout(() => {
     if (!window.QUANT_DATA) return;
@@ -3698,6 +3698,8 @@ function renderKiwoomDecisionPanel() {
   const candidateRawRows = Array.isArray(flow.candidate_stock_flow?.rows) ? flow.candidate_stock_flow.rows : [];
   const set = (id, text, color) => { const el = document.getElementById(id); if (!el) return; el.textContent = text ?? "--"; if (color) el.style.color = color; };
   const statusText = String(permission.permission || "UNKNOWN").toUpperCase();
+  const noKiwoomReason = (permission.reasons || []).some(r => String(r).includes("kiwoom_not_connected") || String(r).includes("사용 가능 값 없음"));
+  const flowUnavailable = permission.status === "no_kiwoom_data" || noKiwoomReason || (!intradayRows.length && !candidateRawRows.length && statusText === "UNKNOWN");
   const permClass = kiwoomClass(statusText);
   const buyEntries = entryRows.filter(r => String(r.paper_decision || r.decision || "").toUpperCase() === "BUY").length;
   const watchEntries = entryRows.filter(r => String(r.paper_decision || r.decision || "").toUpperCase() === "WATCH").length;
@@ -3707,11 +3709,11 @@ function renderKiwoomDecisionPanel() {
 
   set("kiwoom-permission-metric", statusText, permClass === "on" ? "var(--c-green)" : permClass === "off" ? "var(--c-red)" : "var(--c-yellow)");
   set("kiwoom-candidate-metric", candidateRows.length ? `${promoted}/${candidateRows.length}` : "0");
-  set("kiwoom-entry-metric", entryRows.length ? `${buyEntries} BUY` : "대기");
+  set("kiwoom-entry-metric", entryRows.length ? `${buyEntries} BUY` : flowUnavailable ? "입력 없음" : "대기");
   set("kiwoom-live-order-metric", liveOrder ? "ON" : "OFF", liveOrder ? "var(--c-red)" : "var(--c-green)");
   set("kiwoom-panel-meta", `Updated: ${html(permission.timestamp || flow.portfolio_state?.updated_at || "장중 실행 대기")}<br>Source: kiwoom_flow`);
-  set("kiwoom-hero-title", statusText === "ON" ? "시장 허가 ON — 후보 수급과 진입 조건만 확인" : statusText === "OFF" ? "시장 허가 OFF — 신규 매수 금지" : "Kiwoom 장중 의사결정은 아직 대기 상태");
-  set("kiwoom-hero-verdict", statusText === "UNKNOWN" ? "장중 market_flow가 들어오면 Permission, 후보 Flow Score, Entry Timing이 자동으로 채워집니다." : `Permission=${statusText}, 후보 ${candidateRows.length}개, BUY 진입신호 ${buyEntries}개.`);
+  set("kiwoom-hero-title", flowUnavailable ? "Kiwoom 미접속 - 장중 입력 없음" : statusText === "ON" ? "시장 허가 ON - 후보 수급과 진입 조건만 확인" : statusText === "OFF" ? "시장 허가 OFF - 신규 매수 금지" : "Kiwoom 장중 의사결정은 아직 대기 상태");
+  set("kiwoom-hero-verdict", flowUnavailable ? "Market Flow/Candidate Flow 최신 JSON이 없어 Permission, Flow Score, Entry Timing을 갱신할 수 없습니다." : statusText === "UNKNOWN" ? "장중 market_flow가 들어오면 Permission, 후보 Flow Score, Entry Timing이 자동으로 채워집니다." : `Permission=${statusText}, 후보 ${candidateRows.length}개, BUY 진입신호 ${buyEntries}개.`);
 
   const evidence = document.getElementById("kiwoom-evidence-list");
   if (evidence) {
@@ -3723,8 +3725,8 @@ function renderKiwoomDecisionPanel() {
   if (wf) {
     const steps = [
       ["1 TR Schema", "Inspector", "TR 컬럼 스냅샷 도구 준비"],
-      ["2 Market Flow", intradayRows.length ? `${intradayRows.length} rows` : "대기", "KOSPI/KOSDAQ 수급 10분"],
-      ["3 Candidate Flow", candidateRawRows.length ? `${candidateRawRows.length} rows` : "대기", "BUY/WATCH/보유 종목 15분"],
+      ["2 Market Flow", intradayRows.length ? `${intradayRows.length} rows` : flowUnavailable ? "입력 없음" : "대기", "KOSPI/KOSDAQ 수급 10분"],
+      ["3 Candidate Flow", candidateRawRows.length ? `${candidateRawRows.length} rows` : flowUnavailable ? "입력 없음" : "대기", "BUY/WATCH/보유 종목 15분"],
       ["4 Permission", statusText, `score ${permission.score ?? "--"}`],
       ["5 Flow Score", candidateRows.length ? `${candidateRows.length} scored` : "0 scored", `${promoted} PROMOTE`],
       ["6 Entry", entryRows.length ? `${buyEntries}/${watchEntries}/${rejectEntries}` : "대기", "BUY/WATCH/REJECT"],
@@ -3734,7 +3736,7 @@ function renderKiwoomDecisionPanel() {
     wf.innerHTML = steps.map(s => `<div class="kiwoom-step"><div class="label">${html(s[0])}</div><div class="value">${html(s[1])}</div><div class="sub">${html(s[2])}</div></div>`).join("");
   }
   const workflowStatus = document.getElementById("kiwoom-workflow-status");
-  if (workflowStatus) { workflowStatus.textContent = entryRows.length ? "LIVE DATA" : "READY"; workflowStatus.className = `kiwoom-status ${entryRows.length ? 'on' : 'unknown'}`; }
+  if (workflowStatus) { workflowStatus.textContent = entryRows.length ? "LIVE DATA" : flowUnavailable ? "NO DATA" : "READY"; workflowStatus.className = `kiwoom-status ${entryRows.length ? 'on' : 'unknown'}`; }
   const orderStatus = document.getElementById("kiwoom-order-status");
   if (orderStatus) { orderStatus.textContent = liveOrder ? "LIVE ORDER ON" : "LIVE ORDER OFF"; orderStatus.className = `kiwoom-status ${liveOrder ? 'off' : 'on'}`; }
   const entryStatus = document.getElementById("kiwoom-entry-status");
@@ -3754,7 +3756,8 @@ function renderKiwoomDecisionPanel() {
   const entryBody = document.getElementById("kiwoom-entry-table");
   if (entryBody) {
     const rows = entryRows.slice(0, 12);
-    entryBody.innerHTML = rows.length ? rows.map(r => `<tr><td><b>${html(r.name || r.ticker || "-")}</b><br><span style="color:var(--text-sub); font-size:0.75rem;">${html(r.ticker || "")}</span></td><td>${html(r.market_permission || "-")}</td><td>${html(r.flow_bucket || "-")}<br><span style="color:var(--text-sub);">${html(r.flow_score ?? "")}</span></td><td>${html(r.entry_state || "-")}</td><td><span class="kiwoom-status ${kiwoomClass(r.paper_decision)}">${html(r.paper_decision || "-")}</span><br><span style="color:var(--text-sub); font-size:0.76rem;">${html((r.reasons || []).join(' / '))}</span></td></tr>`).join("") : `<tr><td colspan="5" style="color:var(--text-sub); padding:18px;">장중 후보 수급이 들어오면 Entry Timing과 Paper Decision이 여기에 표시됩니다.</td></tr>`;
+    const emptyEntryMessage = flowUnavailable ? "Kiwoom 미접속 또는 최신 Market/Candidate Flow 없음. HTS 로그인과 장중 수집 배치를 확인하세요." : "장중 후보 수급이 들어오면 Entry Timing과 Paper Decision이 여기에 표시됩니다.";
+    entryBody.innerHTML = rows.length ? rows.map(r => `<tr><td><b>${html(r.name || r.ticker || "-")}</b><br><span style="color:var(--text-sub); font-size:0.75rem;">${html(r.ticker || "")}</span></td><td>${html(r.market_permission || "-")}</td><td>${html(r.flow_bucket || "-")}<br><span style="color:var(--text-sub);">${html(r.flow_score ?? "")}</span></td><td>${html(r.entry_state || "-")}</td><td><span class="kiwoom-status ${kiwoomClass(r.paper_decision)}">${html(r.paper_decision || "-")}</span><br><span style="color:var(--text-sub); font-size:0.76rem;">${html((r.reasons || []).join(' / '))}</span></td></tr>`).join("") : `<tr><td colspan="5" style="color:var(--text-sub); padding:18px;">${html(emptyEntryMessage)}</td></tr>`;
   }
 
   const healthBody = document.getElementById("kiwoom-health-table");
